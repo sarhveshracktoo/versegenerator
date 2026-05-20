@@ -2891,11 +2891,13 @@
       });
       if (ntG.children.length) frag.appendChild(ntG);
       sel.replaceChildren(frag);
-      if (optionValueExists(sel, savedBook)) {
+      if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
+        // When switching to "Choose Book", default to "Whole Bible (Random)"
+        sel.value = 'whole';
+      } else if (optionValueExists(sel, savedBook)) {
         sel.value = savedBook;
       } else {
-        const first = getFirstAvailableBook(version);
-        if (optionValueExists(sel, first)) sel.value = first;
+        sel.value = 'whole';
       }
       wrapper.style.display = '';
     } else {
