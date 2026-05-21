@@ -782,7 +782,7 @@
       <div class="control-group full-width" id="d-customSearchWrapper">
         <label for="d-custom-search" id="d-custom-search-label">Search</label>
         <div class="ref-search-wrap">
-          <input type="text" id="d-custom-search" class="read-search-input ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('d')" onkeydown="if(event.key==='Enter')onCustomSearch('d')">
+          <input type="text" id="d-custom-search" class="read-search-input ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('d')" onkeydown="onSearchKeydown(event,'d','custom')">
           <button type="button" class="ref-search-btn" onclick="onCustomSearch('d')" aria-label="Search" title="Search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           </button>
@@ -807,7 +807,7 @@
         <div class="control-group full-width">
           <label for="d-read-search" id="d-read-search-label">Search</label>
           <div class="ref-search-wrap">
-            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('d')">
+            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'d','read')">
             <button type="button" class="ref-search-btn" onclick="onReadSearch('d')" aria-label="Search" title="Search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </button>
@@ -936,7 +936,7 @@
       <div class="mob-field full" id="m-customSearchWrapper" style="margin-bottom:9px;">
         <span class="mob-label" id="m-custom-search-label">Search</span>
         <div class="ref-search-wrap">
-          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onkeydown="if(event.key==='Enter')onCustomSearch('m')">
+          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onkeydown="onSearchKeydown(event,'m','custom')">
           <button type="button" class="ref-search-btn" onclick="onCustomSearch('m')" aria-label="Search" title="Search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           </button>
@@ -962,7 +962,7 @@
         </div>
         <div class="mob-field full" style="margin-bottom:9px;">
           <span class="mob-label" id="m-read-search-label">Search</span>
-          <input type="text" id="m-read-search" class="read-search-input mob-read-search" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('m')">
+          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
         </div>
       </div>
 
@@ -2461,14 +2461,39 @@
     if (display) display.classList.remove('loading', 'read-updating');
   }
 
+  function blurSearchInputs(p) {
+    [p + '-custom-search', p + '-read-search'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.blur();
+    });
+    const active = document.activeElement;
+    if (active && active !== document.body && typeof active.blur === 'function') {
+      active.blur();
+    }
+  }
+
+  function onSearchKeydown(event, p, kind) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    blurSearchInputs(p);
+    if (kind === 'custom') onCustomSearch(p);
+    else onReadSearch(p);
+  }
+
   function scrollReadAreaToTop(p) {
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     requestAnimationFrame(() => {
       const offset = p === 'm' ? 80 : 28;
       const top = window.scrollY + el.getBoundingClientRect().top - offset;
-      const behavior = (p === 'm' || prefersReducedMotion()) ? 'auto' : 'smooth';
+      const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
       window.scrollTo({ top: Math.max(0, top), behavior });
+    });
+  }
+
+  function scrollVerseDisplayAfterSearch(p) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollReadAreaToTop(p));
     });
   }
 
@@ -2800,6 +2825,7 @@
     if (data) {
       renderSearchedPassage(p, data, parsed);
       if (options.resetSearchUi) resetCustomSearchForRandom();
+      scrollVerseDisplayAfterSearch(p);
       return true;
     }
     display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
@@ -2807,6 +2833,7 @@
   }
 
   async function onCustomSearch(p) {
+    blurSearchInputs(p);
     const query = document.getElementById(p + '-custom-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
@@ -2981,6 +3008,7 @@
   }
 
   async function onReadSearch(p) {
+    blurSearchInputs(p);
     const query = document.getElementById(p + '-read-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
@@ -3029,6 +3057,8 @@
       const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
       await loadReadPassage(p, ref, parsed.verseStart, parsed.verseEnd);
     }
+    const display = document.getElementById(p + '-verseDisplay');
+    if (hasReadPassageContent(display)) scrollVerseDisplayAfterSearch(p);
   }
 
   async function refreshReadBibleLabels(p) {
