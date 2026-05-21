@@ -4018,19 +4018,16 @@
       layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
       refY = verseY + blockH + 40;
     }
-    ctx.beginPath();
-    ctx.moveTo(S / 2 - 120, refY - 18);
-    ctx.lineTo(S / 2 + 120, refY - 18);
-    ctx.strokeStyle = '#c9a84c';
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.5;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
     ctx.fillStyle = '#c9a84c';
     ctx.font = '600 28px Georgia, serif';
     const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version)})`;
     ctx.fillText(refLine, S / 2, refY + 8);
+
+    const refOrnament = '──── ❤︎ ────';
+    ctx.font = '22px serif';
+    ctx.globalAlpha = 0.55;
+    ctx.fillText(refOrnament, S / 2, refY + 42);
+    ctx.globalAlpha = 1;
 
     const bottomLine = '━━━━༺❀༻━━ ·:*༺ ♱ versegenerator.edgeone.app ♱ ༻*:· ━━༺❀༻━━━━';
     const bottomY = H - 44;
