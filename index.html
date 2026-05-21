@@ -2691,21 +2691,75 @@
     return fetchBssPassageVerses(version, ref, parsed.verseStart, parsed.verseEnd);
   }
 
-  function renderSearchedPassage(p, data) {
+  function parsedFromPassageData(data) {
+    const fromRef = parseReferenceSearch(data.ref);
+    if (fromRef) return fromRef;
+    const bookEn = resolveBookEnFromRaw(data.bookName || '') ||
+      (data.bookName && ALL.includes(data.bookName) ? data.bookName : null);
+    if (!bookEn || !data.verses?.length) return null;
+    const chapter = data.chapter ?? data.verses[0].chapter;
+    return {
+      book: bookEn,
+      chapter: parseInt(chapter, 10),
+      verseStart: data.verses[0].num,
+      verseEnd: data.verses[data.verses.length - 1].num
+    };
+  }
+
+  function getPassageParsedFromEntry(entry) {
+    if (entry.passageParsed) return entry.passageParsed;
+    const fromRef = parseReferenceSearch(entry.ref);
+    if (fromRef) return fromRef;
+    if (entry.readVerses?.length) {
+      const bookEn = entry.readBook || entry.passageBook ||
+        (entry.bookName ? resolveBookEnFromRaw(entry.bookName) : null);
+      let chapter = entry.readChapter ?? entry.passageChapter ?? entry.readVerses[0].chapter;
+      if (bookEn && chapter != null) {
+        return {
+          book: bookEn,
+          chapter: parseInt(chapter, 10),
+          verseStart: entry.readVerses[0].num,
+          verseEnd: entry.readVerses[entry.readVerses.length - 1].num
+        };
+      }
+      const chapterOnly = entry.ref.match(/^(.+?)\s+(\d+)$/);
+      if (chapterOnly) {
+        const bookFromRef = resolveBookEnFromRaw(chapterOnly[1].trim());
+        if (bookFromRef) {
+          return {
+            book: bookFromRef,
+            chapter: parseInt(chapterOnly[2], 10),
+            verseStart: entry.readVerses[0].num,
+            verseEnd: entry.readVerses[entry.readVerses.length - 1].num
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function renderSearchedPassage(p, data, passageParsed) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const label = getTranslationLabel(data.version);
-    const displayRef = getReadDisplayRef(data);
+    const uiRef = data.ref;
     const reveal = verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
-      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
-      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
+      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(uiRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
+      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(uiRef)} · ${escapeHtml(label)}</p></div>`;
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
+    const parsed = passageParsed || parsedFromPassageData(data);
     current[p] = {
-      ref: displayRef, text: fullText, version: data.version, readVerses: data.verses
+      ref: uiRef,
+      text: fullText,
+      version: data.version,
+      readVerses: data.verses,
+      passageParsed: parsed,
+      passageBook: parsed?.book,
+      passageChapter: parsed?.chapter
     };
 
     document.getElementById(p + '-actions').style.display = 'flex';
@@ -2744,7 +2798,7 @@
     const data = await fetchPassageForParsed(version, parsed);
     clearReadDisplayLoading(p);
     if (data) {
-      renderSearchedPassage(p, data);
+      renderSearchedPassage(p, data, parsed);
       if (options.resetSearchUi) resetCustomSearchForRandom();
       return true;
     }
@@ -3145,8 +3199,10 @@
       renderSearchedPassage(p, {
         verses: entry.readVerses,
         ref: entry.ref,
-        version: entry.version
-      });
+        version: entry.version,
+        bookName: entry.passageBook,
+        chapter: entry.passageChapter
+      }, entry.passageParsed);
     } else {
       renderVerse(p, entry);
     }
@@ -3396,15 +3452,17 @@
 
     try {
       if (entry.readVerses?.length) {
-        const parsed = parseReferenceSearch(ref);
+        const parsed = getPassageParsedFromEntry(entry);
         if (parsed) {
           const data = await fetchPassageForParsed(version, parsed);
           clearReadDisplayLoading(p);
           display.classList.remove('loading');
           if (data) {
-            renderSearchedPassage(p, data);
+            renderSearchedPassage(p, data, parsed);
             return;
           }
+          display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage in the selected translation.</p>`;
+          return;
         }
       }
 
@@ -3707,11 +3765,11 @@
   }
 
   function passageNumFontSize(bodySize) {
-    return Math.max(12, Math.round(bodySize * 0.62));
+    return Math.max(11, Math.round(bodySize * 0.58));
   }
 
   function passageNumRise(bodySize) {
-    return Math.round(bodySize * 0.35);
+    return Math.round(bodySize * 0.38);
   }
 
   function setPassageBodyFont(ctx, size) {
@@ -3761,8 +3819,7 @@
 
     function appendRun(run) {
       const runW = measurePassageRun(ctx, run, bodyFontSize);
-      const gap = currentLine.length ? lineGapWidth() : 0;
-      if (currentLine.length && currentWidth + gap + runW > maxWidth) pushLine();
+      if (currentLine.length && currentWidth + lineGapWidth() + runW > maxWidth) pushLine();
       if (currentLine.length) currentWidth += lineGapWidth();
       currentLine.push(run);
       currentWidth += runW;
@@ -3799,16 +3856,15 @@
     const W = 1080;
     const rawText = getImageSourceText(entry);
     const verses = entry.readVerses || [];
-    const verseCount = verses.length;
-    const isPassage = verseCount > 1 || rawText.length > 220;
+    const isLongPassage = verses.length > 1 || rawText.length > 220;
     const maxW = W - 130;
 
-    if (verseCount) {
-      let fontSize = verseCount > 1 || rawText.length > 220 ? 36 : 38;
+    if (verses.length) {
+      let fontSize = isLongPassage ? 36 : 38;
       let passageLines = [];
       let lineHeight = Math.round(fontSize * 1.35);
-      const maxBlock = verseCount > 1 || rawText.length > 220 ? W * 2.15 - 380 : W - 200;
-      const minHeight = verseCount > 1 || rawText.length > 220 ? Math.round(W * 1.3) : W;
+      const maxBlock = isLongPassage ? W * 2.15 - 380 : W - 200;
+      const minHeight = isLongPassage ? Math.round(W * 1.3) : W;
 
       for (let i = 0; i < 8; i++) {
         passageLines = wrapPassageImageLines(ctx, verses, maxW, fontSize);
@@ -3826,15 +3882,14 @@
         fontSize,
         lineHeight,
         passageLines,
-        portrait: isPassage,
-        isPassage: true
+        portrait: isLongPassage
       };
     }
 
     ctx.font = 'italic 38px Georgia, serif';
     let lines = wrapCanvasLines(ctx, rawText, maxW);
     if (lines.length > 10) lines = lines.slice(0, 10);
-    return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false, isPassage: false };
+    return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false };
   }
 
   function drawPassageImageLines(ctx, layout, S, H) {
