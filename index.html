@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Verse Generator</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -255,6 +255,13 @@
     .daily-banner, .weekly-banner, .mob-daily-banner, .mob-weekly-banner {
       content-visibility: auto;
       contain-intrinsic-size: auto 88px;
+    }
+    body.compat-mobile .daily-banner,
+    body.compat-mobile .weekly-banner,
+    body.compat-mobile .mob-daily-banner,
+    body.compat-mobile .mob-weekly-banner {
+      content-visibility: visible;
+      contain-intrinsic-size: auto;
     }
     .mob-verse-box.read-swipeable { touch-action: pan-y; }
     .verse-placeholder { color:var(--ink-light); font-style:italic; font-size:1rem; opacity:0.6; }
@@ -707,12 +714,64 @@
       .scroll-card, .mob-card { animation-duration: 0.45s; }
       .mob-bottom { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
     }
+    /* Tablet-sized phones in landscape: extra bottom padding for fixed bar */
+    @media (max-width: 1100px) and (min-width: 600px) and (orientation: landscape) {
+      body.layout-mobile .mob-content { padding-bottom: 200px; }
+    }
     @media (hover: none) and (pointer: coarse) {
       .verse-reveal { animation: fadeUp 0.28s ease both; }
       @keyframes scrollUnfurl {
         0%   { opacity:0; transform: translateY(8px); }
         100% { opacity:1; transform: translateY(0); }
       }
+    }
+
+    /* ══ TABLET LAYOUT (desktop shell, 769px–1100px) ══ */
+    @media (min-width: 769px) and (max-width: 1100px) {
+      #desktop-view { padding: 28px 18px 52px; }
+      .header { margin-bottom: 22px; }
+      h1 { font-size: clamp(1.2rem, 3.2vw, 1.85rem); }
+      .daily-banner, .weekly-banner,
+      .scroll-card {
+        max-width: min(720px, 94vw);
+      }
+      .scroll-card { padding: 26px 24px; }
+      .banner-verse { font-size: 1rem; }
+      .controls { gap: 12px; margin-bottom: 16px; }
+      .control-group select,
+      .read-search-input { font-size: 0.95rem; padding: 10px 28px 10px 10px; }
+      .btn-generate { padding: 14px; font-size: 0.9rem; margin-bottom: 18px; }
+      .btn-action { min-height: 44px; padding: 10px 14px; }
+      #d-verseDisplay { padding: 18px 14px; min-height: 100px; }
+      #d-imageCanvas { max-width: min(460px, 78vw); max-height: 78vh; }
+      .image-action-row { gap: 10px; }
+      .fav-panel { max-height: 220px; }
+      .share-modal { max-width: 420px; }
+    }
+    @media (min-width: 769px) and (max-width: 1100px) and (orientation: landscape) {
+      #desktop-view { padding: 20px 22px 44px; }
+      .daily-banner, .weekly-banner,
+      .scroll-card { max-width: min(880px, 92vw); }
+      .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .control-group.full-width,
+      .read-bible-panel { grid-column: 1 / -1; }
+      .read-bible-row { grid-template-columns: 1fr 1fr 1fr; }
+      .read-bible-row .control-group:last-child { grid-column: span 1; }
+    }
+    @media (min-width: 769px) and (max-width: 900px) and (orientation: portrait) {
+      .controls { grid-template-columns: 1fr; }
+      .control-group.full-width { grid-column: 1; }
+      .read-bible-row { grid-template-columns: 1fr; }
+    }
+    body.layout-tablet .btn-generate,
+    body.layout-tablet .btn-action,
+    body.layout-tablet select,
+    body.layout-tablet .ref-search-btn {
+      -webkit-tap-highlight-color: transparent;
+    }
+    body.layout-tablet #desktop-view {
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
     }
   </style>
 </head>
@@ -1272,6 +1331,139 @@
   };
 
   /* ══════════════════════════════════════
+     MOBILE / WEBVIEW API COMPAT (Mi Browser, etc.)
+     fetch() can hang without rejecting — use timeouts + XHR fallback.
+  ══════════════════════════════════════ */
+  const API_FETCH_TIMEOUT_MS = 10000;
+  const API_FETCH_TIMEOUT_MOBILE_MS = 8000;
+  let _apiFailStreak = 0;
+  let _apiCircuitOpenUntil = 0;
+
+  function isRestrictedMobileBrowser() {
+    const ua = navigator.userAgent || '';
+    if (/MiuiBrowser|MiBrowser|XiaoMi|MIUI|HeyTapBrowser|OppoBrowser|VivoBrowser|HuaweiBrowser|UCBrowser|UBrowser|Quark|SamsungBrowser/i.test(ua)) return true;
+    if (/(Android|webOS)/i.test(ua) && /wv\)|; wv|WebView|FB_IAB|Instagram/i.test(ua)) return true;
+    return false;
+  }
+
+  function apiFetchTimeoutMs() {
+    return isRestrictedMobileBrowser() ? API_FETCH_TIMEOUT_MOBILE_MS : API_FETCH_TIMEOUT_MS;
+  }
+
+  function apiCircuitOpen() {
+    return Date.now() < _apiCircuitOpenUntil;
+  }
+
+  function markApiSuccess() {
+    _apiFailStreak = 0;
+    _apiCircuitOpenUntil = 0;
+  }
+
+  function markApiFailure() {
+    _apiFailStreak++;
+    if (_apiFailStreak >= 2) {
+      _apiCircuitOpenUntil = Date.now() + (isRestrictedMobileBrowser() ? 45000 : 20000);
+    }
+  }
+
+  function markCompatMobileBrowser() {
+    if (isRestrictedMobileBrowser()) document.body.classList.add('compat-mobile');
+  }
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function withTimeout(promise, ms, fallback) {
+    return Promise.race([
+      promise,
+      delay(ms).then(() => {
+        if (fallback !== undefined) return fallback;
+        throw new Error('timeout');
+      })
+    ]);
+  }
+
+  function xhrGet(url, timeoutMs, asJson) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let done = false;
+      const finish = (fn, val) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        fn(val);
+      };
+      const timer = setTimeout(() => {
+        try { xhr.abort(); } catch (_) {}
+        finish(reject, new Error('timeout'));
+      }, timeoutMs);
+      xhr.open('GET', url, true);
+      xhr.setRequestHeader('Accept', asJson ? 'application/json' : '*/*');
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (!asJson) return finish(resolve, xhr.responseText);
+          try { finish(resolve, JSON.parse(xhr.responseText)); }
+          catch (e) { finish(reject, e); }
+        } else finish(reject, new Error('http ' + xhr.status));
+      };
+      xhr.onerror = () => finish(reject, new Error('network'));
+      xhr.onabort = () => finish(reject, new Error('abort'));
+      try { xhr.send(); } catch (e) { finish(reject, e); }
+    });
+  }
+
+  async function apiGetJson(url, timeoutMs) {
+    if (apiCircuitOpen()) return null;
+    timeoutMs = timeoutMs || apiFetchTimeoutMs();
+
+    async function tryFetch() {
+      const res = await fetchWithTimeout(url, timeoutMs);
+      if (!res || !res.ok) throw new Error('http');
+      return await res.json();
+    }
+
+    const attempts = isRestrictedMobileBrowser()
+      ? [() => xhrGet(url, timeoutMs, true), tryFetch]
+      : [tryFetch, () => xhrGet(url, timeoutMs, true)];
+
+    for (const run of attempts) {
+      try {
+        const data = await run();
+        if (data != null) {
+          markApiSuccess();
+          return data;
+        }
+      } catch { /* try next transport */ }
+    }
+    markApiFailure();
+    return null;
+  }
+
+  function fetchWithTimeout(url, timeoutMs) {
+    const opts = { credentials: 'omit', mode: 'cors', cache: 'default' };
+    if (typeof AbortController !== 'undefined') {
+      const controller = new AbortController();
+      const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
+      return fetch(url, { ...opts, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+    return withTimeout(fetch(url, opts), timeoutMs);
+  }
+
+  function clearAllVersePanelLoading() {
+    ['d', 'm'].forEach(p => {
+      clearReadDisplayLoading(p);
+      const display = document.getElementById(p + '-verseDisplay');
+      if (!display) return;
+      display.classList.remove('loading');
+      if (/Seeking the Word|Loading Scripture/i.test(display.textContent || '')) {
+        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Tap the button below to reveal a verse.</p>`;
+      }
+    });
+  }
+
+  /* ══════════════════════════════════════
      HELLO AO BIBLE API (second source)
      Only BSB and NET confirmed available
   ══════════════════════════════════════ */
@@ -1323,18 +1515,20 @@
     if (!isBollsMode(module)) return [];
     const bollsId = getBollsId(module);
     try {
-      const res = await fetch(`${BOLLS_API}/get-books/${bollsId}/`);
-      if (!res.ok) {
-        BOLLS_BOOK_IDS_BY_MODULE[module] = [];
+      const data = await apiGetJson(`${BOLLS_API}/get-books/${bollsId}/`);
+      if (!data) {
+        BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
       } else {
-        const data = await res.json();
         BOLLS_BOOK_IDS_BY_MODULE[module] = (Array.isArray(data) ? data : [])
           .map(b => Number(b.bookid))
           .filter(id => id >= 1 && id <= 66)
           .sort((a, b) => a - b);
       }
     } catch {
-      BOLLS_BOOK_IDS_BY_MODULE[module] = [];
+      BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
+    }
+    if (!BOLLS_BOOK_IDS_BY_MODULE[module]?.length) {
+      BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
     }
     delete VERSION_BOOK_IDS_CACHE[module];
     VERSION_BOOK_IDS_CACHE[module] = [...BOLLS_BOOK_IDS_BY_MODULE[module]];
@@ -1364,9 +1558,7 @@
     if (BOLLS_CHAPTER_CACHE[cacheKey]) return BOLLS_CHAPTER_CACHE[cacheKey];
     try {
       const url = `${BOLLS_API}/get-text/${bollsId}/${bookId}/${chapter}/`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
+      const data = await apiGetJson(url);
       if (!Array.isArray(data) || !data.length) return null;
       BOLLS_CHAPTER_CACHE[cacheKey] = data;
       return data;
@@ -1416,7 +1608,7 @@
   }
 
   async function fetchBollsRandomVerse(module, scope, attempt = 0) {
-    if (attempt > 5) return null;
+    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
     const ids = pickRandomBookIds(scope, module);
     if (!ids.length) return null;
     const bookId = ids[Math.floor(Math.random() * ids.length)];
@@ -1470,9 +1662,8 @@
     if (HAO_CHAPTER_CACHE[cacheKey]) return HAO_CHAPTER_CACHE[cacheKey];
     try {
       const url = `${HAO_API}/${haoId}/${bookCode}/${chapter}.json`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = await res.json();
+      const data = await apiGetJson(url);
+      if (!data) return null;
       HAO_CHAPTER_CACHE[cacheKey] = data;
       return data;
     } catch {
@@ -1534,7 +1725,7 @@
   }
 
   async function fetchHaoRandomVerse(module, scope, attempt = 0) {
-    if (attempt > 5) return null;
+    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
     const ids = pickRandomBookIds(scope);
     const bookId = ids[Math.floor(Math.random() * ids.length)];
     const bookIdx = bookId - 1;
@@ -1608,11 +1799,21 @@
   let currentAudio = null;
 
   /* ══════════════════════════════════════
-     LAYOUT DETECTION
+     LAYOUT DETECTION (mobile / tablet / desktop)
   ══════════════════════════════════════ */
-  function isMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent) || window.innerWidth <= 768;
+  const LAYOUT_MOBILE_MAX = 768;
+  const LAYOUT_TABLET_MAX = 1100;
+
+  function getLayoutMode() {
+    const w = window.innerWidth;
+    if (w <= LAYOUT_MOBILE_MAX) return 'mobile';
+    if (w <= LAYOUT_TABLET_MAX) return 'tablet';
+    return 'desktop';
   }
+
+  function isMobile() { return getLayoutMode() === 'mobile'; }
+  function isTablet() { return getLayoutMode() === 'tablet'; }
+  function isDesktop() { return getLayoutMode() === 'desktop'; }
 
   /* ══════════════════════════════════════
      FACEBOOK IN-APP BROWSER DETECTION
@@ -1649,10 +1850,59 @@
     document.getElementById('fb-iab-banner').classList.remove('show');
     document.body.classList.remove('has-iab-banner');
   }
+  function applyLayoutBodyClass(mode) {
+    document.documentElement.setAttribute('data-layout', mode);
+    document.body.classList.remove('layout-mobile', 'layout-tablet', 'layout-desktop');
+    document.body.classList.add('layout-' + mode);
+  }
+
+  function syncLayoutControls(from, to) {
+    ['testament', 'version'].forEach(suffix => {
+      const fromEl = document.getElementById(from + '-' + suffix);
+      const toEl = document.getElementById(to + '-' + suffix);
+      if (fromEl && toEl) toEl.value = fromEl.value;
+    });
+    const fromBook = document.getElementById(from + '-book');
+    const toBook = document.getElementById(to + '-book');
+    if (fromBook && toBook && fromBook.options.length) {
+      if (optionValueExists(toBook, fromBook.value)) toBook.value = fromBook.value;
+    }
+    const fromSearch = document.getElementById(from + '-custom-search');
+    const toSearch = document.getElementById(to + '-custom-search');
+    if (fromSearch && toSearch) toSearch.value = fromSearch.value;
+    _customGenIntent[to] = _customGenIntent[from] || 'random';
+    syncVersionSelects(document.getElementById(from + '-version')?.value);
+    updateCustomSearchUI(to);
+  }
+
+  async function onLayoutModeChange(prevMode, nextMode) {
+    if (prevMode === 'mobile' && nextMode !== 'mobile') {
+      syncLayoutControls('m', 'd');
+      if (current.m) {
+        current.d = current.m;
+        renderCurrentEntry('d', current.d);
+      }
+      verseCount.d = verseCount.m;
+    } else if (prevMode !== 'mobile' && nextMode === 'mobile') {
+      syncLayoutControls('d', 'm');
+      if (current.d) {
+        current.m = current.d;
+        renderCurrentEntry('m', current.m);
+      }
+      verseCount.m = verseCount.d;
+    }
+    restoreTestamentOptions(activePanel());
+    await updateBooks(activePanel());
+  }
+
   async function initLayout() {
     const mob  = document.getElementById('mobile-view');
     const desk = document.getElementById('desktop-view');
-    const nowMobile = isMobile();
+    const mode = getLayoutMode();
+    const nowMobile = mode === 'mobile';
+
+    applyLayoutBodyClass(mode);
+
     if (nowMobile) {
       desk.style.display = 'none';
       mob.style.display  = 'flex';
@@ -1660,11 +1910,19 @@
       mob.style.display  = 'none';
       desk.style.display = 'flex';
     }
-    const layoutChanged = _layoutIsMobile !== nowMobile;
+
+    const layoutChanged = _layoutMode !== mode;
+    const prevMode = _layoutMode;
+    _layoutMode = mode;
     _layoutIsMobile = nowMobile;
+
     if (layoutChanged) {
-      restoreTestamentOptions(activePanel());
-      await updateBooks(activePanel());
+      if (prevMode) {
+        await onLayoutModeChange(prevMode, mode);
+      } else {
+        restoreTestamentOptions(activePanel());
+        await updateBooks(activePanel());
+      }
     }
   }
 
@@ -1763,8 +2021,7 @@
     langCode = langCode || 'en';
     if (BSS_BOOKS_CACHE[langCode]) return BSS_BOOKS_CACHE[langCode];
     try {
-      const res = await fetch(`${BSS_API}/books?language=${encodeURIComponent(langCode)}`);
-      const data = await res.json();
+      const data = await apiGetJson(`${BSS_API}/books?language=${encodeURIComponent(langCode)}`);
       if (data.results?.length) {
         BSS_BOOKS_CACHE[langCode] = data.results;
         const map = {};
@@ -1796,9 +2053,8 @@
     const preset = getVersionBookOverride(module);
     if (module === 'wlc') {
       try {
-        const res = await fetch(`${BOLLS_API}/get-books/WLC/`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await apiGetJson(`${BOLLS_API}/get-books/WLC/`);
+        if (data) {
           const ids = (Array.isArray(data) ? data : [])
             .map(b => Number(b.bookid))
             .filter(id => id >= 1 && id <= 39)
@@ -1984,7 +2240,8 @@
   async function fetchBssPassageVerses(module, reference, filterStart, filterEnd) {
     const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(reference)}&data_format=passage`;
     try {
-      const data = await (await fetch(url)).json();
+      const data = await apiGetJson(url);
+      if (!data) return null;
       const parsed = parseBssPassageVerses(data, module, filterStart, filterEnd);
       if (!parsed) return null;
       return { ...parsed, version: module };
@@ -1996,7 +2253,8 @@
   async function fetchBssReference(module, reference) {
     const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(reference)}&data_format=passage`;
     try {
-      const data = await (await fetch(url)).json();
+      const data = await apiGetJson(url);
+      if (!data) return null;
       return parseBssPassage(data, module);
     } catch {
       return null;
@@ -2016,9 +2274,10 @@
   }
 
   async function fetchRandomBssVerse(module, scope, attempt = 0) {
+    if (apiCircuitOpen()) return null;
     if (isHaoMode(module)) return fetchHaoRandomVerse(module, scope, attempt);
     if (isBollsMode(module)) return fetchBollsRandomVerse(module, scope, attempt);
-    if (attempt > 5) return null;
+    if (attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
     const ids = pickRandomBookIds(scope, module);
     const bookId = ids[Math.floor(Math.random() * ids.length)];
     const bookIdx = bookId - 1;
@@ -2106,21 +2365,18 @@
   }
 
   async function loadBibleList() {
-    try {
-      const res = await fetch(`${BSS_API}/bibles`);
-      const data = await res.json();
-      if (data.results && Object.keys(data.results).length) {
-        BSS_BIBLES = data.results;
-      } else {
-        BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-      }
-    } catch {
-      BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-    }
+    BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
     populateTranslationSelects();
-    await loadBooksForLang('en');
     restoreTestamentOptions('d');
     restoreTestamentOptions('m');
+
+    const data = await apiGetJson(`${BSS_API}/bibles`);
+    if (data?.results && Object.keys(data.results).length) {
+      BSS_BIBLES = data.results;
+      populateTranslationSelects();
+    }
+
+    await loadBooksForLang('en');
     await updateBooks(activePanel());
   }
 
@@ -2233,51 +2489,81 @@
     { ref:"Josué 1:9",           text:"Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras." },
   ];
 
-  async function loadDailyAndWeekly(version) {
+  function paintDailyWeeklyBanners(dailyEntry, weeklyEntry, label, note) {
+    if (!dailyEntry || !weeklyEntry) return;
+    ['d', 'm'].forEach(p => {
+      const dailyText = document.getElementById(p + '-daily-text');
+      const dailyRef = document.getElementById(p + '-daily-ref');
+      const weeklyText = document.getElementById(p + '-weekly-text');
+      const weeklyRef = document.getElementById(p + '-weekly-ref');
+      const noteEl = document.getElementById(p + '-weekly-note');
+      if (dailyText) dailyText.textContent = '"' + dailyEntry.text + '"';
+      if (dailyRef) dailyRef.textContent = '— ' + dailyEntry.ref + ' (' + label + ')';
+      if (weeklyText) weeklyText.textContent = '"' + weeklyEntry.text + '"';
+      if (weeklyRef) weeklyRef.textContent = '— ' + weeklyEntry.ref + ' (' + label + ')';
+      if (noteEl) noteEl.textContent = '💭 ' + note;
+    });
+  }
+
+  function getDailyWeeklyFallbackEntries(version) {
     version = version || 'kjv';
-    const label = getTranslationLabel(version);
     const isLSG = isSegondMode(version);
     const now = new Date();
-    const dayOfYear  = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
     const weekOfYear = Math.floor(dayOfYear / 7);
     const dailyPool = getVersionRefPool(version, DAILY_REFS, isLSG ? DAILY_FALLBACK_LSG : DAILY_FALLBACK);
     const weeklyPool = getVersionRefPool(version, WEEKLY_REFS, isLSG ? WEEKLY_FALLBACK_LSG : WEEKLY_FALLBACK);
-    const dailyIdx  = dayOfYear  % dailyPool.refs.length;
+    const dailyIdx = dayOfYear % dailyPool.refs.length;
     const weeklyIdx = weekOfYear % weeklyPool.refs.length;
-    const note      = isLSG
-      ? WEEKLY_NOTES_FR[weeklyIdx]
-      : WEEKLY_NOTES[weeklyIdx];
+    const note = isLSG ? WEEKLY_NOTES_FR[weeklyIdx] : WEEKLY_NOTES[weeklyIdx];
+    return {
+      label: getTranslationLabel(version),
+      note,
+      dailyEntry: dailyPool.fallbackEntries[dailyIdx],
+      weeklyEntry: weeklyPool.fallbackEntries[weeklyIdx],
+      dailyRef: dailyPool.refs[dailyIdx],
+      weeklyRef: weeklyPool.refs[weeklyIdx]
+    };
+  }
 
-    let dailyEntry, weeklyEntry;
+  async function loadDailyAndWeekly(version) {
+    version = version || 'kjv';
+    const slots = getDailyWeeklyFallbackEntries(version);
+    paintDailyWeeklyBanners(slots.dailyEntry, slots.weeklyEntry, slots.label, slots.note);
 
-    try {
-      let fetchRef;
-      if (isHaoMode(version)) {
-        fetchRef = async (ref) => fetchHaoReferenceFromString(version, ref);
-      } else if (isBollsMode(version)) {
-        fetchRef = async (ref) => fetchBollsReferenceFromString(version, ref);
-      } else {
-        fetchRef = async (ref) => fetchBssReference(version, ref);
-      }
-      const [dEntry, wEntry] = await Promise.all([
-        fetchRef(dailyPool.refs[dailyIdx]),
-        fetchRef(weeklyPool.refs[weeklyIdx])
-      ]);
-      dailyEntry  = dEntry || dailyPool.fallbackEntries[dailyIdx];
-      weeklyEntry = wEntry || weeklyPool.fallbackEntries[weeklyIdx];
-    } catch {
-      dailyEntry  = dailyPool.fallbackEntries[dailyIdx];
-      weeklyEntry = weeklyPool.fallbackEntries[weeklyIdx];
+    if (apiCircuitOpen()) return;
+
+    const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
+    let fetchRef;
+    if (isHaoMode(version)) {
+      fetchRef = (ref) => fetchHaoReferenceFromString(version, ref);
+    } else if (isBollsMode(version)) {
+      fetchRef = (ref) => fetchBollsReferenceFromString(version, ref);
+    } else {
+      fetchRef = (ref) => fetchBssReference(version, ref);
     }
 
-    ['d','m'].forEach(p => {
-      document.getElementById(p+'-daily-text').textContent  = '"' + dailyEntry.text  + '"';
-      document.getElementById(p+'-daily-ref').textContent   = '— ' + dailyEntry.ref  + ' (' + label + ')';
-      document.getElementById(p+'-weekly-text').textContent = '"' + weeklyEntry.text + '"';
-      document.getElementById(p+'-weekly-ref').textContent  = '— ' + weeklyEntry.ref + ' (' + label + ')';
-      const noteEl = document.getElementById(p+'-weekly-note');
-      if (noteEl) noteEl.textContent = '💭 ' + note;
-    });
+    try {
+      let dEntry = null;
+      let wEntry = null;
+      if (isRestrictedMobileBrowser()) {
+        dEntry = await withTimeout(fetchRef(slots.dailyRef), bannerTimeout, null);
+        wEntry = await withTimeout(fetchRef(slots.weeklyRef), bannerTimeout, null);
+      } else {
+        [dEntry, wEntry] = await withTimeout(
+          Promise.all([fetchRef(slots.dailyRef), fetchRef(slots.weeklyRef)]),
+          bannerTimeout,
+          [null, null]
+        );
+      }
+      const dailyEntry = dEntry || slots.dailyEntry;
+      const weeklyEntry = wEntry || slots.weeklyEntry;
+      if (dEntry || wEntry) {
+        paintDailyWeeklyBanners(dailyEntry, weeklyEntry, slots.label, slots.note);
+      }
+    } catch {
+      /* offline banners already shown */
+    }
   }
 
   /* ══════════════════════════════════════
@@ -2314,13 +2600,16 @@
   /** Read Bible verse dropdown: show entire chapter in the display panel */
   const READ_VERSE_WHOLE = 'whole-chapter';
   let _readLoadId = { d: 0, m: 0 };
+  let _layoutMode = null;
   let _layoutIsMobile = null;
+  /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
+  let _customGenIntent = { d: 'random', m: 'random' };
   let _versionChangeTimer = null;
   let _refSearchCandidates = null;
   const LANG_BOOK_NAME_MAP = {};
 
   function activePanel() {
-    return isMobile() ? 'm' : 'd';
+    return getLayoutMode() === 'mobile' ? 'm' : 'd';
   }
 
   function syncVersionSelects(version) {
@@ -2540,17 +2829,20 @@
     setReadDisplayLoading(p, !hasReadPassageContent(display));
 
     let data;
-    if (isHaoMode(version)) {
-      data = await fetchHaoPassageVerses(version, bookEn, chapter, null, null);
-    } else if (isBollsMode(version)) {
-      data = await fetchBollsPassageVerses(version, bookEn, chapter, null, null);
-    } else {
-      const bookApi = getApiBookName(bookEn, version);
-      data = await fetchBssPassageVerses(version, `${bookApi} ${chapter}`);
+    try {
+      const chapterTimeout = apiFetchTimeoutMs() + 2000;
+      if (isHaoMode(version)) {
+        data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
+      } else if (isBollsMode(version)) {
+        data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
+      } else {
+        const bookApi = getApiBookName(bookEn, version);
+        data = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${chapter}`), chapterTimeout, null);
+      }
+    } finally {
+      if (loadId === _readLoadId[p]) clearReadDisplayLoading(p);
     }
     if (loadId !== _readLoadId[p]) return;
-
-    clearReadDisplayLoading(p);
 
     if (data?.verses?.length) {
       storeReadChapterCache(key, data);
@@ -2857,23 +3149,18 @@
 
   function resetCustomSearchForRandom() {
     ['d', 'm'].forEach(pl => {
+      _customGenIntent[pl] = 'random';
       const input = document.getElementById(pl + '-custom-search');
       if (input) input.value = '';
       updateCustomSearchUI(pl);
     });
   }
 
-  /** True when the generate button is in “Reveal the Verses” mode (search box has a reference). */
+  /** True when user intends to load a searched passage (not random). */
   function isCustomRevealVersesMode(p) {
-    const testament = document.getElementById(p + '-testament')?.value;
-    if (testament !== 'custom') return false;
-    const searchQuery = document.getElementById(p + '-custom-search')?.value?.trim();
-    if (!searchQuery) return false;
-    const version = document.getElementById(p + '-version')?.value || 'kjv';
-    const ui = getUiStrings(getTranslationLang(version));
-    const versesLabel = ui.generateVerses || '✦ Reveal the Verses ✦';
-    const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-    return !!(genBtn && genBtn.textContent === versesLabel);
+    if (document.getElementById(p + '-testament')?.value !== 'custom') return false;
+    if ((_customGenIntent[p] || 'random') !== 'verses') return false;
+    return !!document.getElementById(p + '-custom-search')?.value?.trim();
   }
 
   async function loadSearchedPassage(p, parsed, options) {
@@ -2886,20 +3173,25 @@
     future[p] = [];
 
     setReadDisplayLoading(p, true);
-    const data = await fetchPassageForParsed(version, parsed);
-    clearReadDisplayLoading(p);
-    if (data) {
-      renderSearchedPassage(p, data, parsed);
-      scrollVerseDisplayAfterSearch(p);
-      setCustomGenerateButtonAfterReveal();
-      return true;
+    let data = null;
+    try {
+      data = await withTimeout(fetchPassageForParsed(version, parsed), apiFetchTimeoutMs() + 3000, null);
+      if (data) {
+        renderSearchedPassage(p, data, parsed);
+        scrollVerseDisplayAfterSearch(p);
+        setCustomGenerateButtonAfterReveal();
+        return true;
+      }
+      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+      return false;
+    } finally {
+      clearReadDisplayLoading(p);
     }
-    display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
-    return false;
   }
 
   async function onCustomSearch(p) {
     blurSearchInputs(p);
+    _customGenIntent.d = _customGenIntent.m = 'verses';
     const query = document.getElementById(p + '-custom-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
@@ -2914,6 +3206,7 @@
     const ui = getUiStrings(getTranslationLang(version || 'kjv'));
     ['d', 'm'].forEach(pl => {
       if (document.getElementById(pl + '-testament')?.value === 'read') return;
+      _customGenIntent[pl] = 'verses';
       const genBtn = document.getElementById(pl === 'd' ? 'd-generate-btn' : 'm-generate-btn');
       if (genBtn) genBtn.textContent = ui.generateVerses || '✦ Reveal the Verses ✦';
     });
@@ -2922,6 +3215,7 @@
   function setCustomGenerateButtonAfterReveal() {
     ['d', 'm'].forEach(pl => {
       if (document.getElementById(pl + '-testament')?.value !== 'custom') return;
+      _customGenIntent[pl] = 'random';
       const genBtn = document.getElementById(pl === 'd' ? 'd-generate-btn' : 'm-generate-btn');
       if (!genBtn) return;
       const ui = getUiStrings(getTranslationLang(document.getElementById(pl + '-version')?.value || 'kjv'));
@@ -2934,6 +3228,8 @@
     const other = p === 'd' ? 'm' : 'd';
     const otherInput = document.getElementById(other + '-custom-search');
     if (otherInput && input) otherInput.value = input.value;
+    const hasQuery = !!(input && input.value.trim());
+    _customGenIntent.d = _customGenIntent.m = hasQuery ? 'verses' : 'random';
     updateCustomSearchUI(p);
     updateCustomSearchUI(other);
   }
@@ -2960,7 +3256,12 @@
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
     if (!genBtn || testament === 'read') return;
     const hasQuery = searchInput && searchInput.value.trim().length > 0;
-    genBtn.textContent = hasQuery ? (ui.generateVerses || '✦ Reveal the Verses ✦') : ui.generate;
+    const intent = _customGenIntent[p] || 'random';
+    if (intent === 'verses' && hasQuery) {
+      genBtn.textContent = ui.generateVerses || '✦ Reveal the Verses ✦';
+    } else {
+      genBtn.textContent = ui.generate;
+    }
   }
 
   function renderReadPassage(p, data, animate) {
@@ -3025,37 +3326,37 @@
     const version = document.getElementById(p + '-version').value;
     const display = document.getElementById(p + '-verseDisplay');
     setReadDisplayLoading(p, !hasReadPassageContent(display));
-    let data;
-    if (isHaoMode(version)) {
-      // For HAO, derive bookEn and chapter from the selectors (most reliable)
-      // then fall back to parsing the reference string
-      const bookSelEl = document.getElementById(p + '-read-book');
-      const chSelEl   = document.getElementById(p + '-read-chapter');
-      const bookEn = bookSelEl?.value || null;
-      const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-      if (bookEn && ALL.includes(bookEn)) {
-        data = await fetchHaoPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null);
+    const passageTimeout = apiFetchTimeoutMs() + 3000;
+    let data = null;
+    try {
+      if (isHaoMode(version)) {
+        const bookSelEl = document.getElementById(p + '-read-book');
+        const chSelEl   = document.getElementById(p + '-read-chapter');
+        const bookEn = bookSelEl?.value || null;
+        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+        if (bookEn && ALL.includes(bookEn)) {
+          data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
+        } else {
+          data = await withTimeout(fetchHaoPassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
+        }
+      } else if (isBollsMode(version)) {
+        const bookSelEl = document.getElementById(p + '-read-book');
+        const chSelEl   = document.getElementById(p + '-read-chapter');
+        const bookEn = bookSelEl?.value || null;
+        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+        if (bookEn && ALL.includes(bookEn)) {
+          data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
+        }
       } else {
-        data = await fetchHaoPassageFromString(version, reference, filterStart, filterEnd);
+        data = await withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
       }
-    } else if (isBollsMode(version)) {
-      const bookSelEl = document.getElementById(p + '-read-book');
-      const chSelEl   = document.getElementById(p + '-read-chapter');
-      const bookEn = bookSelEl?.value || null;
-      const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-      if (bookEn && ALL.includes(bookEn)) {
-        data = await fetchBollsPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null);
+      if (data) {
+        renderReadPassage(p, data);
       } else {
-        data = null;
+        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
       }
-    } else {
-      data = await fetchBssPassageVerses(version, reference, filterStart, filterEnd);
-    }
-    clearReadDisplayLoading(p);
-    if (data) {
-      renderReadPassage(p, data);
-    } else {
-      display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+    } finally {
+      clearReadDisplayLoading(p);
     }
   }
 
@@ -3097,20 +3398,27 @@
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
+    const passageTimeout = apiFetchTimeoutMs() + 3000;
     if (isHaoMode(version)) {
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      const data = await fetchHaoPassageVerses(version, bookEn, chapter, verse, verse);
-      clearReadDisplayLoading(p);
-      if (data) renderReadPassage(p, data);
-      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      try {
+        const data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else if (isBollsMode(version)) {
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      const data = await fetchBollsPassageVerses(version, bookEn, chapter, verse, verse);
-      clearReadDisplayLoading(p);
-      if (data) renderReadPassage(p, data);
-      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      try {
+        const data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else {
       await loadReadPassage(p, buildReadReference(bookEn, chapter, verse, verse, version));
     }
@@ -3142,34 +3450,40 @@
     syncReadSelectors(p, parsed.book, parsed.chapter, parsed.verseStart);
     _readSyncLock = false;
 
+    const readSearchTimeout = apiFetchTimeoutMs() + 3000;
     if (isHaoMode(version)) {
-      // For HAO: fetch the whole chapter first to get verse count, then load the specific verse range
-      const chapterData = await fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      const chapterData = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
       if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
       _readSyncLock = false;
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      const data = await fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
-      clearReadDisplayLoading(p);
-      if (data) renderReadPassage(p, data);
-      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      try {
+        const data = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else if (isBollsMode(version)) {
-      const chapterData = await fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      const chapterData = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
       if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
       _readSyncLock = false;
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      const data = await fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
-      clearReadDisplayLoading(p);
-      if (data) renderReadPassage(p, data);
-      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      try {
+        const data = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else {
       const bookApi = getApiBookName(parsed.book, version);
-      const probe = await fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`);
+      const probe = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`), readSearchTimeout, null);
       if (probe?.verses?.length) populateReadVerseSelect(p, probe.verses[probe.verses.length - 1].num, { defaultWhole: false });
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
@@ -3608,12 +3922,11 @@
     display.classList.add('loading');
 
     try {
+      const retransTimeout = apiFetchTimeoutMs() + 3000;
       if (entry.readVerses?.length) {
         const parsed = getPassageParsedFromEntry(entry);
         if (parsed) {
-          const data = await fetchPassageForParsed(version, parsed);
-          clearReadDisplayLoading(p);
-          display.classList.remove('loading');
+          const data = await withTimeout(fetchPassageForParsed(version, parsed), retransTimeout, null);
           if (data) {
             renderSearchedPassage(p, data, parsed);
             return;
@@ -3625,11 +3938,11 @@
 
       let newEntry;
       if (isHaoMode(version)) {
-        newEntry = await fetchHaoReferenceFromString(version, ref);
+        newEntry = await withTimeout(fetchHaoReferenceFromString(version, ref), retransTimeout, null);
       } else if (isBollsMode(version)) {
-        newEntry = await fetchBollsReferenceFromString(version, ref);
+        newEntry = await withTimeout(fetchBollsReferenceFromString(version, ref), retransTimeout, null);
       } else {
-        newEntry = await fetchBssReference(version, ref);
+        newEntry = await withTimeout(fetchBssReference(version, ref), retransTimeout, null);
       }
       if (newEntry) {
         current[p] = newEntry;
@@ -3643,8 +3956,10 @@
       const fallback = getLocalVerse(null, version);
       current[p] = fallback;
       renderVerse(p, fallback);
+    } finally {
+      clearReadDisplayLoading(p);
+      display.classList.remove('loading');
     }
-    display.classList.remove('loading');
   }
 
   
@@ -3680,22 +3995,21 @@
     }
 
     try {
-      let entry = await fetchRandomBssVerse(version, scope);
-      if (!entry) {
-        entry = getLocalVerse(scope.book, version);
-      }
-      display.classList.remove('loading');
+      const verseTimeout = apiFetchTimeoutMs() + (isRestrictedMobileBrowser() ? 2000 : 6000);
+      let entry = await withTimeout(fetchRandomBssVerse(version, scope), verseTimeout, null);
+      if (!entry) entry = getLocalVerse(scope.book, version);
       current[p] = entry;
       renderVerse(p, entry);
     } catch {
-      if (retryCount < 2) {
+      if (retryCount < 1 && !apiCircuitOpen()) {
         generate(p, retryCount + 1, scope);
-      } else {
-        display.classList.remove('loading');
-        const entry = getLocalVerse(scope.book, version);
-        current[p] = entry;
-        renderVerse(p, entry);
+        return;
       }
+      const entry = getLocalVerse(scope.book, version);
+      current[p] = entry;
+      renderVerse(p, entry);
+    } finally {
+      display.classList.remove('loading');
     }
   }
 
@@ -4312,24 +4626,47 @@
   /* ══════════════════════════════════════
      INIT
   ══════════════════════════════════════ */
-  window.addEventListener('load', async () => {
+  async function bootstrapApp() {
+    markCompatMobileBrowser();
     if (isFacebookIAB()) {
       document.getElementById('fb-iab-banner').classList.add('show');
       document.body.classList.add('has-iab-banner');
     }
-    await loadBibleList();
+
+    const initialSlots = getDailyWeeklyFallbackEntries('kjv');
+    paintDailyWeeklyBanners(initialSlots.dailyEntry, initialSlots.weeklyEntry, initialSlots.label, initialSlots.note);
+
+    try {
+      await withTimeout(loadBibleList(), 12000);
+    } catch {
+      BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
+      populateTranslationSelects();
+    }
+
     await initLayout();
     initReadSwipe();
-    const version = document.getElementById('d-version').value || 'kjv';
-    if (isBollsMode(version)) await discoverBollsBooks(version);
-    else if (bssNeedsBookDiscovery(version)) await discoverBssBooks(version);
-    await loadDailyAndWeekly(version);
-  });
+    clearAllVersePanelLoading();
+
+    const version = document.getElementById('d-version')?.value || 'kjv';
+    try {
+      if (isBollsMode(version)) {
+        await withTimeout(discoverBollsBooks(version), apiFetchTimeoutMs());
+      } else if (bssNeedsBookDiscovery(version)) {
+        await withTimeout(discoverBssBooks(version), apiFetchTimeoutMs());
+      }
+    } catch { /* preset / fallback book lists */ }
+
+    void loadDailyAndWeekly(version);
+  }
+
+  window.addEventListener('load', () => { void bootstrapApp(); });
   let _resizeTimer;
-  window.addEventListener('resize', () => {
+  function scheduleLayoutRefresh() {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(initLayout, 200);
-  });
+  }
+  window.addEventListener('resize', scheduleLayoutRefresh);
+  window.addEventListener('orientationchange', scheduleLayoutRefresh);
   document.getElementById('shareModal').addEventListener('click', function(e) {
     if (e.target === this) closeShare();
   });
