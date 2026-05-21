@@ -807,7 +807,7 @@
         <div class="control-group full-width">
           <label for="d-read-search" id="d-read-search-label">Search</label>
           <div class="ref-search-wrap">
-            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'d','read')">
+            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'d','read')">
             <button type="button" class="ref-search-btn" onclick="onReadSearch('d')" aria-label="Search" title="Search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </button>
@@ -962,7 +962,7 @@
         </div>
         <div class="mob-field full" style="margin-bottom:9px;">
           <span class="mob-label" id="m-read-search-label">Search</span>
-          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
+          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
         </div>
       </div>
 
@@ -1741,8 +1741,8 @@
   };
 
   const UI_LANG = {
-    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. John 1:1 or John 1:1-7', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
-    fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
+    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
+    fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 6, Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
     es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
     de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
     pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', testament:'Testamento', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', custom:'Escolher livro', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
@@ -2714,14 +2714,26 @@
     for (const { en, alts } of candidates) {
       for (const name of alts) {
         const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp('^' + escaped + '\\s+(\\d+):(\\d+)(?:\\s*[-–]\\s*(\\d+))?', 'i');
-        const m = trimmed.match(re);
-        if (m) {
+        const reVerse = new RegExp('^' + escaped + '\\s+(\\d+):(\\d+)(?:\\s*[-–]\\s*(\\d+))?', 'i');
+        const mVerse = trimmed.match(reVerse);
+        if (mVerse) {
           return {
             book: en,
-            chapter: parseInt(m[1], 10),
-            verseStart: parseInt(m[2], 10),
-            verseEnd: m[3] ? parseInt(m[3], 10) : parseInt(m[2], 10)
+            chapter: parseInt(mVerse[1], 10),
+            verseStart: parseInt(mVerse[2], 10),
+            verseEnd: mVerse[3] ? parseInt(mVerse[3], 10) : parseInt(mVerse[2], 10),
+            wholeChapter: false
+          };
+        }
+        const reChapter = new RegExp('^' + escaped + '\\s+(\\d+)\\s*$', 'i');
+        const mChapter = trimmed.match(reChapter);
+        if (mChapter) {
+          return {
+            book: en,
+            chapter: parseInt(mChapter[1], 10),
+            verseStart: null,
+            verseEnd: null,
+            wholeChapter: true
           };
         }
       }
@@ -2736,6 +2748,16 @@
   }
 
   async function fetchPassageForParsed(version, parsed) {
+    if (parsed.wholeChapter) {
+      if (isHaoMode(version)) {
+        return fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      }
+      if (isBollsMode(version)) {
+        return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      }
+      const bookApi = getApiBookName(parsed.book, version);
+      return fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`);
+    }
     if (isHaoMode(version)) {
       return fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
     }
@@ -3099,11 +3121,22 @@
     const query = document.getElementById(p + '-read-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
-      showToast('Enter a reference like Matthew 24:5 or Matthew 24:5-15');
+      showToast('Enter a reference like Matthew 6, Matthew 24:5, or Matthew 24:5-15');
       return;
     }
     const version = document.getElementById(p + '-version').value;
     const bookSel = document.getElementById(p + '-read-book');
+
+    if (parsed.wholeChapter) {
+      _readSyncLock = true;
+      if (optionValueExists(bookSel, parsed.book)) bookSel.value = parsed.book;
+      syncReadSelectors(p, parsed.book, parsed.chapter, READ_VERSE_WHOLE);
+      _readSyncLock = false;
+      await loadReadChapterAt(p, parsed.book, parsed.chapter, { scrollToTop: true });
+      scrollVerseDisplayAfterSearch(p);
+      return;
+    }
+
     _readSyncLock = true;
     if (optionValueExists(bookSel, parsed.book)) bookSel.value = parsed.book;
     syncReadSelectors(p, parsed.book, parsed.chapter, parsed.verseStart);
@@ -3173,7 +3206,7 @@
     syncReadSelectors(p, bookEn, chapterNum, verseSync);
     _readSyncLock = false;
     const searchInput = document.getElementById(p + '-read-search');
-    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 24:5 or Matthew 24:5-15';
+    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
   }
 
   async function initReadBiblePanel(p, resetToGenesis = false) {
@@ -3185,7 +3218,7 @@
     const langBooks = await loadBooksForLang(langCode);
     populateReadBookSelect(p, langBooks, ui, version);
     const searchInput = document.getElementById(p + '-read-search');
-    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 24:5 or Matthew 24:5-15';
+    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
     if (resetToGenesis) {
       await loadReadChapterAt(p, getFirstAvailableBook(version), 1);
     } else {
