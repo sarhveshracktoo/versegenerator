@@ -298,6 +298,42 @@
       outline: none;
       background-color: rgba(255,255,255,0.6);
     }
+    .ref-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+    }
+    .ref-search-input {
+      padding-right: 42px;
+    }
+    .ref-search-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--gold-dark);
+      border-radius: 0 3px 3px 0;
+      transition: color 0.2s, background 0.2s;
+    }
+    .ref-search-btn:hover,
+    .ref-search-btn:focus {
+      color: var(--gold);
+      background: rgba(201,168,76,0.12);
+      outline: none;
+    }
+    .ref-search-btn svg {
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
     .read-passage-text {
       text-align: left;
       font-style: normal;
@@ -342,7 +378,8 @@
     #d-imageCanvas {
       width: 100%;
       max-width: 500px;
-      aspect-ratio: 1/1;
+      max-height: 85vh;
+      height: auto;
       border-radius: 8px;
       box-shadow: 0 4px 24px var(--shadow);
       display: block;
@@ -485,7 +522,8 @@
     }
     #m-imageCanvas {
       width: 100%;
-      aspect-ratio: 1/1;
+      max-height: 70vh;
+      height: auto;
       border-radius: 8px;
       box-shadow: 0 4px 20px var(--shadow);
       display: block;
@@ -725,7 +763,6 @@
         <label for="d-testament" id="d-testament-label">Testament</label>
         <select id="d-testament" onchange="updateBooks('d')">
           <option value="custom" selected>Choose Book</option>
-          <option value="all">Whole Bible</option>
           <option value="old">Old Testament</option>
           <option value="new">New Testament</option>
           <option value="read">Read Bible</option>
@@ -740,6 +777,16 @@
       <div class="control-group full-width" id="d-bookWrapper">
         <label for="d-book" id="d-book-label">Book</label>
         <select id="d-book"></select>
+      </div>
+
+      <div class="control-group full-width" id="d-customSearchWrapper">
+        <label for="d-custom-search" id="d-custom-search-label">Search</label>
+        <div class="ref-search-wrap">
+          <input type="text" id="d-custom-search" class="read-search-input ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('d')" onkeydown="if(event.key==='Enter')onCustomSearch('d')">
+          <button type="button" class="ref-search-btn" onclick="onCustomSearch('d')" aria-label="Search" title="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+        </div>
       </div>
 
       <div id="d-readBibleWrapper" class="read-bible-panel" style="display:none;">
@@ -759,7 +806,12 @@
         </div>
         <div class="control-group full-width">
           <label for="d-read-search" id="d-read-search-label">Search</label>
-          <input type="text" id="d-read-search" class="read-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('d')">
+          <div class="ref-search-wrap">
+            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('d')">
+            <button type="button" class="ref-search-btn" onclick="onReadSearch('d')" aria-label="Search" title="Search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -861,7 +913,6 @@
           <span class="mob-label" id="m-testament-label">Testament</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
             <option value="custom" selected>Choose Book</option>
-            <option value="all">Whole Bible</option>
             <option value="old">Old Testament</option>
             <option value="new">New Testament</option>
             <option value="read">Read Bible</option>
@@ -879,6 +930,16 @@
         <div class="mob-field full">
           <span class="mob-label" id="m-book-label">Book</span>
           <select class="mob-select" id="m-book"></select>
+        </div>
+      </div>
+
+      <div class="mob-field full" id="m-customSearchWrapper" style="margin-bottom:9px;">
+        <span class="mob-label" id="m-custom-search-label">Search</span>
+        <div class="ref-search-wrap">
+          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onkeydown="if(event.key==='Enter')onCustomSearch('m')">
+          <button type="button" class="ref-search-btn" onclick="onCustomSearch('m')" aria-label="Search" title="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
         </div>
       </div>
 
@@ -1680,18 +1741,18 @@
   };
 
   const UI_LANG = {
-    en: { whole:'— Whole Bible (random) —', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 24:5 or Matthew 24:5-15', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦' },
-    fr: { whole:'— Toute la Bible (aléatoire) —', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 24:5 ou Matthieu 24:5-15', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦' },
-    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦' },
-    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦' },
-    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', testament:'Testamento', book:'Livro', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', custom:'Escolher livro', generate:'✦ Revelar versículo ✦' },
-    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', testament:'Testamento', book:'Libro', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', custom:'Scegli libro', generate:'✦ Rivela un versetto ✦' },
-    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', testament:'Testament', book:'Boek', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', custom:'Kies boek', generate:'✦ Open een vers ✦' },
-    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', testament:'Завет', book:'Книга', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', custom:'Выбрать книгу', generate:'✦ Показать стих ✦' },
-    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', testament:'约', book:'书卷', old:'旧约', new:'新约', all:'全圣经', custom:'选择书卷', generate:'✦ 显示经文 ✦' },
-    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', testament:'성경', book:'책', old:'구약', new:'신약', all:'성경 전체', custom:'책 선택', generate:'✦ 구절 보기 ✦' },
-    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', testament:'العهد', book:'سفر', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', custom:'اختر سفراً', generate:'✦ اعرض آية ✦' },
-    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', testament:'תנ״ך', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', custom:'בחר ספר', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦' }
+    en: { whole:'— Whole Bible (random) —', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. John 1:1 or John 1:1-7', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
+    fr: { whole:'— Toute la Bible (aléatoire) —', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
+    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
+    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
+    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', testament:'Testamento', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', custom:'Escolher livro', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
+    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', testament:'Testamento', book:'Libro', search:'Cerca', searchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', customSearchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', custom:'Scegli libro', generate:'✦ Rivela un versetto ✦', generateVerses:'✦ Rivela i versetti ✦' },
+    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', testament:'Testament', book:'Boek', search:'Zoeken', searchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', customSearchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', custom:'Kies boek', generate:'✦ Open een vers ✦', generateVerses:'✦ Open de verzen ✦' },
+    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', testament:'Завет', book:'Книга', search:'Поиск', searchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', customSearchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', custom:'Выбрать книгу', generate:'✦ Показать стих ✦', generateVerses:'✦ Показать стихи ✦' },
+    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', testament:'约', book:'书卷', search:'搜索', searchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', customSearchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', old:'旧约', new:'新约', all:'全圣经', custom:'选择书卷', generate:'✦ 显示经文 ✦', generateVerses:'✦ 显示经文 ✦' },
+    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', testament:'성경', book:'책', search:'검색', searchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', customSearchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', old:'구약', new:'신약', all:'성경 전체', custom:'책 선택', generate:'✦ 구절 보기 ✦', generateVerses:'✦ 구절들 보기 ✦' },
+    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', testament:'العهد', book:'سفر', search:'بحث', searchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', customSearchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', custom:'اختر سفراً', generate:'✦ اعرض آية ✦', generateVerses:'✦ اعرض الآيات ✦' },
+    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', testament:'תנ״ך', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', customSearchPlaceholder:'לדוגמה: יוחנן א:א או א:א-ז', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', custom:'בחר ספר', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦', generateVerses:'✦ גלה פסוקים ✦' }
   };
 
   function getUiStrings(langCode) {
@@ -2237,7 +2298,6 @@
     const prev = sel.value;
     sel.innerHTML =
       '<option value="custom" selected>Choose Book</option>' +
-      '<option value="all">Whole Bible</option>' +
       '<option value="old">Old Testament</option>' +
       '<option value="new">New Testament</option>' +
       '<option value="read">Read Bible</option>';
@@ -2619,6 +2679,110 @@
     return `${bookApi} ${chapter}:${verseStart}-${verseEnd}`;
   }
 
+  async function fetchPassageForParsed(version, parsed) {
+    if (isHaoMode(version)) {
+      return fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+    }
+    if (isBollsMode(version)) {
+      return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+    }
+    const bookApi = getApiBookName(parsed.book, version);
+    const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
+    return fetchBssPassageVerses(version, ref, parsed.verseStart, parsed.verseEnd);
+  }
+
+  function renderSearchedPassage(p, data) {
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+    const body = formatVersesHtml(data.verses);
+    const label = getTranslationLabel(data.version);
+    const displayRef = getReadDisplayRef(data);
+    const reveal = verseRevealClass();
+    clearReadDisplayLoading(p);
+    display.innerHTML = isDesk
+      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
+      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
+
+    const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
+    current[p] = {
+      ref: displayRef, text: fullText, version: data.version, readVerses: data.verses
+    };
+
+    document.getElementById(p + '-actions').style.display = 'flex';
+    setReadModeActions(p, false);
+    document.getElementById(p + '-prev-btn').disabled = history[p].length === 0;
+    document.getElementById(p + '-next-btn').disabled = future[p].length === 0;
+
+    const imgWrap = document.getElementById(p + '-imageWrap');
+    if (imgWrap) imgWrap.style.display = 'none';
+    if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
+    const speakBtn = document.getElementById(p + '-speak-btn');
+    if (speakBtn) { speakBtn.textContent = p === 'd' ? '🔊 Read' : '🔊'; speakBtn.classList.remove('active'); }
+
+    const counter = document.getElementById(p + '-counter');
+    if (counter) counter.style.display = 'none';
+  }
+
+  async function loadSearchedPassage(p, parsed) {
+    const version = document.getElementById(p + '-version').value;
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+
+    if (current[p]) history[p].push(current[p]);
+    future[p] = [];
+
+    setReadDisplayLoading(p, true);
+    const data = await fetchPassageForParsed(version, parsed);
+    clearReadDisplayLoading(p);
+    if (data) {
+      renderSearchedPassage(p, data);
+    } else {
+      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+    }
+  }
+
+  async function onCustomSearch(p) {
+    const query = document.getElementById(p + '-custom-search').value;
+    const parsed = parseReferenceSearch(query);
+    if (!parsed) {
+      showToast('Enter a reference like John 1:1 or John 1:1-7');
+      return;
+    }
+    await loadSearchedPassage(p, parsed);
+  }
+
+  function onCustomSearchInput(p) {
+    const input = document.getElementById(p + '-custom-search');
+    const other = p === 'd' ? 'm' : 'd';
+    const otherInput = document.getElementById(other + '-custom-search');
+    if (otherInput && input) otherInput.value = input.value;
+    updateCustomSearchUI(p);
+    updateCustomSearchUI(other);
+  }
+
+  function updateCustomSearchUI(p) {
+    const wrap = document.getElementById(p + '-customSearchWrapper');
+    const testament = document.getElementById(p + '-testament')?.value;
+    if (wrap) wrap.style.display = testament === 'custom' ? '' : 'none';
+
+    const version = document.getElementById(p + '-version')?.value;
+    const langCode = getTranslationLang(version || 'kjv');
+    const ui = getUiStrings(langCode);
+
+    const searchLabel = document.getElementById(p + '-custom-search-label');
+    if (searchLabel) searchLabel.textContent = ui.search || 'Search';
+
+    const searchInput = document.getElementById(p + '-custom-search');
+    if (searchInput) {
+      searchInput.placeholder = ui.customSearchPlaceholder || ui.searchPlaceholder || 'e.g. John 1:1 or John 1:1-7';
+    }
+
+    const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
+    if (!genBtn || testament === 'read') return;
+    const hasQuery = searchInput && searchInput.value.trim().length > 0;
+    genBtn.textContent = hasQuery ? (ui.generateVerses || '✦ Reveal the Verses ✦') : ui.generate;
+  }
+
   function renderReadPassage(p, data, animate) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
@@ -2907,11 +3071,13 @@
 
     if (readWrap) readWrap.style.display = readMode ? '' : 'none';
 
+    const customSearchWrap = document.getElementById(p + '-customSearchWrapper');
+    if (customSearchWrap) customSearchWrap.style.display = showBooks ? '' : 'none';
+
     const opts = testamentSel.options;
     for (let i = 0; i < opts.length; i++) {
       if (opts[i].value === 'old')    opts[i].text = ui.old;
       if (opts[i].value === 'new')    opts[i].text = ui.new;
-      if (opts[i].value === 'all')    opts[i].text = ui.all;
       if (opts[i].value === 'custom') opts[i].text = ui.custom;
       if (opts[i].value === 'read')   opts[i].text = ui.readBible || 'Read Bible';
     }
@@ -2932,10 +3098,8 @@
     if (readSearchLabel) readSearchLabel.textContent = ui.search || 'Search';
 
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-    if (genBtn) {
-      genBtn.textContent = ui.generate;
-      genBtn.style.display = readMode ? 'none' : '';
-    }
+    if (genBtn) genBtn.style.display = readMode ? 'none' : '';
+    updateCustomSearchUI(p);
 
     if (readMode) {
       setReadModeActions(p, true);
@@ -2965,6 +3129,18 @@
   /* ══════════════════════════════════════
      RENDER VERSE
   ══════════════════════════════════════ */
+  function renderCurrentEntry(p, entry) {
+    if (entry?.readVerses?.length) {
+      renderSearchedPassage(p, {
+        verses: entry.readVerses,
+        ref: entry.ref,
+        version: entry.version
+      });
+    } else {
+      renderVerse(p, entry);
+    }
+  }
+
   function renderVerse(p, entry) {
     const display = document.getElementById(p+'-verseDisplay');
     const isDesk  = p === 'd';
@@ -3208,6 +3384,19 @@
     display.classList.add('loading');
 
     try {
+      if (entry.readVerses?.length) {
+        const parsed = parseReferenceSearch(ref);
+        if (parsed) {
+          const data = await fetchPassageForParsed(version, parsed);
+          clearReadDisplayLoading(p);
+          display.classList.remove('loading');
+          if (data) {
+            renderSearchedPassage(p, data);
+            return;
+          }
+        }
+      }
+
       let newEntry;
       if (isHaoMode(version)) {
         newEntry = await fetchHaoReferenceFromString(version, ref);
@@ -3235,6 +3424,19 @@
   
   async function generate(p, retryCount = 0, pinnedScope = null) {
     if (isReadBibleMode(p)) return;
+
+    const testament = document.getElementById(p + '-testament').value;
+    const searchQuery = document.getElementById(p + '-custom-search')?.value?.trim();
+    if (testament === 'custom' && searchQuery && retryCount === 0) {
+      const parsed = parseReferenceSearch(searchQuery);
+      if (!parsed) {
+        showToast('Enter a reference like John 1:1 or John 1:1-7');
+        return;
+      }
+      await loadSearchedPassage(p, parsed);
+      return;
+    }
+
     const version = document.getElementById(p + '-version').value;
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk    = p === 'd';
@@ -3279,7 +3481,7 @@
     future[p].push(current[p]);
     const prev = history[p].pop();
     current[p] = prev;
-    renderVerse(p, prev);
+    renderCurrentEntry(p, prev);
   }
   function showNext(p) {
     if (isReadBibleMode(p)) {
@@ -3290,7 +3492,7 @@
     history[p].push(current[p]);
     const next = future[p].pop();
     current[p] = next;
-    renderVerse(p, next);
+    renderCurrentEntry(p, next);
   }
 
   /* ══════════════════════════════════════
@@ -3311,7 +3513,7 @@
       return;
     }
 
-    if (isReadBibleMode(p)) {
+    if (current[p]?.readVerses?.length) {
       const text = getReadPassageCopyText(p);
       if (!text) { showToast('Nothing to copy yet.'); return; }
       copyTextToClipboard(text, 'Passage copied to clipboard!');
@@ -3486,108 +3688,156 @@
     ['#0f0a1a','#2a1a3d'],
   ];
 
-  function generateImage(p) {
-    if (!current[p]) { showToast('Generate a verse first!'); return; }
-    try {
-      const canvas = document.getElementById(p+'-imageCanvas');
-      const ctx    = canvas.getContext('2d');
-    const S = 1080; // square
-    canvas.width = S; canvas.height = S;
+  function getImageSourceText(entry) {
+    if (entry.readVerses?.length) {
+      return entry.readVerses.map(v => `${v.num} ${v.text}`).join(' ');
+    }
+    return entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
+  }
 
-    // Background gradient
-    const grad = BG_GRADIENTS[Math.floor(Math.random()*BG_GRADIENTS.length)];
-    const bg   = ctx.createLinearGradient(0,0,S,S);
+  function wrapCanvasLines(ctx, text, maxWidth) {
+    const words = text.split(/\s+/).filter(Boolean);
+    let line = '';
+    const lines = [];
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function computeVerseImageLayout(ctx, entry) {
+    const W = 1080;
+    const rawText = getImageSourceText(entry);
+    const verseCount = entry.readVerses?.length || 0;
+    const isPassage = verseCount > 1 || rawText.length > 220;
+    const maxW = W - 130;
+
+    if (!isPassage) {
+      ctx.font = 'italic 38px Georgia, serif';
+      let lines = wrapCanvasLines(ctx, rawText, maxW);
+      if (lines.length > 10) lines = lines.slice(0, 10);
+      return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false };
+    }
+
+    let fontSize = 36;
+    let lines = [];
+    let lineHeight = 48;
+    for (let i = 0; i < 8; i++) {
+      ctx.font = `italic ${fontSize}px Georgia, serif`;
+      lines = wrapCanvasLines(ctx, rawText, maxW);
+      lineHeight = Math.round(fontSize * 1.35);
+      const blockH = lines.length * lineHeight;
+      const maxBlock = W * 2.15 - 380;
+      if (blockH <= maxBlock || fontSize <= 22) break;
+      fontSize -= 2;
+    }
+
+    const blockH = lines.length * lineHeight;
+    const height = Math.min(2400, Math.max(Math.round(W * 1.3), 300 + blockH + 200));
+    return { width: W, height, fontSize, lineHeight, lines, portrait: true };
+  }
+
+  function drawVerseImage(ctx, layout, entry) {
+    const S = layout.width;
+    const H = layout.height;
+
+    const grad = BG_GRADIENTS[Math.floor(Math.random() * BG_GRADIENTS.length)];
+    const bg = ctx.createLinearGradient(0, 0, S, H);
     bg.addColorStop(0, grad[0]);
     bg.addColorStop(1, grad[1]);
     ctx.fillStyle = bg;
-    ctx.fillRect(0,0,S,S);
+    ctx.fillRect(0, 0, S, H);
 
-    // Subtle noise overlay
-    for(let i=0;i<4000;i++){
-      ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.025})`;
-      ctx.fillRect(Math.random()*S,Math.random()*S,1,1);
+    const noiseCount = layout.portrait ? 5500 : 4000;
+    for (let i = 0; i < noiseCount; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.025})`;
+      ctx.fillRect(Math.random() * S, Math.random() * H, 1, 1);
     }
 
-    // Outer gold border
     ctx.strokeStyle = '#c9a84c';
     ctx.lineWidth = 5;
-    ctx.strokeRect(20,20,S-40,S-40);
-    // Inner thin border
+    ctx.strokeRect(20, 20, S - 40, H - 40);
     ctx.lineWidth = 1.5;
     ctx.globalAlpha = 0.45;
-    ctx.strokeRect(30,30,S-60,S-60);
+    ctx.strokeRect(30, 30, S - 60, H - 60);
     ctx.globalAlpha = 1;
 
-    // Top ornament
     ctx.fillStyle = '#c9a84c';
     ctx.font = '36px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✦ ✝ ✦', S/2, 88);
+    ctx.fillText('✦ ✝ ✦', S / 2, 88);
 
-    // Thin gold divider line below ornament
     ctx.beginPath();
-    ctx.moveTo(S/2-160,108); ctx.lineTo(S/2+160,108);
-    ctx.strokeStyle='#c9a84c'; ctx.lineWidth=1; ctx.globalAlpha=0.4;
-    ctx.stroke(); ctx.globalAlpha=1;
+    ctx.moveTo(S / 2 - 160, 108);
+    ctx.lineTo(S / 2 + 160, 108);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.4;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    // Opening quote mark (decorative)
-    ctx.fillStyle='#c9a84c';
-    ctx.font='italic 110px Georgia,serif';
-    ctx.globalAlpha=0.12;
-    ctx.fillText('\u201C', 60, 240);
-    ctx.globalAlpha=1;
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'italic 110px Georgia,serif';
+    ctx.globalAlpha = 0.12;
+    ctx.fillText('\u201C', 60, layout.portrait ? 220 : 240);
+    ctx.globalAlpha = 1;
 
-    // Verse text (word wrap)
     ctx.fillStyle = '#f5ead6';
-    ctx.font = 'italic 38px Georgia, serif';
-    const rawText = current[p].text.replace(/\s+"/g,'"').replace(/\s+'/g,"'");
-    const words   = rawText.split(' ');
-    const maxW    = S - 130;
-    let line='', lines=[], startY=200;
-    for(const word of words){
-      const test = line + word + ' ';
-      if(ctx.measureText(test).width > maxW && line){ lines.push(line.trim()); line=word+' '; }
-      else line=test;
-    }
-    if(line) lines.push(line.trim());
-    if(lines.length > 10) lines=lines.slice(0,10);
+    ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
+    const lineH = layout.lineHeight;
+    const blockH = layout.lines.length * lineH;
+    const headerSpace = 200;
+    const footerSpace = 160;
+    const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
+    layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
 
-    // Center verse block vertically
-    const lineH = 52;
-    const blockH = lines.length * lineH;
-    const verseY = Math.max(startY, (S - blockH)/2 - 30);
-    lines.forEach((l,i) => ctx.fillText(l, S/2, verseY + i*lineH));
-
-    // Divider above reference
-    const refY = verseY + lines.length*lineH + 40;
+    const refY = verseY + blockH + 40;
     ctx.beginPath();
-    ctx.moveTo(S/2-120,refY-18); ctx.lineTo(S/2+120,refY-18);
-    ctx.strokeStyle='#c9a84c'; ctx.lineWidth=1; ctx.globalAlpha=0.5;
-    ctx.stroke(); ctx.globalAlpha=1;
+    ctx.moveTo(S / 2 - 120, refY - 18);
+    ctx.lineTo(S / 2 + 120, refY - 18);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    // Reference
     ctx.fillStyle = '#c9a84c';
     ctx.font = '600 28px Georgia, serif';
-    ctx.fillText(`— ${current[p].ref} (${getTranslationLabel(current[p].version)})`, S/2, refY+8);
+    const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version)})`;
+    ctx.fillText(refLine, S / 2, refY + 8);
 
-    // Bottom ornament
     ctx.fillStyle = '#c9a84c';
     ctx.font = '24px serif';
     ctx.globalAlpha = 0.55;
-    ctx.fillText('· · ❧ · ·', S/2, S-62);
-    ctx.globalAlpha=1;
+    ctx.fillText('· · ❧ · ·', S / 2, H - 62);
+    ctx.globalAlpha = 1;
 
-    // Watermark domain
     ctx.fillStyle = 'rgba(201,168,76,0.45)';
     ctx.font = '500 20px Georgia, serif';
-    ctx.letterSpacing = '0.08em';
-    ctx.fillText('versegenerator.edgeone.app', S/2, S - 28);
+    ctx.fillText('versegenerator.edgeone.app', S / 2, H - 28);
+  }
 
-    // Show the wrap div
-    const wrap = document.getElementById(p+'-imageWrap');
-    wrap.style.display = 'block';
-    showToast('Image ready! Download or share below.');
-    } catch(e) {
+  function generateImage(p) {
+    if (!current[p]) { showToast('Generate a verse first!'); return; }
+    try {
+      const canvas = document.getElementById(p + '-imageCanvas');
+      const ctx = canvas.getContext('2d');
+      const layout = computeVerseImageLayout(ctx, current[p]);
+      canvas.width = layout.width;
+      canvas.height = layout.height;
+      drawVerseImage(ctx, layout, current[p]);
+
+      const wrap = document.getElementById(p + '-imageWrap');
+      wrap.style.display = 'block';
+      showToast('Image ready! Download or share below.');
+    } catch (e) {
       showToast('Image generation not supported in this browser. Please open in Safari or Chrome.');
     }
   }
