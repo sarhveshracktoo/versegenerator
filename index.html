@@ -3794,12 +3794,6 @@
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    ctx.fillStyle = '#c9a84c';
-    ctx.font = 'italic 110px Georgia,serif';
-    ctx.globalAlpha = 0.12;
-    ctx.fillText('\u201C', 60, layout.portrait ? 220 : 240);
-    ctx.globalAlpha = 1;
-
     ctx.fillStyle = '#f5ead6';
     ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
     const lineH = layout.lineHeight;
@@ -3824,15 +3818,19 @@
     const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version)})`;
     ctx.fillText(refLine, S / 2, refY + 8);
 
+    const bottomLine = '━━━━༺❀༻━━ ·:*༺ ♱ versegenerator.edgeone.app ♱ ༻*:· ━━༺❀༻━━━━';
+    const bottomY = H - 44;
+    const maxFooterW = S - 56;
+    let footerSize = 17;
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#c9a84c';
-    ctx.font = '24px serif';
-    ctx.globalAlpha = 0.55;
-    ctx.fillText('· · ❧ · ·', S / 2, H - 62);
+    ctx.globalAlpha = 0.72;
+    do {
+      ctx.font = `500 ${footerSize}px Georgia, serif`;
+      footerSize -= 1;
+    } while (ctx.measureText(bottomLine).width > maxFooterW && footerSize > 11);
+    ctx.fillText(bottomLine, S / 2, bottomY);
     ctx.globalAlpha = 1;
-
-    ctx.fillStyle = 'rgba(201,168,76,0.45)';
-    ctx.font = '500 20px Georgia, serif';
-    ctx.fillText('versegenerator.edgeone.app', S / 2, H - 28);
   }
 
   function generateImage(p) {
