@@ -3706,6 +3706,78 @@
     return entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
   }
 
+  function passageNumFontSize(bodySize) {
+    return Math.max(12, Math.round(bodySize * 0.62));
+  }
+
+  function passageNumRise(bodySize) {
+    return Math.round(bodySize * 0.35);
+  }
+
+  function setPassageBodyFont(ctx, size) {
+    ctx.font = `italic ${size}px Georgia, serif`;
+  }
+
+  function setPassageNumFont(ctx, size) {
+    ctx.font = `600 ${passageNumFontSize(size)}px Cinzel, serif`;
+  }
+
+  function measurePassageRun(ctx, run, bodySize) {
+    if (run.type === 'num') {
+      setPassageNumFont(ctx, bodySize);
+      return ctx.measureText(run.value).width;
+    }
+    setPassageBodyFont(ctx, bodySize);
+    return ctx.measureText(run.value).width;
+  }
+
+  function measurePassageLineWidth(ctx, lineRuns, bodySize) {
+    let w = 0;
+    lineRuns.forEach((run, i) => {
+      if (i > 0) {
+        setPassageBodyFont(ctx, bodySize);
+        w += ctx.measureText(' ').width;
+      }
+      w += measurePassageRun(ctx, run, bodySize);
+    });
+    return w;
+  }
+
+  function wrapPassageImageLines(ctx, verses, maxWidth, bodyFontSize) {
+    const lines = [];
+    let currentLine = [];
+    let currentWidth = 0;
+
+    function lineGapWidth() {
+      setPassageBodyFont(ctx, bodyFontSize);
+      return ctx.measureText(' ').width;
+    }
+
+    function pushLine() {
+      if (currentLine.length) lines.push(currentLine);
+      currentLine = [];
+      currentWidth = 0;
+    }
+
+    function appendRun(run) {
+      const runW = measurePassageRun(ctx, run, bodyFontSize);
+      const gap = currentLine.length ? lineGapWidth() : 0;
+      if (currentLine.length && currentWidth + gap + runW > maxWidth) pushLine();
+      if (currentLine.length) currentWidth += lineGapWidth();
+      currentLine.push(run);
+      currentWidth += runW;
+    }
+
+    verses.forEach(v => {
+      appendRun({ type: 'num', value: String(v.num) });
+      const words = (v.text || '').replace(/\s+"/g, '"').replace(/\s+'/g, "'").split(/\s+/).filter(Boolean);
+      words.forEach(word => appendRun({ type: 'text', value: word }));
+    });
+
+    pushLine();
+    return lines;
+  }
+
   function wrapCanvasLines(ctx, text, maxWidth) {
     const words = text.split(/\s+/).filter(Boolean);
     let line = '';
@@ -3726,33 +3798,84 @@
   function computeVerseImageLayout(ctx, entry) {
     const W = 1080;
     const rawText = getImageSourceText(entry);
-    const verseCount = entry.readVerses?.length || 0;
+    const verses = entry.readVerses || [];
+    const verseCount = verses.length;
     const isPassage = verseCount > 1 || rawText.length > 220;
     const maxW = W - 130;
 
-    if (!isPassage) {
-      ctx.font = 'italic 38px Georgia, serif';
-      let lines = wrapCanvasLines(ctx, rawText, maxW);
-      if (lines.length > 10) lines = lines.slice(0, 10);
-      return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false };
+    if (verseCount) {
+      let fontSize = verseCount > 1 || rawText.length > 220 ? 36 : 38;
+      let passageLines = [];
+      let lineHeight = Math.round(fontSize * 1.35);
+      const maxBlock = verseCount > 1 || rawText.length > 220 ? W * 2.15 - 380 : W - 200;
+      const minHeight = verseCount > 1 || rawText.length > 220 ? Math.round(W * 1.3) : W;
+
+      for (let i = 0; i < 8; i++) {
+        passageLines = wrapPassageImageLines(ctx, verses, maxW, fontSize);
+        lineHeight = Math.round(fontSize * 1.35);
+        const blockH = passageLines.length * lineHeight;
+        if (blockH <= maxBlock || fontSize <= 22) break;
+        fontSize -= 2;
+      }
+
+      const blockH = passageLines.length * lineHeight;
+      const height = Math.min(2400, Math.max(minHeight, 300 + blockH + 200));
+      return {
+        width: W,
+        height,
+        fontSize,
+        lineHeight,
+        passageLines,
+        portrait: isPassage,
+        isPassage: true
+      };
     }
 
-    let fontSize = 36;
-    let lines = [];
-    let lineHeight = 48;
-    for (let i = 0; i < 8; i++) {
-      ctx.font = `italic ${fontSize}px Georgia, serif`;
-      lines = wrapCanvasLines(ctx, rawText, maxW);
-      lineHeight = Math.round(fontSize * 1.35);
-      const blockH = lines.length * lineHeight;
-      const maxBlock = W * 2.15 - 380;
-      if (blockH <= maxBlock || fontSize <= 22) break;
-      fontSize -= 2;
-    }
+    ctx.font = 'italic 38px Georgia, serif';
+    let lines = wrapCanvasLines(ctx, rawText, maxW);
+    if (lines.length > 10) lines = lines.slice(0, 10);
+    return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false, isPassage: false };
+  }
 
-    const blockH = lines.length * lineHeight;
-    const height = Math.min(2400, Math.max(Math.round(W * 1.3), 300 + blockH + 200));
-    return { width: W, height, fontSize, lineHeight, lines, portrait: true };
+  function drawPassageImageLines(ctx, layout, S, H) {
+    const lines = layout.passageLines;
+    const lineH = layout.lineHeight;
+    const bodySize = layout.fontSize;
+    const blockH = lines.length * lineH;
+    const headerSpace = 200;
+    const footerSpace = 160;
+    const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
+    const numRise = passageNumRise(bodySize);
+
+    lines.forEach((lineRuns, li) => {
+      const lineW = measurePassageLineWidth(ctx, lineRuns, bodySize);
+      let x = S / 2 - lineW / 2;
+      const y = verseY + li * lineH;
+
+      lineRuns.forEach((run, ri) => {
+        if (ri > 0) {
+          setPassageBodyFont(ctx, bodySize);
+          x += ctx.measureText(' ').width;
+        }
+        if (run.type === 'num') {
+          setPassageNumFont(ctx, bodySize);
+          ctx.fillStyle = '#8a6820';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          ctx.fillText(run.value, x, y - numRise);
+          x += ctx.measureText(run.value).width;
+        } else {
+          setPassageBodyFont(ctx, bodySize);
+          ctx.fillStyle = '#f5ead6';
+          ctx.fillText(run.value, x, y);
+          x += ctx.measureText(run.value).width;
+        }
+      });
+    });
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    return verseY + blockH;
   }
 
   function drawVerseImage(ctx, layout, entry) {
@@ -3795,15 +3918,21 @@
     ctx.globalAlpha = 1;
 
     ctx.fillStyle = '#f5ead6';
-    ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
-    const lineH = layout.lineHeight;
-    const blockH = layout.lines.length * lineH;
-    const headerSpace = 200;
-    const footerSpace = 160;
-    const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
-    layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
-
-    const refY = verseY + blockH + 40;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    let refY;
+    if (layout.passageLines?.length) {
+      refY = drawPassageImageLines(ctx, layout, S, H) + 40;
+    } else {
+      ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
+      const lineH = layout.lineHeight;
+      const blockH = layout.lines.length * lineH;
+      const headerSpace = 200;
+      const footerSpace = 160;
+      const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
+      layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
+      refY = verseY + blockH + 40;
+    }
     ctx.beginPath();
     ctx.moveTo(S / 2 - 120, refY - 18);
     ctx.lineTo(S / 2 + 120, refY - 18);
