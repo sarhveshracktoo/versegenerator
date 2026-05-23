@@ -18,6 +18,7 @@
       --crimson: #8b1a1a;
       --shadow: rgba(42,26,10,0.4);
       --verse-size: 1.4rem;
+      --devotional-text-size: 15px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -159,49 +160,68 @@
       animation: fadeUp 0.8s ease 0.12s both;
       position: relative;
     }
-    .devotional-header {
+    button.devotional-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      width: 100%;
       padding: 12px 16px;
-      min-height: 44px;
+      min-height: 48px;
+      margin: 0;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: background 0.2s ease;
     }
-    .devotional-header .banner-label {
+    button.devotional-header:hover,
+    button.devotional-header:focus-visible {
+      background: rgba(201,168,76,0.08);
+      outline: none;
+    }
+    button.devotional-header:active {
+      background: rgba(201,168,76,0.12);
+    }
+    button.devotional-header .banner-label {
       margin-bottom: 0;
       flex: 1;
       text-align: left;
       text-transform: uppercase;
       letter-spacing: 0.18em;
+      pointer-events: none;
     }
-    .devotional-toggle {
+    .devotional-chevron {
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       width: 40px;
       height: 40px;
-      padding: 0;
       border: 1px solid rgba(201,168,76,0.35);
       border-radius: 6px;
       background: rgba(0,0,0,0.2);
       color: var(--gold);
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s, transform 0.25s ease;
-      -webkit-tap-highlight-color: transparent;
+      pointer-events: none;
+      transition: background 0.2s, border-color 0.2s;
     }
-    .devotional-toggle:hover,
-    .devotional-toggle:focus {
+    button.devotional-header:hover .devotional-chevron,
+    button.devotional-header:focus-visible .devotional-chevron {
       background: rgba(201,168,76,0.12);
       border-color: var(--gold);
-      outline: none;
     }
-    .devotional-toggle svg {
+    .devotional-chevron svg {
       width: 20px;
       height: 20px;
       transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: rotate(0deg);
     }
-    .devotional-banner.is-open .devotional-toggle svg {
+    .devotional-banner.is-open .devotional-chevron svg {
       transform: rotate(180deg);
     }
     .devotional-collapse {
@@ -250,20 +270,53 @@
       border-radius: 4px;
       border-left: 3px solid var(--gold-dark);
     }
+    .devotional-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 12px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.14);
+      border-radius: 4px;
+      border: 1px solid rgba(201,168,76,0.18);
+    }
+    .devotional-slider-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .devotional-slider-row input[type=range] {
+      flex: 1;
+      min-width: 0;
+      accent-color: var(--gold);
+      cursor: pointer;
+      height: 28px;
+    }
     .devotional-content {
       font-family: 'EB Garamond', serif;
-      font-size: 0.95rem;
+      font-size: var(--devotional-text-size);
       color: rgba(245,234,214,0.88);
       line-height: 1.65;
       max-height: 55vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      transition: font-size 0.12s ease;
     }
     .devotional-content p {
-      margin-bottom: 0.85em;
+      margin-bottom: 0.5em;
+      font-size: inherit;
+      text-align: left;
     }
     .devotional-content p:last-child {
       margin-bottom: 0;
+    }
+    .devotional-content p + p {
+      margin-top: 0.65em;
     }
     .devotional-loading {
       font-style: italic;
@@ -283,11 +336,14 @@
     }
     .mob-devotional-banner .devotional-content {
       max-height: 50vh;
-      font-size: 0.92rem;
+    }
+    .mob-devotional-banner .devotional-slider-row {
+      margin: 6px 0 10px;
+      padding: 8px 8px;
     }
     @media (prefers-reduced-motion: reduce) {
       .devotional-collapse,
-      .devotional-toggle svg {
+      .devotional-chevron svg {
         transition: none !important;
       }
     }
@@ -961,20 +1017,24 @@
 
   <!-- Daily Devotional -->
   <div class="devotional-banner" id="d-devotional-banner">
-    <div class="devotional-header">
+    <button type="button" class="devotional-header" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
       <span class="banner-label">Daily Devotional</span>
-      <button type="button" class="devotional-toggle" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
-      </button>
-    </div>
+      </span>
+    </button>
     <div class="devotional-collapse" id="d-devotional-collapse">
       <div class="devotional-inner">
         <div class="devotional-panel-body">
           <p class="devotional-date" id="d-devotional-date">Loading…</p>
           <h2 class="devotional-heading" id="d-devotional-title"></h2>
           <p class="devotional-scripture" id="d-devotional-scripture"></p>
+          <div class="devotional-slider-row">
+            <span class="devotional-slider-label">Text Size</span>
+            <input type="range" id="d-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
+          </div>
           <div class="devotional-content" id="d-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
         </div>
       </div>
@@ -1133,20 +1193,24 @@
 
     <!-- Mobile Daily Devotional -->
     <div class="devotional-banner mob-devotional-banner" id="m-devotional-banner">
-      <div class="devotional-header">
+      <button type="button" class="devotional-header" id="m-devotional-toggle" aria-expanded="false" aria-controls="m-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
         <span class="banner-label">Daily Devotional</span>
-        <button type="button" class="devotional-toggle" id="m-devotional-toggle" aria-expanded="false" aria-controls="m-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
-        </button>
-      </div>
+        </span>
+      </button>
       <div class="devotional-collapse" id="m-devotional-collapse">
         <div class="devotional-inner">
           <div class="devotional-panel-body">
             <p class="devotional-date" id="m-devotional-date">Loading…</p>
             <h2 class="devotional-heading" id="m-devotional-title"></h2>
             <p class="devotional-scripture" id="m-devotional-scripture"></p>
+            <div class="devotional-slider-row">
+              <span class="devotional-slider-label">Text Size</span>
+              <input type="range" id="m-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
+            </div>
             <div class="devotional-content" id="m-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
           </div>
         </div>
@@ -2903,17 +2967,61 @@
     return _devotionalLoadPromise;
   }
 
+  function normalizeDevotionalParagraph(text) {
+    return text.replace(/\s+/g, ' ').trim();
+  }
+
+  /** Merge PDF/soft line wraps; keep breaks only after sentence ends or blank lines. */
+  function splitDevotionalParagraphs(raw) {
+    let text = String(raw).replace(/\r\n/g, '\n').trim();
+    text = text.replace(/^,\s*\d+-\d+\s*\n+/, '');
+    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/-\n(\s*)([a-z])/g, '$1$2');
+
+    const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+    const paragraphs = [];
+
+    blocks.forEach(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return;
+
+      let current = '';
+      lines.forEach(line => {
+        if (!current) {
+          current = line;
+          return;
+        }
+        if (/-\s*$/.test(current)) {
+          current = current.replace(/-\s*$/, '') + line;
+          return;
+        }
+        const prevEndsSentence = /[.!?…"')\]]\s*$/.test(current) || /[.!?…"']\d*$/.test(current);
+        const startsNewBlock = /^[A-Z"“‘(1-9]/.test(line) && prevEndsSentence && line.length > 2;
+        if (startsNewBlock) {
+          paragraphs.push(normalizeDevotionalParagraph(current));
+          current = line;
+        } else {
+          current += ' ' + line;
+        }
+      });
+      if (current) paragraphs.push(normalizeDevotionalParagraph(current));
+    });
+
+    return paragraphs.filter(Boolean);
+  }
+
   function formatDevotionalBodyHtml(body) {
     if (!body || !String(body).trim()) {
       return '<p class="devotional-loading">No devotional text for this date.</p>';
     }
-    const normalized = String(body).replace(/\r\n/g, '\n').trim();
-    let parts = normalized.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
-    if (parts.length <= 1 && normalized.includes('\n')) {
-      parts = normalized.split('\n').map(s => s.trim()).filter(Boolean);
+    const paragraphs = splitDevotionalParagraphs(body);
+    if (!paragraphs.length) {
+      return '<p class="devotional-loading">No devotional text for this date.</p>';
     }
-    if (!parts.length) parts = [normalized];
-    return parts.map(p => '<p>' + escapeHtml(p) + '</p>').join('');
+    if (paragraphs.length === 1) {
+      return '<p class="devotional-prose">' + escapeHtml(paragraphs[0]) + '</p>';
+    }
+    return paragraphs.map(p => '<p class="devotional-prose">' + escapeHtml(p) + '</p>').join('');
   }
 
   function paintDevotionalPanels(entry) {
@@ -2983,6 +3091,36 @@
     const willOpen = !_devotionalOpen;
     setDevotionalPanelOpen(willOpen);
     if (willOpen) await ensureTodaysDevotionalPainted();
+  }
+
+  const DEVOTIONAL_TEXT_SIZE_KEY = 'vg-devotional-text-px';
+  const DEVOTIONAL_TEXT_SIZE_DEFAULT = 15;
+  const DEVOTIONAL_TEXT_SIZE_MIN = 12;
+  const DEVOTIONAL_TEXT_SIZE_MAX = 22;
+
+  function setDevotionalTextSize(val) {
+    const px = Math.min(
+      DEVOTIONAL_TEXT_SIZE_MAX,
+      Math.max(DEVOTIONAL_TEXT_SIZE_MIN, Number(val) || DEVOTIONAL_TEXT_SIZE_DEFAULT)
+    );
+    document.documentElement.style.setProperty('--devotional-text-size', px + 'px');
+    const dSlider = document.getElementById('d-devotional-size-slider');
+    const mSlider = document.getElementById('m-devotional-size-slider');
+    if (dSlider) dSlider.value = px;
+    if (mSlider) mSlider.value = px;
+    try { localStorage.setItem(DEVOTIONAL_TEXT_SIZE_KEY, String(px)); } catch { /* private mode */ }
+  }
+
+  function initDevotionalTextSize() {
+    let px = DEVOTIONAL_TEXT_SIZE_DEFAULT;
+    try {
+      const saved = localStorage.getItem(DEVOTIONAL_TEXT_SIZE_KEY);
+      if (saved != null && saved !== '') {
+        const n = Number(saved);
+        if (!Number.isNaN(n)) px = n;
+      }
+    } catch { /* ignore */ }
+    setDevotionalTextSize(px);
   }
 
   /* ══════════════════════════════════════
@@ -5095,6 +5233,7 @@
 
     void loadDailyAndWeekly(version);
     void loadDevotionalsCatalog();
+    initDevotionalTextSize();
   }
 
   window.addEventListener('load', () => { void bootstrapApp(); });
