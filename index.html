@@ -2389,39 +2389,147 @@
     "1 John 4:8","Hebrews 11:1","2 Timothy 3:16","Acts 2:38","Ephesians 2:8",
     "Proverbs 22:6","Matthew 11:28","Revelation 21:4","Psalm 27:1","Romans 6:23"
   ];
-  const WEEKLY_REFS = [
-    "John 3:16","Philippians 4:13","Psalm 23:1","Romans 8:28","Jeremiah 29:11",
-    "Isaiah 40:31","Matthew 5:9","Proverbs 3:5","1 Corinthians 13:4","Psalm 46:1",
-    "Galatians 5:22","Joshua 1:9"
+  const WEEKLY_JSON_URL =
+    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
+  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v2';
+  let _weeklyVersesList = [];
+  let _weeklyVersesByWeek = {};
+  let _weeklyCatalogLoadPromise = null;
+  let _bannerCanonicalRefs = { daily: null, weekly: null };
+
+  const WEEKLY_VERSES_OFFLINE = [
+    { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life." },
+    { week: 2, reference: 'Genesis 1:1', verse: 'In the beginning God created the heaven and the earth.', note: 'God is the Creator of everything and the source of all life.' },
+    { week: 3, reference: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.', note: 'God can use every situation in life for the good of those who trust Him.' }
   ];
-  const WEEKLY_NOTES = [
-    "A reminder of God's boundless love for every soul on earth.",
-    "Whatever challenge you face this week, you do not face it alone.",
-    "Trust in His provision and rest in His guidance this week.",
-    "Even in hardship, His purpose is being woven through your story.",
-    "You are not forgotten. His plans for you are full of hope.",
-    "Rest in Him this week and let your spirit be renewed.",
-    "Be an instrument of peace in every conversation this week.",
-    "Surrender your worries and walk in faith, not in fear.",
-    "Let love guide every decision and interaction this week.",
-    "You are safe in His arms no matter what storms surround you.",
-    "Ask the Spirit to grow these fruits in your heart this week.",
-    "Step boldly into this week — He goes before you."
-  ];
-  const WEEKLY_NOTES_FR = [
-    "Un rappel de l'amour infini de Dieu pour chaque âme sur terre.",
-    "Quel que soit le défi de cette semaine, vous ne l'affrontez pas seul.",
-    "Cette semaine, confiez-vous à sa provision et reposez-vous en sa guidance.",
-    "Même dans l'épreuve, son dessein se tisse à travers votre histoire.",
-    "Vous n'êtes pas oublié. Ses projets pour vous sont pleins d'espérance.",
-    "Cette semaine, reposez-vous en lui et laissez votre esprit être renouvelé.",
-    "Soyez un instrument de paix dans chaque conversation cette semaine.",
-    "Abandonnez vos soucis et marchez dans la foi, non dans la peur.",
-    "Que l'amour guide chaque décision et chaque interaction cette semaine.",
-    "Vous êtes en sécurité dans ses bras, quelles que soient les tempêtes autour de vous.",
-    "Demandez à l'Esprit de faire croître ces fruits dans votre cœur cette semaine.",
-    "Avancez avec audace cette semaine — il marche devant vous."
-  ];
+
+  function indexWeeklyVersesCatalog() {
+    _weeklyVersesByWeek = {};
+    _weeklyVersesList.forEach(item => {
+      if (item && item.week != null) _weeklyVersesByWeek[Number(item.week)] = item;
+    });
+  }
+
+  function ensureWeeklyCatalogIndexed() {
+    if (_weeklyVersesList.length && !Object.keys(_weeklyVersesByWeek).length) {
+      indexWeeklyVersesCatalog();
+    }
+  }
+
+  function hydrateWeeklyCatalogFromCache() {
+    if (_weeklyVersesList.length) return true;
+    try {
+      const raw = sessionStorage.getItem(WEEKLY_JSON_CACHE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (Array.isArray(data) && data.length) {
+        _weeklyVersesList = data;
+        indexWeeklyVersesCatalog();
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  async function loadWeeklyVersesCatalog() {
+    if (_weeklyVersesList.length) return _weeklyVersesList;
+    if (_weeklyCatalogLoadPromise) return _weeklyCatalogLoadPromise;
+
+    _weeklyCatalogLoadPromise = (async () => {
+      hydrateWeeklyCatalogFromCache();
+      if (!_weeklyVersesList.length) {
+        _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
+        indexWeeklyVersesCatalog();
+      }
+      try {
+        const data = await apiGetJson(WEEKLY_JSON_URL, 12000);
+        if (Array.isArray(data) && data.length) {
+          _weeklyVersesList = data;
+          indexWeeklyVersesCatalog();
+          try { sessionStorage.setItem(WEEKLY_JSON_CACHE_KEY, JSON.stringify(data)); } catch { /* quota */ }
+        }
+      } catch { /* keep cache / offline list */ }
+      return _weeklyVersesList;
+    })();
+
+    return _weeklyCatalogLoadPromise;
+  }
+
+  function getISOWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  }
+
+  function getWeeklyVerseSlotNumber() {
+    const now = new Date();
+    const isoWeek = getISOWeekNumber(now);
+    return ((now.getFullYear() * 53 + isoWeek) % 104) + 1;
+  }
+
+  function weeklyRefAllowed(version, ref) {
+    if (!ref) return false;
+    const book = ref.replace(/\s+\d+:\d+(?:-\d+)?$/, '').trim();
+    const allowed = new Set(getAvailableBooks(version));
+    if (!allowed.size) return true;
+    return allowed.has(book);
+  }
+
+  function getCurrentWeeklyVerseEntry(version) {
+    ensureWeeklyCatalogIndexed();
+    if (!Object.keys(_weeklyVersesByWeek).length) return WEEKLY_VERSES_OFFLINE[0];
+    let slot = getWeeklyVerseSlotNumber();
+    for (let i = 0; i < 104; i++) {
+      const entry = _weeklyVersesByWeek[slot];
+      if (entry && (!version || weeklyRefAllowed(version, entry.reference))) return entry;
+      slot = (slot % 104) + 1;
+    }
+    return _weeklyVersesByWeek[1] || _weeklyVersesList[0] || WEEKLY_VERSES_OFFLINE[0];
+  }
+
+  function buildRefFromParsed(parsed) {
+    if (!parsed?.book || parsed.chapter == null) return null;
+    if (parsed.verseStart != null) {
+      if (parsed.verseEnd != null && parsed.verseEnd !== parsed.verseStart) {
+        return `${parsed.book} ${parsed.chapter}:${parsed.verseStart}-${parsed.verseEnd}`;
+      }
+      return `${parsed.book} ${parsed.chapter}:${parsed.verseStart}`;
+    }
+    return `${parsed.book} ${parsed.chapter}`;
+  }
+
+  function getCanonicalReference(entry) {
+    if (!entry) return '';
+    if (entry.canonicalRef) return entry.canonicalRef;
+    const fromParsed = getPassageParsedFromEntry(entry);
+    if (fromParsed) {
+      const built = buildRefFromParsed(fromParsed);
+      if (built) return built;
+    }
+    if (entry.readBook && entry.readChapter != null && entry.readVerses?.length) {
+      return buildRefFromParsed({
+        book: entry.readBook,
+        chapter: entry.readChapter,
+        verseStart: entry.readVerses[0].num,
+        verseEnd: entry.readVerses[entry.readVerses.length - 1].num
+      }) || entry.ref;
+    }
+    return entry.ref || '';
+  }
+
+  async function fetchReferenceForVersion(version, ref) {
+    if (!ref) return null;
+    const timeout = apiFetchTimeoutMs() + 2000;
+    if (isHaoMode(version)) {
+      return withTimeout(fetchHaoReferenceFromString(version, ref), timeout, null);
+    }
+    if (isBollsMode(version)) {
+      return withTimeout(fetchBollsReferenceFromString(version, ref), timeout, null);
+    }
+    return withTimeout(fetchBssReference(version, ref), timeout, null);
+  }
 
   // KJV fallback text (used when fetch fails)
   const DAILY_FALLBACK = [
@@ -2441,21 +2549,6 @@
     { ref:"Psalm 27:1",      text:"The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?" },
     { ref:"Romans 6:23",     text:"For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord." },
   ];
-  const WEEKLY_FALLBACK = [
-    { ref:"John 3:16",       text:"For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
-    { ref:"Philippians 4:13",text:"I can do all things through Christ which strengtheneth me." },
-    { ref:"Psalm 23:1",      text:"The LORD is my shepherd; I shall not want." },
-    { ref:"Romans 8:28",     text:"And we know that all things work together for good to them that love God." },
-    { ref:"Jeremiah 29:11",  text:"For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
-    { ref:"Isaiah 40:31",    text:"But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles." },
-    { ref:"Matthew 5:9",     text:"Blessed are the peacemakers: for they shall be called the children of God." },
-    { ref:"Proverbs 3:5",    text:"Trust in the LORD with all thine heart; and lean not unto thine own understanding." },
-    { ref:"1 Corinthians 13:4", text:"Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up." },
-    { ref:"Psalm 46:1",      text:"God is our refuge and strength, a very present help in trouble." },
-    { ref:"Galatians 5:22",  text:"But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith." },
-    { ref:"Joshua 1:9",      text:"Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
-  ];
-
   // Louis Segond offline fallbacks (module: segond_1910)
   const DAILY_FALLBACK_LSG = [
     { ref:"Jean 14:6",         text:"Jésus lui dit: Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi." },
@@ -2474,21 +2567,6 @@
     { ref:"Psaumes 27:1",      text:"L'Éternel est ma lumière et mon salut: De qui aurais-je crainte? L'Éternel est le soutien de ma vie: De qui aurais-je peur?" },
     { ref:"Romains 6:23",      text:"Car le salaire du péché, c'est la mort; mais le don gratuit de Dieu, c'est la vie éternelle en Jésus-Christ notre Seigneur." },
   ];
-  const WEEKLY_FALLBACK_LSG = [
-    { ref:"Jean 3:16",           text:"Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle." },
-    { ref:"Philippiens 4:13",    text:"Je puis tout par celui qui me fortifie." },
-    { ref:"Psaumes 23:1",        text:"L'Éternel est mon berger: je ne manquerai de rien." },
-    { ref:"Romains 8:28",        text:"Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu, de ceux qui sont appelés selon son dessein." },
-    { ref:"Jérémie 29:11",      text:"Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance." },
-    { ref:"Ésaïe 40:31",         text:"Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles; ils courent, et ne se lassent point; ils marchent, et ne se fatiguent point." },
-    { ref:"Matthieu 5:9",        text:"Heureux ceux qui procurent la paix, car ils seront appelés fils de Dieu!" },
-    { ref:"Proverbes 3:5",       text:"Confie-toi en l'Éternel de tout ton cœur, Et ne t'appuie pas sur ta sagesse." },
-    { ref:"1 Corinthiens 13:4",  text:"L'amour est patient, il est plein de bonté; l'amour n'est point envieux; l'amour ne se vante point, il ne s'enfle point d'orgueil." },
-    { ref:"Psaumes 46:1",        text:"Dieu est notre refuge et notre force, Un secours toujours prêt dans la détresse." },
-    { ref:"Galates 5:22",        text:"Mais le fruit de l'Esprit, c'est l'amour, la joie, la paix, la patience, la bonté, la bénignité, la fidélité." },
-    { ref:"Josué 1:9",           text:"Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras." },
-  ];
-
   function paintDailyWeeklyBanners(dailyEntry, weeklyEntry, label, note) {
     if (!dailyEntry || !weeklyEntry) return;
     ['d', 'm'].forEach(p => {
@@ -2510,54 +2588,67 @@
     const isLSG = isSegondMode(version);
     const now = new Date();
     const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-    const weekOfYear = Math.floor(dayOfYear / 7);
     const dailyPool = getVersionRefPool(version, DAILY_REFS, isLSG ? DAILY_FALLBACK_LSG : DAILY_FALLBACK);
-    const weeklyPool = getVersionRefPool(version, WEEKLY_REFS, isLSG ? WEEKLY_FALLBACK_LSG : WEEKLY_FALLBACK);
     const dailyIdx = dayOfYear % dailyPool.refs.length;
-    const weeklyIdx = weekOfYear % weeklyPool.refs.length;
-    const note = isLSG ? WEEKLY_NOTES_FR[weeklyIdx] : WEEKLY_NOTES[weeklyIdx];
+    const dailyRef = _bannerCanonicalRefs.daily || dailyPool.refs[dailyIdx];
+
+    const weeklyJson = getCurrentWeeklyVerseEntry(version);
+    const weeklyRef = _bannerCanonicalRefs.weekly || weeklyJson.reference;
+    const weeklyNote = weeklyJson.note || '';
+    const weeklyEntry = {
+      ref: weeklyRef,
+      text: weeklyJson.verse || '',
+      canonicalRef: weeklyRef
+    };
+
     return {
       label: getTranslationLabel(version),
-      note,
+      note: weeklyNote,
       dailyEntry: dailyPool.fallbackEntries[dailyIdx],
-      weeklyEntry: weeklyPool.fallbackEntries[weeklyIdx],
-      dailyRef: dailyPool.refs[dailyIdx],
-      weeklyRef: weeklyPool.refs[weeklyIdx]
+      weeklyEntry,
+      dailyRef,
+      weeklyRef
     };
   }
 
   async function loadDailyAndWeekly(version) {
     version = version || 'kjv';
+    await loadWeeklyVersesCatalog();
+
     const slots = getDailyWeeklyFallbackEntries(version);
+    _bannerCanonicalRefs.daily = slots.dailyRef;
+    _bannerCanonicalRefs.weekly = slots.weeklyRef;
+
     paintDailyWeeklyBanners(slots.dailyEntry, slots.weeklyEntry, slots.label, slots.note);
 
     if (apiCircuitOpen()) return;
 
     const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
-    let fetchRef;
-    if (isHaoMode(version)) {
-      fetchRef = (ref) => fetchHaoReferenceFromString(version, ref);
-    } else if (isBollsMode(version)) {
-      fetchRef = (ref) => fetchBollsReferenceFromString(version, ref);
-    } else {
-      fetchRef = (ref) => fetchBssReference(version, ref);
-    }
+    const dailyRef = slots.dailyRef;
+    const weeklyRef = slots.weeklyRef;
 
     try {
       let dEntry = null;
       let wEntry = null;
       if (isRestrictedMobileBrowser()) {
-        dEntry = await withTimeout(fetchRef(slots.dailyRef), bannerTimeout, null);
-        wEntry = await withTimeout(fetchRef(slots.weeklyRef), bannerTimeout, null);
+        dEntry = await withTimeout(fetchReferenceForVersion(version, dailyRef), bannerTimeout, null);
+        wEntry = await withTimeout(fetchReferenceForVersion(version, weeklyRef), bannerTimeout, null);
       } else {
         [dEntry, wEntry] = await withTimeout(
-          Promise.all([fetchRef(slots.dailyRef), fetchRef(slots.weeklyRef)]),
+          Promise.all([
+            fetchReferenceForVersion(version, dailyRef),
+            fetchReferenceForVersion(version, weeklyRef)
+          ]),
           bannerTimeout,
           [null, null]
         );
       }
-      const dailyEntry = dEntry || slots.dailyEntry;
-      const weeklyEntry = wEntry || slots.weeklyEntry;
+      const dailyEntry = dEntry
+        ? { ref: dEntry.ref || dailyRef, text: dEntry.text, canonicalRef: dailyRef }
+        : slots.dailyEntry;
+      const weeklyEntry = wEntry
+        ? { ref: wEntry.ref || weeklyRef, text: wEntry.text, canonicalRef: weeklyRef }
+        : slots.weeklyEntry;
       if (dEntry || wEntry) {
         paintDailyWeeklyBanners(dailyEntry, weeklyEntry, slots.label, slots.note);
       }
@@ -3122,6 +3213,7 @@
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
     const parsed = passageParsed || parsedFromPassageData(data);
+    const canonicalRef = buildRefFromParsed(parsed) || getCanonicalReference({ ref: uiRef, passageParsed: parsed });
     current[p] = {
       ref: uiRef,
       text: fullText,
@@ -3129,7 +3221,8 @@
       readVerses: data.verses,
       passageParsed: parsed,
       passageBook: parsed?.book,
-      passageChapter: parsed?.chapter
+      passageChapter: parsed?.chapter,
+      canonicalRef: canonicalRef || uiRef
     };
 
     document.getElementById(p + '-actions').style.display = 'flex';
@@ -3279,9 +3372,19 @@
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
     const bookEn = document.getElementById(p + '-read-book')?.value;
     const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
+    const verseStart = data.verses[0]?.num;
+    const verseEnd = data.verses[data.verses.length - 1]?.num;
+    const passageParsed = bookEn && chapterNum != null
+      ? { book: bookEn, chapter: chapterNum, verseStart, verseEnd }
+      : parsedFromPassageData(data);
+    const canonicalRef = buildRefFromParsed(passageParsed) || displayRef;
     current[p] = {
       ref: displayRef, text: fullText, version: data.version, readVerses: data.verses,
-      readBook: bookEn, readChapter: chapterNum
+      readBook: bookEn, readChapter: chapterNum,
+      passageParsed,
+      passageBook: bookEn,
+      passageChapter: chapterNum,
+      canonicalRef
     };
 
     if (bookEn && chapterNum) {
@@ -3917,45 +4020,41 @@
     const entry = current[p];
     if (!entry) return;
 
-    const ref = entry.ref;
     const display = document.getElementById(p + '-verseDisplay');
+    const canonicalRef = getCanonicalReference(entry);
     display.classList.add('loading');
 
     try {
-      const retransTimeout = apiFetchTimeoutMs() + 3000;
+      const retransTimeout = apiFetchTimeoutMs() + 5000;
       if (entry.readVerses?.length) {
         const parsed = getPassageParsedFromEntry(entry);
         if (parsed) {
           const data = await withTimeout(fetchPassageForParsed(version, parsed), retransTimeout, null);
           if (data) {
             renderSearchedPassage(p, data, parsed);
+            if (current[p]) current[p].canonicalRef = canonicalRef;
             return;
           }
-          display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage in the selected translation.</p>`;
+          showToast('Could not load this passage in the selected translation.');
+          renderCurrentEntry(p, entry);
           return;
         }
       }
 
-      let newEntry;
-      if (isHaoMode(version)) {
-        newEntry = await withTimeout(fetchHaoReferenceFromString(version, ref), retransTimeout, null);
-      } else if (isBollsMode(version)) {
-        newEntry = await withTimeout(fetchBollsReferenceFromString(version, ref), retransTimeout, null);
-      } else {
-        newEntry = await withTimeout(fetchBssReference(version, ref), retransTimeout, null);
-      }
+      const newEntry = await withTimeout(fetchReferenceForVersion(version, canonicalRef), retransTimeout, null);
       if (newEntry) {
+        newEntry.canonicalRef = canonicalRef;
+        newEntry.version = version;
         current[p] = newEntry;
         renderVerse(p, newEntry);
-      } else {
-        const fallback = getLocalVerse(null, version);
-        current[p] = fallback;
-        renderVerse(p, fallback);
+        return;
       }
+      showToast('Could not load this reference in the selected translation.');
+      entry.version = version;
+      renderCurrentEntry(p, entry);
     } catch {
-      const fallback = getLocalVerse(null, version);
-      current[p] = fallback;
-      renderVerse(p, fallback);
+      renderCurrentEntry(p, entry);
+      showToast('Translation update failed. Showing previous text.');
     } finally {
       clearReadDisplayLoading(p);
       display.classList.remove('loading');
@@ -3998,6 +4097,7 @@
       const verseTimeout = apiFetchTimeoutMs() + (isRestrictedMobileBrowser() ? 2000 : 6000);
       let entry = await withTimeout(fetchRandomBssVerse(version, scope), verseTimeout, null);
       if (!entry) entry = getLocalVerse(scope.book, version);
+      if (entry && !entry.canonicalRef) entry.canonicalRef = entry.ref;
       current[p] = entry;
       renderVerse(p, entry);
     } catch {
@@ -4633,7 +4733,16 @@
       document.body.classList.add('has-iab-banner');
     }
 
+    hydrateWeeklyCatalogFromCache();
+    if (!_weeklyVersesList.length) {
+      _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
+      indexWeeklyVersesCatalog();
+    }
+    void loadWeeklyVersesCatalog();
+
     const initialSlots = getDailyWeeklyFallbackEntries('kjv');
+    _bannerCanonicalRefs.daily = initialSlots.dailyRef;
+    _bannerCanonicalRefs.weekly = initialSlots.weeklyRef;
     paintDailyWeeklyBanners(initialSlots.dailyEntry, initialSlots.weeklyEntry, initialSlots.label, initialSlots.note);
 
     try {
