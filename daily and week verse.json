@@ -1,0 +1,730 @@
+[
+  {
+    "week": 1,
+    "reference": "John 3:16",
+    "verse": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+    "note": "God\u2019s love for humanity is shown through Jesus Christ and the promise of eternal life.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 2,
+    "reference": "Genesis 1:1",
+    "verse": "In the beginning God created the heaven and the earth.",
+    "note": "God is the Creator of everything and the source of all life.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 3,
+    "reference": "Romans 8:28",
+    "verse": "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+    "note": "God can use every situation in life for the good of those who trust Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 4,
+    "reference": "Genesis 50:20",
+    "verse": "But as for you, ye thought evil against me; but God meant it unto good.",
+    "note": "God can turn difficult and painful situations into something good.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 5,
+    "reference": "Philippians 4:13",
+    "verse": "I can do all things through Christ which strengtheneth me.",
+    "note": "Christ gives believers strength to endure challenges and fulfill His purpose.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 6,
+    "reference": "Exodus 14:14",
+    "verse": "The Lord shall fight for you, and ye shall hold your peace.",
+    "note": "God protects and fights for His people in times of trouble.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 7,
+    "reference": "Matthew 11:28",
+    "verse": "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
+    "note": "Jesus invites weary people to find peace and rest in Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 8,
+    "reference": "Exodus 20:3",
+    "verse": "Thou shalt have no other gods before me.",
+    "note": "God desires to be first and above all things in our lives.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 9,
+    "reference": "2 Corinthians 5:17",
+    "verse": "Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new.",
+    "note": "Faith in Christ brings spiritual renewal and a transformed life.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 10,
+    "reference": "Leviticus 19:18",
+    "verse": "Thou shalt love thy neighbour as thyself.",
+    "note": "God calls people to treat others with love and kindness.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 11,
+    "reference": "Romans 10:9",
+    "verse": "That if thou shalt confess with thy mouth the Lord Jesus, and shalt believe in thine heart that God hath raised him from the dead, thou shalt be saved.",
+    "note": "Salvation comes through faith in Jesus Christ and openly confessing Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 12,
+    "reference": "Numbers 6:24",
+    "verse": "The Lord bless thee, and keep thee.",
+    "note": "God\u2019s blessing and protection are upon His people.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 13,
+    "reference": "Galatians 5:22",
+    "verse": "But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith.",
+    "note": "A life led by the Holy Spirit produces godly character and attitudes.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 14,
+    "reference": "Deuteronomy 6:5",
+    "verse": "And thou shalt love the Lord thy God with all thine heart.",
+    "note": "God wants wholehearted love and devotion from His people.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 15,
+    "reference": "Ephesians 2:8",
+    "verse": "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God.",
+    "note": "Salvation is a gift from God and cannot be earned by human effort.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 16,
+    "reference": "Deuteronomy 31:6",
+    "verse": "Be strong and of a good courage; fear not, nor be afraid of them.",
+    "note": "God gives courage and strength in fearful situations.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 17,
+    "reference": "1 Peter 5:7",
+    "verse": "Casting all your care upon him; for he careth for you.",
+    "note": "God lovingly cares for His people and wants them to trust Him with their worries.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 18,
+    "reference": "Joshua 1:9",
+    "verse": "Be strong and of a good courage; be not afraid.",
+    "note": "God encourages His people to trust Him and remain courageous.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 19,
+    "reference": "Matthew 5:14",
+    "verse": "Ye are the light of the world. A city that is set on an hill cannot be hid.",
+    "note": "Believers are called to shine God\u2019s truth and goodness before others.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 20,
+    "reference": "Judges 6:12",
+    "verse": "The Lord is with thee, thou mighty man of valour.",
+    "note": "God sees potential and strength in those He calls.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 21,
+    "reference": "James 1:5",
+    "verse": "If any of you lack wisdom, let him ask of God, that giveth to all men liberally.",
+    "note": "God generously gives wisdom to those who sincerely seek Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 22,
+    "reference": "Ruth 1:16",
+    "verse": "Whither thou goest, I will go.",
+    "note": "Ruth\u2019s loyalty reflects faithfulness and commitment.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 23,
+    "reference": "Hebrews 11:1",
+    "verse": "Now faith is the substance of things hoped for, the evidence of things not seen.",
+    "note": "Faith means trusting God even when we cannot yet see the outcome.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 24,
+    "reference": "1 Samuel 16:7",
+    "verse": "Man looketh on the outward appearance, but the Lord looketh on the heart.",
+    "note": "God values the heart and character more than outward appearance.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 25,
+    "reference": "Romans 5:8",
+    "verse": "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+    "note": "Jesus sacrificed Himself out of love even while humanity was still in sin.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 26,
+    "reference": "2 Samuel 22:31",
+    "verse": "As for God, his way is perfect.",
+    "note": "God\u2019s ways are trustworthy and without error.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 27,
+    "reference": "John 14:6",
+    "verse": "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me.",
+    "note": "Jesus declared Himself to be the only path to God and eternal life.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 28,
+    "reference": "1 Kings 8:61",
+    "verse": "Let your heart therefore be perfect with the Lord our God.",
+    "note": "Believers are encouraged to stay faithful and devoted to God.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 29,
+    "reference": "Philippians 4:6",
+    "verse": "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God.",
+    "note": "Prayer replaces anxiety with trust and thanksgiving toward God.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 30,
+    "reference": "2 Chronicles 7:14",
+    "verse": "If my people, which are called by my name, shall humble themselves, and pray.",
+    "note": "God promises healing and forgiveness to those who repent and seek Him.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 31,
+    "reference": "2 Timothy 1:7",
+    "verse": "For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind.",
+    "note": "God empowers believers with courage, love, and self-control.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 32,
+    "reference": "Ezra 7:10",
+    "verse": "Ezra had prepared his heart to seek the law of the Lord.",
+    "note": "Seeking God sincerely leads to wisdom and spiritual growth.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 33,
+    "reference": "1 Thessalonians 5:16",
+    "verse": "Rejoice evermore.",
+    "note": "Believers are encouraged to live with continual joy in God.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 34,
+    "reference": "Nehemiah 8:10",
+    "verse": "The joy of the Lord is your strength.",
+    "note": "True strength comes from the joy found in God.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 35,
+    "reference": "Matthew 6:33",
+    "verse": "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you.",
+    "note": "Putting God first brings direction and provision in life.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 36,
+    "reference": "Esther 4:14",
+    "verse": "Who knoweth whether thou art come to the kingdom for such a time as this?",
+    "note": "God places people in positions for meaningful purposes.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 37,
+    "reference": "John 8:32",
+    "verse": "And ye shall know the truth, and the truth shall make you free.",
+    "note": "God\u2019s truth brings spiritual freedom and transformation.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 38,
+    "reference": "Job 1:21",
+    "verse": "The Lord gave, and the Lord hath taken away; blessed be the name of the Lord.",
+    "note": "Job remained faithful to God even during suffering.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 39,
+    "reference": "Romans 12:2",
+    "verse": "And be not conformed to this world: but be ye transformed by the renewing of your mind.",
+    "note": "Believers should allow God to change their thinking and way of life.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 40,
+    "reference": "Job 19:25",
+    "verse": "For I know that my redeemer liveth.",
+    "note": "Job expressed confidence and hope in God\u2019s redemption.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 41,
+    "reference": "Colossians 3:23",
+    "verse": "And whatsoever ye do, do it heartily, as to the Lord, and not unto men.",
+    "note": "Every task should be done sincerely as an act of service to God.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 42,
+    "reference": "Psalm 23:1",
+    "verse": "The Lord is my shepherd; I shall not want.",
+    "note": "God lovingly guides, protects, and provides for His people.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 43,
+    "reference": "1 John 4:19",
+    "verse": "We love him, because he first loved us.",
+    "note": "Our love for God is a response to His love for us.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 44,
+    "reference": "Psalm 27:1",
+    "verse": "The Lord is my light and my salvation; whom shall I fear?",
+    "note": "God brings courage and removes fear from those who trust Him.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 45,
+    "reference": "Luke 1:37",
+    "verse": "For with God nothing shall be impossible.",
+    "note": "God\u2019s power has no limits and nothing is beyond His ability.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 46,
+    "reference": "Psalm 34:8",
+    "verse": "O taste and see that the Lord is good.",
+    "note": "Experiencing God personally reveals His goodness.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 47,
+    "reference": "Hebrews 13:8",
+    "verse": "Jesus Christ the same yesterday, and to day, and for ever.",
+    "note": "Jesus never changes and remains faithful forever.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 48,
+    "reference": "Psalm 46:10",
+    "verse": "Be still, and know that I am God.",
+    "note": "God calls people to trust Him and rest in His power.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 49,
+    "reference": "James 4:8",
+    "verse": "Draw nigh to God, and he will draw nigh to you.",
+    "note": "God welcomes those who sincerely seek a closer relationship with Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 50,
+    "reference": "Psalm 119:105",
+    "verse": "Thy word is a lamp unto my feet, and a light unto my path.",
+    "note": "God\u2019s Word gives guidance and direction for life.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 51,
+    "reference": "Matthew 19:26",
+    "verse": "With men this is impossible; but with God all things are possible.",
+    "note": "God can accomplish what human strength and wisdom cannot.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 52,
+    "reference": "Proverbs 3:5",
+    "verse": "Trust in the Lord with all thine heart; and lean not unto thine own understanding.",
+    "note": "Believers should rely on God rather than human wisdom.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 53,
+    "reference": "1 Corinthians 10:13",
+    "verse": "God is faithful, who will not suffer you to be tempted above that ye are able.",
+    "note": "God provides strength and a way through temptation.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 54,
+    "reference": "Proverbs 9:10",
+    "verse": "The fear of the Lord is the beginning of wisdom.",
+    "note": "True wisdom begins with reverence and respect for God.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 55,
+    "reference": "Romans 15:13",
+    "verse": "Now the God of hope fill you with all joy and peace in believing.",
+    "note": "Trusting God fills believers with hope, joy, and peace.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 56,
+    "reference": "Proverbs 16:3",
+    "verse": "Commit thy works unto the Lord, and thy thoughts shall be established.",
+    "note": "Giving plans to God brings stability and direction.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 57,
+    "reference": "Mark 9:23",
+    "verse": "If thou canst believe, all things are possible to him that believeth.",
+    "note": "Faith opens the door to experiencing God\u2019s power.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 58,
+    "reference": "Ecclesiastes 3:1",
+    "verse": "To every thing there is a season, and a time to every purpose under the heaven.",
+    "note": "Life has seasons, and God\u2019s timing is perfect.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 59,
+    "reference": "Ephesians 6:11",
+    "verse": "Put on the whole armour of God, that ye may be able to stand against the wiles of the devil.",
+    "note": "Believers need spiritual protection through God\u2019s strength and truth.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 60,
+    "reference": "Ecclesiastes 12:13",
+    "verse": "Fear God, and keep his commandments.",
+    "note": "The purpose of life is to honor and obey God.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 61,
+    "reference": "John 10:10",
+    "verse": "I am come that they might have life, and that they might have it more abundantly.",
+    "note": "Jesus offers a full and meaningful life through Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 62,
+    "reference": "Song of Solomon 8:7",
+    "verse": "Many waters cannot quench love.",
+    "note": "True love is strong, enduring, and powerful.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 63,
+    "reference": "2 Corinthians 12:9",
+    "verse": "My grace is sufficient for thee: for my strength is made perfect in weakness.",
+    "note": "God\u2019s grace sustains believers even in their weakness.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 64,
+    "reference": "Isaiah 40:31",
+    "verse": "But they that wait upon the Lord shall renew their strength.",
+    "note": "Trusting God brings renewed strength and endurance.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 65,
+    "reference": "Matthew 22:37",
+    "verse": "Thou shalt love the Lord thy God with all thy heart.",
+    "note": "Loving God fully is the greatest commandment.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 66,
+    "reference": "Isaiah 41:10",
+    "verse": "Fear thou not; for I am with thee.",
+    "note": "God comforts His people with His constant presence.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 67,
+    "reference": "1 John 1:9",
+    "verse": "If we confess our sins, he is faithful and just to forgive us our sins.",
+    "note": "God faithfully forgives those who sincerely repent.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 68,
+    "reference": "Isaiah 53:5",
+    "verse": "He was wounded for our transgressions.",
+    "note": "This prophecy points to the suffering servant who bears sin.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 69,
+    "reference": "Acts 16:31",
+    "verse": "Believe on the Lord Jesus Christ, and thou shalt be saved.",
+    "note": "Faith in Jesus Christ brings salvation.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 70,
+    "reference": "Jeremiah 29:11",
+    "verse": "For I know the thoughts that I think toward you, saith the Lord.",
+    "note": "God\u2019s plans for His people are filled with hope and purpose.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 71,
+    "reference": "Romans 6:23",
+    "verse": "For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.",
+    "note": "Sin leads to death, but God offers eternal life through Jesus.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 72,
+    "reference": "Jeremiah 33:3",
+    "verse": "Call unto me, and I will answer thee.",
+    "note": "God invites people to seek Him through prayer.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 73,
+    "reference": "Matthew 7:7",
+    "verse": "Ask, and it shall be given you; seek, and ye shall find.",
+    "note": "God encourages persistent prayer and seeking after Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 74,
+    "reference": "Lamentations 3:22",
+    "verse": "It is of the Lord's mercies that we are not consumed.",
+    "note": "God\u2019s mercy and compassion are renewed every day.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 75,
+    "reference": "1 Corinthians 16:14",
+    "verse": "Let all your things be done with charity.",
+    "note": "Love should guide every action and relationship.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 76,
+    "reference": "Ezekiel 36:26",
+    "verse": "A new heart also will I give you.",
+    "note": "God promises spiritual renewal and transformation.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 77,
+    "reference": "Galatians 6:9",
+    "verse": "And let us not be weary in well doing: for in due season we shall reap.",
+    "note": "Doing good faithfully will eventually bring spiritual reward.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 78,
+    "reference": "Daniel 3:17",
+    "verse": "Our God whom we serve is able to deliver us.",
+    "note": "Faith trusts in God\u2019s power even in dangerous situations.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 79,
+    "reference": "John 16:33",
+    "verse": "In the world ye shall have tribulation: but be of good cheer; I have overcome the world.",
+    "note": "Jesus gives hope and victory even during hardships.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 80,
+    "reference": "Daniel 6:23",
+    "verse": "Daniel was taken up out of the den, and no manner of hurt was found upon him.",
+    "note": "God protected Daniel because of his faithfulness.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 81,
+    "reference": "Colossians 3:2",
+    "verse": "Set your affection on things above, not on things on the earth.",
+    "note": "Believers should focus on eternal and spiritual priorities.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 82,
+    "reference": "Hosea 6:6",
+    "verse": "For I desired mercy, and not sacrifice.",
+    "note": "God values compassion and sincere devotion over empty rituals.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 83,
+    "reference": "Luke 6:31",
+    "verse": "And as ye would that men should do to you, do ye also to them likewise.",
+    "note": "The Golden Rule teaches kindness and fairness toward others.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 84,
+    "reference": "Joel 2:13",
+    "verse": "Turn unto the Lord your God: for he is gracious and merciful.",
+    "note": "God welcomes repentance with mercy and forgiveness.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 85,
+    "reference": "Hebrews 12:2",
+    "verse": "Looking unto Jesus the author and finisher of our faith.",
+    "note": "Jesus is the source and perfect example of faith.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 86,
+    "reference": "Amos 5:24",
+    "verse": "Let judgment run down as waters, and righteousness as a mighty stream.",
+    "note": "God desires justice and righteousness among people.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 87,
+    "reference": "Romans 8:1",
+    "verse": "There is therefore now no condemnation to them which are in Christ Jesus.",
+    "note": "Those who belong to Christ are forgiven and free from condemnation.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 88,
+    "reference": "Obadiah 1:15",
+    "verse": "The day of the Lord is near upon all the heathen.",
+    "note": "God\u2019s justice and judgment will ultimately prevail.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 89,
+    "reference": "Matthew 5:16",
+    "verse": "Let your light so shine before men, that they may see your good works.",
+    "note": "Good actions should reflect God\u2019s goodness to the world.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 90,
+    "reference": "Jonah 2:2",
+    "verse": "I cried by reason of mine affliction unto the Lord, and he heard me.",
+    "note": "God hears prayers even in moments of desperation.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 91,
+    "reference": "James 1:22",
+    "verse": "But be ye doers of the word, and not hearers only.",
+    "note": "Faith should be demonstrated through obedient actions.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 92,
+    "reference": "Micah 6:8",
+    "verse": "What doth the Lord require of thee, but to do justly, and to love mercy.",
+    "note": "God calls His people to justice, mercy, and humility.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 93,
+    "reference": "1 Peter 2:24",
+    "verse": "Who his own self bare our sins in his own body on the tree.",
+    "note": "Jesus bore humanity\u2019s sins through His sacrifice on the cross.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 94,
+    "reference": "Nahum 1:7",
+    "verse": "The Lord is good, a strong hold in the day of trouble.",
+    "note": "God is a refuge and protector during difficult times.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 95,
+    "reference": "Philippians 4:7",
+    "verse": "And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.",
+    "note": "God gives supernatural peace to those who trust Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 96,
+    "reference": "Habakkuk 2:4",
+    "verse": "The just shall live by his faith.",
+    "note": "Faith is essential for living in relationship with God.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 97,
+    "reference": "Mark 12:30",
+    "verse": "And thou shalt love the Lord thy God with all thy heart, and with all thy soul.",
+    "note": "God desires wholehearted devotion from His people.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 98,
+    "reference": "Zephaniah 3:17",
+    "verse": "The Lord thy God in the midst of thee is mighty.",
+    "note": "God is present with His people in love and power.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 99,
+    "reference": "John 15:13",
+    "verse": "Greater love hath no man than this, that a man lay down his life for his friends.",
+    "note": "True love is shown through sacrifice and selflessness.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 100,
+    "reference": "Haggai 1:5",
+    "verse": "Consider your ways.",
+    "note": "God calls people to examine their priorities and actions.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 101,
+    "reference": "Revelation 3:20",
+    "verse": "Behold, I stand at the door, and knock.",
+    "note": "Jesus invites people into a personal relationship with Him.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 102,
+    "reference": "Zechariah 4:6",
+    "verse": "Not by might, nor by power, but by my spirit, saith the Lord.",
+    "note": "God\u2019s work is accomplished through His Spirit, not human strength.",
+    "testament": "Old Testament"
+  },
+  {
+    "week": 103,
+    "reference": "2 Peter 3:9",
+    "verse": "The Lord is not slack concerning his promise.",
+    "note": "God is faithful to His promises and patient with humanity.",
+    "testament": "New Testament"
+  },
+  {
+    "week": 104,
+    "reference": "Malachi 3:10",
+    "verse": "Bring ye all the tithes into the storehouse.",
+    "note": "God encourages faithfulness and promises provision in return.",
+    "testament": "Old Testament"
+  }
+]
