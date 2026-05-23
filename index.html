@@ -148,6 +148,150 @@
       font-style: italic;
     }
 
+    /* Daily Devotional panel */
+    .devotional-banner {
+      width: 100%;
+      max-width: 760px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #181008, #241608);
+      border: 1px solid rgba(201,168,76,0.22);
+      animation: fadeUp 0.8s ease 0.12s both;
+      position: relative;
+    }
+    .devotional-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      min-height: 44px;
+    }
+    .devotional-header .banner-label {
+      margin-bottom: 0;
+      flex: 1;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+    .devotional-toggle {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+      color: var(--gold);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .devotional-toggle:hover,
+    .devotional-toggle:focus {
+      background: rgba(201,168,76,0.12);
+      border-color: var(--gold);
+      outline: none;
+    }
+    .devotional-toggle svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .devotional-banner.is-open .devotional-toggle svg {
+      transform: rotate(180deg);
+    }
+    .devotional-collapse {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .devotional-banner.is-open .devotional-collapse {
+      grid-template-rows: 1fr;
+    }
+    .devotional-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+    .devotional-panel-body {
+      padding: 0 18px 16px;
+      border-top: 1px solid rgba(201,168,76,0.12);
+    }
+    .devotional-date {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 12px 0 8px;
+    }
+    .devotional-heading {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--parchment);
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+    .devotional-scripture {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.98rem;
+      font-style: italic;
+      color: rgba(232,201,122,0.95);
+      line-height: 1.55;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 4px;
+      border-left: 3px solid var(--gold-dark);
+    }
+    .devotional-content {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.95rem;
+      color: rgba(245,234,214,0.88);
+      line-height: 1.65;
+      max-height: 55vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .devotional-content p {
+      margin-bottom: 0.85em;
+    }
+    .devotional-content p:last-child {
+      margin-bottom: 0;
+    }
+    .devotional-loading {
+      font-style: italic;
+      color: rgba(245,234,214,0.55);
+      font-size: 0.9rem;
+      padding: 8px 0 4px;
+    }
+    .mob-devotional-banner {
+      border-radius: 10px;
+      margin-bottom: 0;
+    }
+    .mob-devotional-banner .devotional-header {
+      padding: 10px 12px;
+    }
+    .mob-devotional-banner .devotional-panel-body {
+      padding: 0 12px 14px;
+    }
+    .mob-devotional-banner .devotional-content {
+      max-height: 50vh;
+      font-size: 0.92rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .devotional-collapse,
+      .devotional-toggle svg {
+        transition: none !important;
+      }
+    }
+
     /* Scroll card */
     .scroll-card {
       width:100%; max-width:760px; min-width:0; overflow:hidden; box-sizing:border-box;
@@ -259,7 +403,9 @@
     body.compat-mobile .daily-banner,
     body.compat-mobile .weekly-banner,
     body.compat-mobile .mob-daily-banner,
-    body.compat-mobile .mob-weekly-banner {
+    body.compat-mobile .mob-weekly-banner,
+    body.compat-mobile .devotional-banner,
+    body.compat-mobile .mob-devotional-banner {
       content-visibility: visible;
       contain-intrinsic-size: auto;
     }
@@ -731,7 +877,7 @@
       #desktop-view { padding: 28px 18px 52px; }
       .header { margin-bottom: 22px; }
       h1 { font-size: clamp(1.2rem, 3.2vw, 1.85rem); }
-      .daily-banner, .weekly-banner,
+      .daily-banner, .weekly-banner, .devotional-banner,
       .scroll-card {
         max-width: min(720px, 94vw);
       }
@@ -750,7 +896,7 @@
     }
     @media (min-width: 769px) and (max-width: 1100px) and (orientation: landscape) {
       #desktop-view { padding: 20px 22px 44px; }
-      .daily-banner, .weekly-banner,
+      .daily-banner, .weekly-banner, .devotional-banner,
       .scroll-card { max-width: min(880px, 92vw); }
       .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .control-group.full-width,
@@ -811,6 +957,28 @@
     <p class="banner-verse" id="d-weekly-text"></p>
     <span class="banner-ref" id="d-weekly-ref"></span>
     <p class="weekly-note" id="d-weekly-note"></p>
+  </div>
+
+  <!-- Daily Devotional -->
+  <div class="devotional-banner" id="d-devotional-banner">
+    <div class="devotional-header">
+      <span class="banner-label">Daily Devotional</span>
+      <button type="button" class="devotional-toggle" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+    <div class="devotional-collapse" id="d-devotional-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body">
+          <p class="devotional-date" id="d-devotional-date">Loading…</p>
+          <h2 class="devotional-heading" id="d-devotional-title"></h2>
+          <p class="devotional-scripture" id="d-devotional-scripture"></p>
+          <div class="devotional-content" id="d-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="scroll-card">
@@ -961,6 +1129,28 @@
       <p class="banner-verse" id="m-weekly-text"></p>
       <span class="banner-ref" id="m-weekly-ref"></span>
       <p class="weekly-note" id="m-weekly-note"></p>
+    </div>
+
+    <!-- Mobile Daily Devotional -->
+    <div class="devotional-banner mob-devotional-banner" id="m-devotional-banner">
+      <div class="devotional-header">
+        <span class="banner-label">Daily Devotional</span>
+        <button type="button" class="devotional-toggle" id="m-devotional-toggle" aria-expanded="false" aria-controls="m-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div class="devotional-collapse" id="m-devotional-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body">
+            <p class="devotional-date" id="m-devotional-date">Loading…</p>
+            <h2 class="devotional-heading" id="m-devotional-title"></h2>
+            <p class="devotional-scripture" id="m-devotional-scripture"></p>
+            <div class="devotional-content" id="m-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="mob-card">
@@ -2655,6 +2845,144 @@
     } catch {
       /* offline banners already shown */
     }
+  }
+
+  /* ══════════════════════════════════════
+     DAILY DEVOTIONAL (GitHub JSON, MM-DD)
+  ══════════════════════════════════════ */
+  const DEVOTIONAL_JSON_URL =
+    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20devotionals.json';
+  const DEVOTIONAL_CACHE_KEY = 'vg-devotionals-json-v1';
+  let _devotionalsMap = null;
+  let _devotionalLoadPromise = null;
+  let _devotionalOpen = false;
+  let _devotionalRenderedKey = null;
+
+  function getDevotionalDateKey(date) {
+    const d = date || new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return m + '-' + day;
+  }
+
+  function getTodaysDevotionalEntry() {
+    if (!_devotionalsMap) return null;
+    return _devotionalsMap[getDevotionalDateKey()] || null;
+  }
+
+  async function loadDevotionalsCatalog() {
+    if (_devotionalsMap) return _devotionalsMap;
+    if (_devotionalLoadPromise) return _devotionalLoadPromise;
+
+    _devotionalLoadPromise = (async () => {
+      try {
+        const raw = sessionStorage.getItem(DEVOTIONAL_CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const map = parsed.devotionals || parsed;
+          if (map && typeof map === 'object') _devotionalsMap = map;
+        }
+      } catch { /* ignore */ }
+
+      try {
+        const data = await apiGetJson(DEVOTIONAL_JSON_URL, 22000);
+        if (data) {
+          const map = data.devotionals || data;
+          if (map && typeof map === 'object') {
+            _devotionalsMap = map;
+            try {
+              sessionStorage.setItem(DEVOTIONAL_CACHE_KEY, JSON.stringify({ devotionals: _devotionalsMap }));
+            } catch { /* quota */ }
+          }
+        }
+      } catch { /* network */ }
+
+      return _devotionalsMap;
+    })();
+
+    return _devotionalLoadPromise;
+  }
+
+  function formatDevotionalBodyHtml(body) {
+    if (!body || !String(body).trim()) {
+      return '<p class="devotional-loading">No devotional text for this date.</p>';
+    }
+    const normalized = String(body).replace(/\r\n/g, '\n').trim();
+    let parts = normalized.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+    if (parts.length <= 1 && normalized.includes('\n')) {
+      parts = normalized.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    if (!parts.length) parts = [normalized];
+    return parts.map(p => '<p>' + escapeHtml(p) + '</p>').join('');
+  }
+
+  function paintDevotionalPanels(entry) {
+    if (!entry) {
+      ['d', 'm'].forEach(p => {
+        const dateEl = document.getElementById(p + '-devotional-date');
+        const titleEl = document.getElementById(p + '-devotional-title');
+        const scriptEl = document.getElementById(p + '-devotional-scripture');
+        const contentEl = document.getElementById(p + '-devotional-content');
+        if (dateEl) dateEl.textContent = 'Devotional unavailable';
+        if (titleEl) titleEl.textContent = '';
+        if (scriptEl) scriptEl.textContent = '';
+        if (contentEl) {
+          contentEl.innerHTML = '<p class="devotional-loading">Could not load today\'s devotional. Check your connection and try again.</p>';
+        }
+      });
+      return;
+    }
+
+    const dateLine = entry.month_name
+      ? entry.month_name + ' ' + entry.day
+      : getDevotionalDateKey();
+    const title = (entry.title || '').trim();
+    const scripture = (entry.scripture || '').trim();
+    const bodyHtml = formatDevotionalBodyHtml(entry.body);
+
+    ['d', 'm'].forEach(p => {
+      const dateEl = document.getElementById(p + '-devotional-date');
+      const titleEl = document.getElementById(p + '-devotional-title');
+      const scriptEl = document.getElementById(p + '-devotional-scripture');
+      const contentEl = document.getElementById(p + '-devotional-content');
+      if (dateEl) dateEl.textContent = dateLine;
+      if (titleEl) {
+        titleEl.textContent = title || 'Daily Devotional';
+        titleEl.style.display = '';
+      }
+      if (scriptEl) {
+        scriptEl.textContent = scripture;
+        scriptEl.style.display = scripture ? '' : 'none';
+      }
+      if (contentEl) contentEl.innerHTML = bodyHtml;
+    });
+    _devotionalRenderedKey = getDevotionalDateKey();
+  }
+
+  async function ensureTodaysDevotionalPainted() {
+    const todayKey = getDevotionalDateKey();
+    if (_devotionalRenderedKey === todayKey && _devotionalsMap) return;
+    await loadDevotionalsCatalog();
+    paintDevotionalPanels(getTodaysDevotionalEntry());
+  }
+
+  function setDevotionalPanelOpen(open) {
+    _devotionalOpen = open;
+    ['d', 'm'].forEach(p => {
+      const banner = document.getElementById(p + '-devotional-banner');
+      const btn = document.getElementById(p + '-devotional-toggle');
+      if (banner) banner.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse daily devotional' : 'Expand daily devotional');
+      }
+    });
+  }
+
+  async function toggleDevotionalPanel() {
+    const willOpen = !_devotionalOpen;
+    setDevotionalPanelOpen(willOpen);
+    if (willOpen) await ensureTodaysDevotionalPainted();
   }
 
   /* ══════════════════════════════════════
@@ -4766,6 +5094,7 @@
     } catch { /* preset / fallback book lists */ }
 
     void loadDailyAndWeekly(version);
+    void loadDevotionalsCatalog();
   }
 
   window.addEventListener('load', () => { void bootstrapApp(); });
