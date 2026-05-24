@@ -1047,11 +1047,9 @@
 
     <div class="controls">
       <div class="control-group">
-        <label for="d-testament" id="d-testament-label">Testament</label>
+        <label for="d-testament" id="d-testament-label">Mode</label>
         <select id="d-testament" onchange="updateBooks('d')">
-          <option value="custom" selected>Choose Book</option>
-          <option value="old">Old Testament</option>
-          <option value="new">New Testament</option>
+          <option value="custom" selected>Verse Generator</option>
           <option value="read">Read Bible</option>
         </select>
       </div>
@@ -1063,7 +1061,7 @@
       </div>
       <div class="control-group full-width" id="d-bookWrapper">
         <label for="d-book" id="d-book-label">Book</label>
-        <select id="d-book"></select>
+        <select id="d-book" onchange="onBookSelectChange('d')"></select>
       </div>
 
       <div class="control-group full-width" id="d-customSearchWrapper">
@@ -1223,11 +1221,9 @@
 
       <div class="mob-select-row">
         <div class="mob-field">
-          <span class="mob-label" id="m-testament-label">Testament</span>
+          <span class="mob-label" id="m-testament-label">Mode</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="custom" selected>Choose Book</option>
-            <option value="old">Old Testament</option>
-            <option value="new">New Testament</option>
+            <option value="custom" selected>Verse Generator</option>
             <option value="read">Read Bible</option>
           </select>
         </div>
@@ -1242,7 +1238,7 @@
       <div class="mob-select-row" id="m-bookWrapper">
         <div class="mob-field full">
           <span class="mob-label" id="m-book-label">Book</span>
-          <select class="mob-select" id="m-book"></select>
+          <select class="mob-select" id="m-book" onchange="onBookSelectChange('m')"></select>
         </div>
       </div>
 
@@ -1694,8 +1690,8 @@
     return null;
   }
 
-  function fetchWithTimeout(url, timeoutMs) {
-    const opts = { credentials: 'omit', mode: 'cors', cache: 'default' };
+  function fetchWithTimeout(url, timeoutMs, extraOpts) {
+    const opts = { credentials: 'omit', mode: 'cors', cache: 'default', ...(extraOpts || {}) };
     if (typeof AbortController !== 'undefined') {
       const controller = new AbortController();
       const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
@@ -1756,6 +1752,525 @@
   const BOLLS_CHAPTER_CACHE = {};
   // Per-module canonical book IDs discovered from get-books (1–66)
   const BOLLS_BOOK_IDS_BY_MODULE = {};
+
+  /* ══════════════════════════════════════
+     API.BIBLE (rest.api.bible) — 3 translations
+  ══════════════════════════════════════ */
+  const API_BIBLE_BASE = 'https://rest.api.bible/v1';
+  const API_BIBLE_KEY = '-xMulho1difcgD2nYHEVy';
+
+  const API_BIBLE_BIBLES = {
+    'apib-KJV': {
+      name: 'King James (Authorised) Version',
+      shortname: 'KJV (API)',
+      module: 'apib-KJV',
+      lang: 'English',
+      lang_short: 'en',
+      source: 'apibible',
+      bibleId: 'de4e12af7f28f599-02',
+      hideInSelect: true
+    },
+    'apib-CSB': {
+      name: 'Christian Standard Bible',
+      shortname: 'CSB',
+      module: 'apib-CSB',
+      lang: 'English',
+      lang_short: 'en',
+      source: 'apibible',
+      bibleId: 'a556c5305ee15c3f-01'
+    },
+    'apib-NKJV': {
+      name: 'New King James Version',
+      shortname: 'NKJV',
+      module: 'apib-NKJV',
+      lang: 'English',
+      lang_short: 'en',
+      source: 'apibible',
+      bibleId: '63097d2a0a2f7db3-01',
+      insertAfterModule: 'kjvpce'
+    }
+  };
+
+  const API_BIBLE_PASSAGE_CACHE = {};
+
+  function isApiBibleMode(module) {
+    return (module || '').startsWith('apib-');
+  }
+
+  function getApiBibleId(module) {
+    return API_BIBLE_BIBLES[module]?.bibleId || '';
+  }
+
+  function getApiBibleBookCode(bookEn) {
+    return HAO_BOOK_CODES[bookEn] || bookEn.toUpperCase().slice(0, 3);
+  }
+
+  function buildApiBiblePassageId(bookEn, chapter, verseStart, verseEnd) {
+    const code = getApiBibleBookCode(bookEn);
+    if (verseStart == null && verseEnd == null) return code + '.' + chapter;
+    if (verseEnd == null || verseEnd === verseStart) return code + '.' + chapter + '.' + verseStart;
+    return code + '.' + chapter + '.' + verseStart + '-' + code + '.' + chapter + '.' + verseEnd;
+  }
+
+  function cleanApiBibleText(content) {
+    return (content || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+      .replace(/\[\d+\]\s*/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function parseApiBiblePassageContent(content, bookEn, chapter) {
+    const verses = [];
+    const re = /\[(\d+)\]\s*([^[]*)/g;
+    let m;
+    while ((m = re.exec(content || '')) !== null) {
+      const num = parseInt(m[1], 10);
+      const text = cleanApiBibleText(m[2]);
+      if (text) verses.push({ num, chapter, text });
+    }
+    if (!verses.length) {
+      const text = cleanApiBibleText(content);
+      if (text) verses.push({ num: 1, chapter, text });
+    }
+    return verses;
+  }
+
+  async function apiBibleGetJson(path, query) {
+    if (apiCircuitOpen() || !API_BIBLE_KEY) return null;
+    const q = query && Object.keys(query).length
+      ? '?' + new URLSearchParams(query).toString()
+      : '';
+    const url = API_BIBLE_BASE + path + q;
+    const timeout = apiFetchTimeoutMs() + 4000;
+    const headers = { 'api-key': API_BIBLE_KEY, Accept: 'application/json' };
+
+    async function tryFetch() {
+      const res = await fetchWithTimeout(url, timeout, { headers });
+      if (!res || !res.ok) throw new Error('http');
+      return await res.json();
+    }
+
+    try {
+      const data = await tryFetch();
+      if (data != null) {
+        markApiSuccess();
+        return data;
+      }
+    } catch {
+      try {
+        const data = await xhrGetWithHeaders(url, timeout, true, headers);
+        if (data != null) {
+          markApiSuccess();
+          return data;
+        }
+      } catch { /* fall through */ }
+    }
+    markApiFailure();
+    return null;
+  }
+
+  function xhrGetWithHeaders(url, timeoutMs, asJson, headers) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let done = false;
+      const finish = (fn, val) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        fn(val);
+      };
+      const timer = setTimeout(() => {
+        try { xhr.abort(); } catch (_) {}
+        finish(reject, new Error('timeout'));
+      }, timeoutMs);
+      xhr.open('GET', url, true);
+      Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (!asJson) return finish(resolve, xhr.responseText);
+          try { finish(resolve, JSON.parse(xhr.responseText)); }
+          catch (e) { finish(reject, e); }
+        } else finish(reject, new Error('http ' + xhr.status));
+      };
+      xhr.onerror = () => finish(reject, new Error('network'));
+      xhr.onabort = () => finish(reject, new Error('abort'));
+      try { xhr.send(); } catch (e) { finish(reject, e); }
+    });
+  }
+
+  async function fetchApiBiblePassage(module, bookEn, chapter, verseStart, verseEnd) {
+    const bibleId = getApiBibleId(module);
+    if (!bibleId || !bookEn) return null;
+    const passageId = buildApiBiblePassageId(bookEn, chapter, verseStart, verseEnd);
+    const cacheKey = module + ':' + passageId;
+    if (API_BIBLE_PASSAGE_CACHE[cacheKey]) return API_BIBLE_PASSAGE_CACHE[cacheKey];
+
+    const data = await apiBibleGetJson(
+      '/bibles/' + encodeURIComponent(bibleId) + '/passages/' + encodeURIComponent(passageId),
+      { 'content-type': 'text' }
+    );
+    if (!data?.data?.content) return null;
+
+    let verses = parseApiBiblePassageContent(data.data.content, bookEn, chapter);
+    if (verseStart != null) verses = verses.filter(v => v.num >= verseStart);
+    if (verseEnd != null) verses = verses.filter(v => v.num <= verseEnd);
+    if (!verses.length) return null;
+
+    const ref = data.data.reference || formatPassageRef(bookEn, chapter, verses);
+    const result = {
+      verses,
+      ref,
+      bookName: bookEn,
+      chapter,
+      version: module
+    };
+    API_BIBLE_PASSAGE_CACHE[cacheKey] = result;
+    return result;
+  }
+
+  async function fetchApiBibleReference(module, bookEn, chapter, verseNum) {
+    const data = await fetchApiBiblePassage(module, bookEn, chapter, verseNum, verseNum);
+    if (!data?.verses?.length) return null;
+    const v = data.verses[0];
+    return { text: v.text, ref: data.ref, version: module };
+  }
+
+  async function fetchApiBibleReferenceFromString(module, ref) {
+    const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
+    if (!m) return null;
+    const bookEn = resolveBookEnFromRaw(m[1].trim());
+    if (!bookEn) return null;
+    return fetchApiBibleReference(module, bookEn, parseInt(m[2], 10), parseInt(m[3], 10));
+  }
+
+  async function fetchApiBiblePassageFromString(module, reference, filterStart, filterEnd) {
+    const m = reference.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?/);
+    if (!m) return null;
+    const bookEn = resolveBookEnFromRaw(m[1].trim());
+    if (!bookEn) return null;
+    const chapter = parseInt(m[2], 10);
+    const vStart = m[3] ? parseInt(m[3], 10) : filterStart;
+    const vEnd = m[4] ? parseInt(m[4], 10) : (filterEnd != null ? filterEnd : vStart);
+    if (vStart == null) return fetchApiBiblePassage(module, bookEn, chapter, null, null);
+    return fetchApiBiblePassage(module, bookEn, chapter, vStart, vEnd);
+  }
+
+  async function fetchApiBibleRandomVerse(module, scope, attempt = 0) {
+    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
+    const ids = pickRandomBookIds(scope, module);
+    const bookId = ids[Math.floor(Math.random() * ids.length)];
+    const bookIdx = bookId - 1;
+    const bookEn = ALL[bookIdx];
+    const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookIdx]) + 1;
+    const verse = Math.floor(Math.random() * 30) + 1;
+    const entry = await fetchApiBibleReference(module, bookEn, chapter, verse);
+    if (entry) return entry;
+    return fetchApiBibleRandomVerse(module, scope, attempt + 1);
+  }
+
+  /* ══════════════════════════════════════
+     WLDH Bible API (cdn.jsdelivr.net/gh/wldeh/bible-api)
+  ══════════════════════════════════════ */
+  const WLDH_API = 'https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles';
+  const WLDH_BIBLES_LIST_URL = WLDH_API + '/bibles.json';
+  const WLDH_CATALOG_CACHE_KEY = 'wldh-bible-catalog-v2';
+  const WLDH_CATALOG_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const WLDH_BSS_REPLACE = { kjv: 'wldh-en-kjv', web: 'wldh-en-web', asv: 'wldh-en-asv' };
+  const WLDH_LEGACY_MODULE_MAP = { ...WLDH_BSS_REPLACE, 'hao-BSB': 'wldh-en-bsb' };
+
+  const WLDH_LANG_SHORT = {
+    eng: 'en', en: 'en', heb: 'he', nld: 'nl', de: 'de', es: 'es', fra: 'fr', fr: 'fr',
+    san: 'sa', nya: 'ny', kpg: 'kpg', nag: 'nag', nho: 'nho', mni: 'mni', kfw: 'kfw', sch: 'sch'
+  };
+  const WLDH_LANG_LABELS = {
+    eng: 'English', heb: 'Hebrew', nld: 'Dutch', de: 'German', es: 'Spanish', fra: 'French',
+    san: 'Sanskrit', nya: 'Chichewa', kpg: 'Kapingamarangi', nag: 'Naga Pidgin', nho: 'Takuu',
+    mni: 'Meitei', kfw: 'Kharam', sch: 'Sakachep'
+  };
+  const WLDH_RANK = {
+    'en-kjv': 11, 'en-web': 21, 'en-asv': 31, 'en-bsb': 25, 'en-lsv': 35, 'en-dra': 40,
+    'en-rv': 45, 'en-gnv': 50, 'en-fbv': 55, 'en-wmb': 60
+  };
+
+  const WLDH_VERIFIED_CATALOG = [
+    { id: 'en-kjv', scope: 'Bible with Deuterocanon', abbr: 'KJV', name: 'King James Version', lang: 'eng', langName: 'English' },
+    { id: 'en-web', scope: 'Bible with Deuterocanon', abbr: 'WEB', name: 'World English Bible (American Edition)', lang: 'eng', langName: 'English' },
+    { id: 'en-asv', scope: 'Bible', abbr: 'ASV', name: 'American Standard Version of 1901', lang: 'eng', langName: 'English' },
+    { id: 'en-bsb', scope: 'Bible', abbr: 'BSB', name: 'Berean Study Bible', lang: 'eng', langName: 'English' },
+    { id: 'en-lsv', scope: 'Bible', abbr: 'LSV', name: 'Literal Standard Version', lang: 'eng', langName: 'English' },
+    { id: 'en-dra', scope: 'Bible with Deuterocanon', abbr: 'DRA', name: 'Douay-Rheims American Edition 1899', lang: 'eng', langName: 'English' },
+    { id: 'en-rv', scope: 'Bible with Deuterocanon', abbr: 'RV', name: 'Revised Version 1885', lang: 'eng', langName: 'English' },
+    { id: 'en-gnv', scope: 'Bible', abbr: 'GNV', name: 'Geneva Bible 1599', lang: 'eng', langName: 'English' },
+    { id: 'en-fbv', scope: 'Bible', abbr: 'FBV', name: 'Free Bible Version', lang: 'eng', langName: 'English' },
+    { id: 'en-t4t', scope: 'Bible', abbr: 'T4T', name: 'Translation for Translators', lang: 'eng', langName: 'English' },
+    { id: 'en-wmb', scope: 'Bible', abbr: 'WMB', name: 'World Messianic Bible (American English)', lang: 'eng', langName: 'English' },
+    { id: 'en-wmbbe', scope: 'Bible', abbr: 'WMBBE', name: 'World Messianic Bible British Edition', lang: 'eng', langName: 'English' },
+    { id: 'en-webus', scope: 'Bible with Deuterocanon', abbr: 'WEBUS', name: 'World English Bible USA', lang: 'eng', langName: 'English' },
+    { id: 'en-webbe', scope: 'Bible with Deuterocanon', abbr: 'WEBBE', name: 'World English Bible British Edition', lang: 'eng', langName: 'English' },
+    { id: 'en-ojps', scope: 'Old Testament', abbr: 'OJPS', name: 'Old JPS TaNaKH', lang: 'eng', langName: 'English' },
+    { id: 'en-engbrent', scope: 'Old Testament + Deuterocanon', abbr: 'LXX', name: 'Brenton English Septuagint', lang: 'eng', langName: 'English' },
+    { id: 'en-US-lxxup', scope: 'Old Testament + Deuterocanon', abbr: 'LXXup', name: 'Brenton Septuagint (Updated)', lang: 'eng', langName: 'English' },
+    { id: 'en-US-kjvcpb', scope: 'Bible with Deuterocanon', abbr: 'KJVCPB', name: 'Cambridge Paragraph Bible (KJV)', lang: 'eng', langName: 'English' },
+    { id: 'en-US-asvbt', scope: 'Bible with Deuterocanon', abbr: 'ASVBT', name: 'ASV Byzantine Text with Apocrypha', lang: 'eng', langName: 'English' },
+    { id: 'en-US-emtv', scope: 'New Testament', abbr: 'EMTV', name: 'English Majority Text Version', lang: 'eng', langName: 'English' },
+    { id: 'en-US-f35', scope: 'New Testament', abbr: 'F35', name: 'English NT (Family 35)', lang: 'eng', langName: 'English' },
+    { id: 'en-tcent', scope: 'New Testament', abbr: 'TCENT', name: 'Text-Critical English NT', lang: 'eng', langName: 'English' },
+    { id: 'he-wlc', scope: 'Old Testament', abbr: 'WLC', name: 'Westminster Leningrad Codex', lang: 'heb', langName: 'Hebrew' },
+    { id: 'nl-nld1939', scope: 'Bible with Deuterocanon', abbr: 'NLD1939', name: 'De Heilige Schrift (Canisius, 1939)', lang: 'nld', langName: 'Dutch' },
+    { id: 'ny-tccl', scope: 'Bible', abbr: 'TCCl', name: 'Open God\'s Word in Contemporary Chichewa', lang: 'nya', langName: 'Chichewa' },
+    { id: 'kpg-kpg', scope: 'Bible', abbr: 'KPG', name: 'Kapingamarangi Bible', lang: 'kpg', langName: 'Kapingamarangi' },
+    { id: 'mni-rsm', scope: 'Bible', abbr: 'RSM', name: 'Meitei Roman Script Translation', lang: 'mni', langName: 'Meitei' },
+    { id: 'nag-isvnag', scope: 'New Testament', abbr: 'ISVNag', name: 'Indian Standard Version (Nagamese)', lang: 'nag', langName: 'Naga Pidgin' },
+    { id: 'kfw-khmnt', scope: 'Bible', abbr: 'KHMNT', name: 'Kharam NT', lang: 'kfw', langName: 'Naga, Kharam' },
+    { id: 'sch-sak', scope: 'Bible', abbr: 'SAK', name: 'Sakachep Bible', lang: 'sch', langName: 'Sakachep' },
+    { id: 'sa-Beng-IN-laukika-sanas', scope: 'New Testament', abbr: 'SANAS', name: 'Sanskrit Bible (NT, Assamese script)', lang: 'san', langName: 'Sanskrit' },
+    { id: 'nho-nho', scope: 'New Testament', abbr: 'NHO', name: 'Takuu New Testament', lang: 'nho', langName: 'Takuu' }
+  ];
+
+  const WLDH_BOOK_SLUGS = {
+    'Genesis':'genesis','Exodus':'exodus','Leviticus':'leviticus','Numbers':'numbers','Deuteronomy':'deuteronomy',
+    'Joshua':'joshua','Judges':'judges','Ruth':'ruth','1 Samuel':'1samuel','2 Samuel':'2samuel',
+    '1 Kings':'1kings','2 Kings':'2kings','1 Chronicles':'1chronicles','2 Chronicles':'2chronicles',
+    'Ezra':'ezra','Nehemiah':'nehemiah','Esther':'esther','Job':'job','Psalms':'psalms',
+    'Proverbs':'proverbs','Ecclesiastes':'ecclesiastes','Song of Solomon':'songofsolomon','Isaiah':'isaiah',
+    'Jeremiah':'jeremiah','Lamentations':'lamentations','Ezekiel':'ezekiel','Daniel':'daniel','Hosea':'hosea',
+    'Joel':'joel','Amos':'amos','Obadiah':'obadiah','Jonah':'jonah','Micah':'micah',
+    'Nahum':'nahum','Habakkuk':'habakkuk','Zephaniah':'zephaniah','Haggai':'haggai','Zechariah':'zechariah',
+    'Malachi':'malachi','Matthew':'matthew','Mark':'mark','Luke':'luke','John':'john',
+    'Acts':'acts','Romans':'romans','1 Corinthians':'1corinthians','2 Corinthians':'2corinthians',
+    'Galatians':'galatians','Ephesians':'ephesians','Philippians':'philippians','Colossians':'colossians',
+    '1 Thessalonians':'1thessalonians','2 Thessalonians':'2thessalonians','1 Timothy':'1timothy','2 Timothy':'2timothy',
+    'Titus':'titus','Philemon':'philemon','Hebrews':'hebrews','James':'james','1 Peter':'1peter',
+    '2 Peter':'2peter','1 John':'1john','2 John':'2john','3 John':'3john','Jude':'jude',
+    'Revelation':'revelation'
+  };
+
+  let WLDH_BIBLES = {};
+  const WLDH_CHAPTER_CACHE = {};
+  const WLDH_BOOK_IDS_BY_MODULE = {};
+
+  function isWldhMode(module) {
+    return (module || '').startsWith('wldh-');
+  }
+
+  function getWldhId(module) {
+    return WLDH_BIBLES[module]?.wldhId || module.replace(/^wldh-/, '');
+  }
+
+  function bssReplacedByWldh(module) {
+    const wldhMod = WLDH_BSS_REPLACE[module];
+    return !!(wldhMod && WLDH_BIBLES[wldhMod]);
+  }
+
+  function resolveLegacyModule(module) {
+    return WLDH_LEGACY_MODULE_MAP[module] || module;
+  }
+
+  function wldhBookIdsForScope(scope) {
+    const s = scope || 'Bible';
+    if (/^New Testament/i.test(s)) return Array.from({ length: 27 }, (_, i) => i + 40);
+    if (/Old Testament/i.test(s) && !/New Testament/i.test(s)) return Array.from({ length: 39 }, (_, i) => i + 1);
+    return Array.from({ length: 66 }, (_, i) => i + 1);
+  }
+
+  function buildWldhBibleFromCatalog(item) {
+    const module = 'wldh-' + item.id;
+    const langShort = WLDH_LANG_SHORT[item.lang] || (item.lang || 'en').slice(0, 2);
+    const langLabel = item.langName || WLDH_LANG_LABELS[item.lang] || item.lang || 'Other';
+    let shortname = (item.abbr || '').trim();
+    if (!shortname) shortname = item.id.split('-').pop().toUpperCase().slice(0, 10);
+    return {
+      name: item.name,
+      shortname,
+      module,
+      wldhId: item.id,
+      lang: langLabel,
+      lang_short: langShort,
+      source: 'wldh',
+      scope: item.scope,
+      rank: String(WLDH_RANK[item.id] || 600)
+    };
+  }
+
+  function readWldhCatalogCache() {
+    try {
+      const raw = localStorage.getItem(WLDH_CATALOG_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed?.items?.length || Date.now() - (parsed.at || 0) > WLDH_CATALOG_TTL_MS) return null;
+      return parsed;
+    } catch { return null; }
+  }
+
+  function writeWldhCatalogCache(items) {
+    try {
+      localStorage.setItem(WLDH_CATALOG_CACHE_KEY, JSON.stringify({ at: Date.now(), items }));
+    } catch { /* quota */ }
+  }
+
+  function rebuildWldhBiblesFromCatalog(items) {
+    WLDH_BIBLES = {};
+    items.forEach(item => {
+      const entry = buildWldhBibleFromCatalog(item);
+      WLDH_BIBLES[entry.module] = entry;
+    });
+  }
+
+  function loadWldhBibleCatalog() {
+    const cached = readWldhCatalogCache();
+    rebuildWldhBiblesFromCatalog(cached?.items?.length ? cached.items : WLDH_VERIFIED_CATALOG);
+  }
+
+  async function probeWldhCatalogEntry(entry) {
+    const tries = [];
+    const scope = entry.scope || '';
+    if (/Old Testament/i.test(scope) && !/New Testament/i.test(scope)) tries.push(['genesis', 1, 1]);
+    else if (/^New Testament/i.test(scope)) tries.push(['john', 3, 16], ['matthew', 1, 1]);
+    else tries.push(['genesis', 1, 1], ['john', 3, 16]);
+    for (const [book, ch, v] of tries) {
+      const url = `${WLDH_API}/${entry.id}/books/${book}/chapters/${ch}/verses/${v}.json`;
+      const data = await withTimeout(apiGetJson(url, 6000), 6500, null);
+      if (data?.text || data?.data) return true;
+    }
+    return false;
+  }
+
+  async function refreshWldhCatalogInBackground() {
+    const list = await apiGetJson(WLDH_BIBLES_LIST_URL, 15000);
+    if (!Array.isArray(list) || !list.length) return;
+    const candidates = list.filter(b => b.id && b.scope !== 'Portions');
+    const working = [];
+    let i = 0;
+    const workers = 8;
+    await Promise.all(Array.from({ length: workers }, async () => {
+      while (i < candidates.length) {
+        const b = candidates[i++];
+        const item = {
+          id: b.id,
+          scope: b.scope,
+          abbr: (b.localVersionAbbreviation || '').trim(),
+          name: (b.version || b.description || b.id).slice(0, 120),
+          lang: b.language?.code || '',
+          langName: b.language?.name || ''
+        };
+        if (await probeWldhCatalogEntry(item)) working.push(item);
+      }
+    }));
+    if (working.length < 5) return;
+    working.sort((a, b) => (a.langName || '').localeCompare(b.langName || '') || a.id.localeCompare(b.id));
+    writeWldhCatalogCache(working);
+    rebuildWldhBiblesFromCatalog(working);
+    populateTranslationSelects();
+    const active = activePanel();
+    const version = document.getElementById(active + '-version')?.value;
+    if (isWldhMode(version)) await updateBooks(active, { refreshReadLabels: isReadBibleMode(active) });
+  }
+
+  function cleanWldhText(text) {
+    return (text || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+      .trim().replace(/\s+/g, ' ');
+  }
+
+  function parseWldhChapterPayload(data, chapter) {
+    const rows = data?.data;
+    if (!Array.isArray(rows) || !rows.length) return null;
+    return rows.map(row => ({
+      num: parseInt(row.verse, 10),
+      chapter: parseInt(row.chapter, 10) || chapter,
+      text: cleanWldhText(row.text)
+    })).filter(v => v.text && !isNaN(v.num));
+  }
+
+  async function fetchWldhChapter(module, bookEn, chapter) {
+    const wldhId = getWldhId(module);
+    const slug = WLDH_BOOK_SLUGS[bookEn];
+    if (!wldhId || !slug) return null;
+    const cacheKey = `${module}:${slug}:${chapter}`;
+    if (WLDH_CHAPTER_CACHE[cacheKey]) return WLDH_CHAPTER_CACHE[cacheKey];
+    const url = `${WLDH_API}/${encodeURIComponent(wldhId)}/books/${slug}/chapters/${chapter}.json`;
+    const data = await apiGetJson(url);
+    const verses = parseWldhChapterPayload(data, chapter);
+    if (!verses?.length) return null;
+    WLDH_CHAPTER_CACHE[cacheKey] = verses;
+    return verses;
+  }
+
+  async function fetchWldhPassageVerses(module, bookEn, chapter, verseStart, verseEnd) {
+    const verses = await fetchWldhChapter(module, bookEn, chapter);
+    if (!verses) return null;
+    let slice = verses;
+    if (verseStart != null) slice = slice.filter(v => v.num >= verseStart);
+    if (verseEnd != null) slice = slice.filter(v => v.num <= verseEnd);
+    if (!slice.length) return null;
+    const start = slice[0].num;
+    const end = slice[slice.length - 1].num;
+    const ref = start === end ? `${bookEn} ${chapter}:${start}` : `${bookEn} ${chapter}:${start}-${end}`;
+    return { verses: slice, ref, bookName: bookEn, chapter, version: module };
+  }
+
+  async function fetchWldhReference(module, bookEn, chapter, verseNum) {
+    const data = await fetchWldhPassageVerses(module, bookEn, chapter, verseNum, verseNum);
+    if (!data?.verses?.length) return null;
+    return { text: data.verses[0].text, ref: data.ref, version: module };
+  }
+
+  async function fetchWldhReferenceFromString(module, ref) {
+    const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
+    if (!m) return null;
+    const bookEn = resolveBookEnFromRaw(m[1].trim());
+    if (!bookEn) return null;
+    return fetchWldhReference(module, bookEn, parseInt(m[2], 10), parseInt(m[3], 10));
+  }
+
+  async function fetchWldhPassageFromString(module, reference, filterStart, filterEnd) {
+    const m = reference.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?/);
+    if (!m) return null;
+    const bookEn = resolveBookEnFromRaw(m[1].trim());
+    if (!bookEn) return null;
+    const chapter = parseInt(m[2], 10);
+    const vStart = m[3] ? parseInt(m[3], 10) : filterStart;
+    const vEnd = m[4] ? parseInt(m[4], 10) : (filterEnd != null ? filterEnd : vStart);
+    if (vStart == null) return fetchWldhPassageVerses(module, bookEn, chapter, null, null);
+    return fetchWldhPassageVerses(module, bookEn, chapter, vStart, vEnd);
+  }
+
+  async function fetchWldhRandomVerse(module, scope, attempt = 0) {
+    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
+    const ids = pickRandomBookIds(scope, module);
+    if (!ids.length) return null;
+    const bookId = ids[Math.floor(Math.random() * ids.length)];
+    const bookEn = ALL[bookId - 1];
+    const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookId - 1]) + 1;
+    const verses = await fetchWldhChapter(module, bookEn, chapter);
+    if (!verses?.length) return fetchWldhRandomVerse(module, scope, attempt + 1);
+    const v = verses[Math.floor(Math.random() * verses.length)];
+    return { text: v.text, ref: `${bookEn} ${chapter}:${v.num}`, version: module };
+  }
+
+  async function discoverWldhBooks(module) {
+    if (!isWldhMode(module)) return [];
+    const meta = WLDH_BIBLES[module];
+    const ids = wldhBookIdsForScope(meta?.scope);
+    WLDH_BOOK_IDS_BY_MODULE[module] = ids;
+    delete VERSION_BOOK_IDS_CACHE[module];
+    VERSION_BOOK_IDS_CACHE[module] = [...ids];
+    return ids;
+  }
+
+  async function ensureWldhBooksDiscovered(module) {
+    if (!isWldhMode(module)) return;
+    if (WLDH_BOOK_IDS_BY_MODULE[module]) return;
+    await discoverWldhBooks(module);
+  }
 
   function isBollsMode(module) {
     return (module || '').startsWith('bolls-');
@@ -2198,6 +2713,14 @@
       const b = BOLLS_BIBLES[module];
       return b ? b.shortname : module.replace('bolls-', '');
     }
+    if (isApiBibleMode(module)) {
+      const b = API_BIBLE_BIBLES[module];
+      return b ? b.shortname : module.replace('apib-', '');
+    }
+    if (isWldhMode(module)) {
+      const w = WLDH_BIBLES[module];
+      return w ? w.shortname : module.replace('wldh-', '');
+    }
     const b = BSS_BIBLES[module];
     return b ? (b.shortname || module.toUpperCase()) : module.toUpperCase();
   }
@@ -2208,6 +2731,12 @@
     }
     if (isBollsMode(module)) {
       return BOLLS_BIBLES[module]?.lang_short || 'en';
+    }
+    if (isApiBibleMode(module)) {
+      return API_BIBLE_BIBLES[module]?.lang_short || 'en';
+    }
+    if (isWldhMode(module)) {
+      return WLDH_BIBLES[module]?.lang_short || 'en';
     }
     const b = BSS_BIBLES[module];
     if (b?.lang_short) return b.lang_short;
@@ -2253,18 +2782,18 @@
   };
 
   const UI_LANG = {
-    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
-    fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 6, Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
-    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
-    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
-    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', testament:'Testamento', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', custom:'Escolher livro', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
-    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', testament:'Testamento', book:'Libro', search:'Cerca', searchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', customSearchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', custom:'Scegli libro', generate:'✦ Rivela un versetto ✦', generateVerses:'✦ Rivela i versetti ✦' },
-    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', testament:'Testament', book:'Boek', search:'Zoeken', searchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', customSearchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', custom:'Kies boek', generate:'✦ Open een vers ✦', generateVerses:'✦ Open de verzen ✦' },
-    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', testament:'Завет', book:'Книга', search:'Поиск', searchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', customSearchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', custom:'Выбрать книгу', generate:'✦ Показать стих ✦', generateVerses:'✦ Показать стихи ✦' },
-    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', testament:'约', book:'书卷', search:'搜索', searchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', customSearchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', old:'旧约', new:'新约', all:'全圣经', custom:'选择书卷', generate:'✦ 显示经文 ✦', generateVerses:'✦ 显示经文 ✦' },
-    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', testament:'성경', book:'책', search:'검색', searchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', customSearchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', old:'구약', new:'신약', all:'성경 전체', custom:'책 선택', generate:'✦ 구절 보기 ✦', generateVerses:'✦ 구절들 보기 ✦' },
-    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', testament:'العهد', book:'سفر', search:'بحث', searchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', customSearchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', custom:'اختر سفراً', generate:'✦ اعرض آية ✦', generateVerses:'✦ اعرض الآيات ✦' },
-    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', testament:'תנ״ך', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', customSearchPlaceholder:'לדוגמה: יוחנן א:א או א:א-ז', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', custom:'בחר ספר', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦', generateVerses:'✦ גלה פסוקים ✦' }
+    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', mode:'Mode', testament:'Mode', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', verseGenerator:'Verse Generator', custom:'Verse Generator', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
+    fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', mode:'Mode', testament:'Mode', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 6, Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', verseGenerator:'Générateur de versets', custom:'Générateur de versets', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
+    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', mode:'Modo', testament:'Modo', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', verseGenerator:'Generador de versículos', custom:'Generador de versículos', readBible:'Leer la Biblia', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
+    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', mode:'Modus', testament:'Modus', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', verseGenerator:'Versgenerator', custom:'Versgenerator', readBible:'Bibel lesen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
+    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', mode:'Modo', testament:'Modo', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', verseGenerator:'Gerador de versículos', custom:'Gerador de versículos', readBible:'Ler a Bíblia', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
+    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', mode:'Modalità', testament:'Modalità', book:'Libro', search:'Cerca', searchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', customSearchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', verseGenerator:'Generatore di versetti', custom:'Generatore di versetti', readBible:'Leggi la Bibbia', generate:'✦ Rivela un versetto ✦', generateVerses:'✦ Rivela i versetti ✦' },
+    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', mode:'Modus', testament:'Modus', book:'Boek', search:'Zoeken', searchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', customSearchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', verseGenerator:'Versgenerator', custom:'Versgenerator', readBible:'Bijbel lezen', generate:'✦ Open een vers ✦', generateVerses:'✦ Open de verzen ✦' },
+    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', mode:'Режим', testament:'Режим', book:'Книга', search:'Поиск', searchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', customSearchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', verseGenerator:'Генератор стихов', custom:'Генератор стихов', readBible:'Читать Библию', generate:'✦ Показать стих ✦', generateVerses:'✦ Показать стихи ✦' },
+    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', mode:'模式', testament:'模式', book:'书卷', search:'搜索', searchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', customSearchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', old:'旧约', new:'新约', all:'全圣经', verseGenerator:'经文生成', custom:'经文生成', readBible:'阅读圣经', generate:'✦ 显示经文 ✦', generateVerses:'✦ 显示经文 ✦' },
+    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', mode:'모드', testament:'모드', book:'책', search:'검색', searchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', customSearchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', old:'구약', new:'신약', all:'성경 전체', verseGenerator:'구절 생성기', custom:'구절 생성기', readBible:'성경 읽기', generate:'✦ 구절 보기 ✦', generateVerses:'✦ 구절들 보기 ✦' },
+    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', mode:'الوضع', testament:'الوضع', book:'سفر', search:'بحث', searchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', customSearchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', verseGenerator:'مولّد الآيات', custom:'مولّد الآيات', readBible:'قراءة الكتاب المقدس', generate:'✦ اعرض آية ✦', generateVerses:'✦ اعرض الآيات ✦' },
+    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', mode:'מצב', testament:'מצב', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', customSearchPlaceholder:'לדוגמה: יוחנן א:א או א:א-ז', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', verseGenerator:'מחולל פסוקים', custom:'מחולל פסוקים', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦', generateVerses:'✦ גלה פסוקים ✦' }
   };
 
   function getUiStrings(langCode) {
@@ -2297,6 +2826,10 @@
   }
 
   function isOtOnlyVersion(version) {
+    if (isWldhMode(version)) {
+      const scope = WLDH_BIBLES[version]?.scope || '';
+      return /Old Testament/i.test(scope) && !/New Testament/i.test(scope);
+    }
     const ids = getVersionBookOverride(version);
     if (!ids?.length) return false;
     return ids.every(id => id >= 1 && id <= 39);
@@ -2332,7 +2865,7 @@
   }
 
   async function ensureBssBooksDiscovered(module) {
-    if (isBollsMode(module) || isHaoMode(module)) return;
+    if (isBollsMode(module) || isHaoMode(module) || isWldhMode(module)) return;
     if (!getVersionBookOverride(module) && module !== 'wlc') return;
     if (BSS_BOOK_IDS_BY_MODULE[module]) return;
     await discoverBssBooks(module);
@@ -2351,6 +2884,21 @@
         return VERSION_BOOK_IDS_CACHE[version];
       }
       return [];
+    }
+    if (isApiBibleMode(version)) {
+      VERSION_BOOK_IDS_CACHE[version] = Array.from({ length: 66 }, (_, i) => i + 1);
+      return VERSION_BOOK_IDS_CACHE[version];
+    }
+    if (isWldhMode(version)) {
+      const discovered = WLDH_BOOK_IDS_BY_MODULE[version];
+      if (discovered?.length) {
+        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
+        return VERSION_BOOK_IDS_CACHE[version];
+      }
+      const meta = WLDH_BIBLES[version];
+      const ids = wldhBookIdsForScope(meta?.scope);
+      VERSION_BOOK_IDS_CACHE[version] = ids;
+      return ids;
     }
     if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
       VERSION_BOOK_IDS_CACHE[version] = [...BSS_BOOK_IDS_BY_MODULE[version]];
@@ -2435,6 +2983,12 @@
     }
     if (isBollsMode(module)) {
       return BOLLS_BIBLES[module]?.lang_short === 'fr' ? 'lsg' : 'kjv';
+    }
+    if (isApiBibleMode(module)) {
+      return 'kjv';
+    }
+    if (isWldhMode(module)) {
+      return WLDH_BIBLES[module]?.lang_short === 'fr' ? 'lsg' : 'kjv';
     }
     return module === 'segond_1910' ? 'lsg' : module;
   }
@@ -2531,6 +3085,8 @@
     if (apiCircuitOpen()) return null;
     if (isHaoMode(module)) return fetchHaoRandomVerse(module, scope, attempt);
     if (isBollsMode(module)) return fetchBollsRandomVerse(module, scope, attempt);
+    if (isApiBibleMode(module)) return fetchApiBibleRandomVerse(module, scope, attempt);
+    if (isWldhMode(module)) return fetchWldhRandomVerse(module, scope, attempt);
     if (attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
     const ids = pickRandomBookIds(scope, module);
     const bookId = ids[Math.floor(Math.random() * ids.length)];
@@ -2550,18 +3106,30 @@
     return 2;
   }
 
+  function insertTranslationAfter(list, afterModule, entry) {
+    if (!list || !entry) return;
+    const idx = list.findIndex(b => b.module === afterModule);
+    if (idx >= 0) list.splice(idx + 1, 0, entry);
+    else list.push(entry);
+  }
+
   function populateTranslationSelects() {
     // Merge BSS, HAO, and Bolls bibles into unified language groups
     const byLang = {};
+    const apiBiblesForSelect = Object.values(API_BIBLE_BIBLES).filter(b => !b.hideInSelect);
+    const wldhBiblesForSelect = Object.values(WLDH_BIBLES).filter(b => !b.hideInSelect);
 
     // Build a set of shortnames already provided by HAO or Bolls — BSS duplicates are skipped
     const overriddenShortnames = new Set([
       ...Object.values(HAO_BIBLES).map(b => b.shortname),
       ...Object.values(BOLLS_BIBLES).map(b => b.shortname),
+      ...apiBiblesForSelect.map(b => b.shortname),
+      ...wldhBiblesForSelect.map(b => b.shortname),
     ]);
 
     Object.values(BSS_BIBLES).forEach(b => {
       if (b.module === 'wo_kyg') return; // KYG removed from translation list per product request
+      if (bssReplacedByWldh(b.module)) return;
       if (overriddenShortnames.has(b.shortname)) return; // skip duplicate
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
@@ -2572,8 +3140,16 @@
       byLang[lang].sort((a, b) => (+a.rank || 999) - (+b.rank || 999));
     });
 
+    wldhBiblesForSelect.forEach(b => {
+      const lang = b.lang || 'Other';
+      if (!byLang[lang]) byLang[lang] = [];
+      if (b.insertAfterModule) insertTranslationAfter(byLang[lang], b.insertAfterModule, b);
+      else byLang[lang].push(b);
+    });
+
     // Append HAO translations into the same language buckets (after BSS ones)
     Object.values(HAO_BIBLES).forEach(b => {
+      if (b.shortname === 'BSB' && WLDH_BIBLES['wldh-en-bsb']) return;
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
       byLang[lang].push(b);
@@ -2584,6 +3160,17 @@
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
       byLang[lang].push(b);
+    });
+
+    apiBiblesForSelect.forEach(b => {
+      const lang = b.lang || 'Other';
+      if (!byLang[lang]) byLang[lang] = [];
+      if (b.insertAfterModule) insertTranslationAfter(byLang[lang], b.insertAfterModule, b);
+      else byLang[lang].push(b);
+    });
+
+    Object.keys(byLang).forEach(lang => {
+      byLang[lang].sort((a, b) => (+a.rank || 999) - (+b.rank || 999));
     });
 
     const langOrder = Object.keys(byLang).sort((a, b) => {
@@ -2613,13 +3200,17 @@
       });
       sel.replaceChildren(frag);
 
-      const hasPrev = optionValueExists(sel, prev);
-      sel.value = hasPrev ? prev : (BSS_BIBLES.kjv ? 'kjv' : sel.options[0]?.value || 'kjv');
+      const prevResolved = resolveLegacyModule(prev);
+      const hiddenModule = API_BIBLE_BIBLES[prevResolved]?.hideInSelect;
+      const hasPrev = !hiddenModule && optionValueExists(sel, prevResolved);
+      const defaultMod = WLDH_BIBLES['wldh-en-kjv'] ? 'wldh-en-kjv' : (BSS_BIBLES.kjv ? 'kjv' : sel.options[0]?.value || 'kjv');
+      sel.value = hasPrev ? prevResolved : defaultMod;
     });
   }
 
   async function loadBibleList() {
     BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
+    loadWldhBibleCatalog();
     populateTranslationSelects();
     restoreTestamentOptions('d');
     restoreTestamentOptions('m');
@@ -2632,6 +3223,7 @@
 
     await loadBooksForLang('en');
     await updateBooks(activePanel());
+    if (!readWldhCatalogCache()) void refreshWldhCatalogInBackground();
   }
 
   /* ══════════════════════════════════════
@@ -2781,6 +3373,12 @@
     }
     if (isBollsMode(version)) {
       return withTimeout(fetchBollsReferenceFromString(version, ref), timeout, null);
+    }
+    if (isApiBibleMode(version)) {
+      return withTimeout(fetchApiBibleReferenceFromString(version, ref), timeout, null);
+    }
+    if (isWldhMode(version)) {
+      return withTimeout(fetchWldhReferenceFromString(version, ref), timeout, null);
     }
     return withTimeout(fetchBssReference(version, ref), timeout, null);
   }
@@ -3140,11 +3738,33 @@
     if (!sel || sel.options.length > 1) return;
     const prev = sel.value;
     sel.innerHTML =
-      '<option value="custom" selected>Choose Book</option>' +
-      '<option value="old">Old Testament</option>' +
-      '<option value="new">New Testament</option>' +
+      '<option value="custom" selected>Verse Generator</option>' +
       '<option value="read">Read Bible</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
+    else if (prev === 'old' || prev === 'new') sel.value = 'custom';
+  }
+
+  function isVerseGeneratorMode(p) {
+    return document.getElementById(p + '-testament')?.value === 'custom';
+  }
+
+  function onBookSelectChange(p) {
+    const sel = document.getElementById(p + '-book');
+    const other = p === 'd' ? 'm' : 'd';
+    const otherSel = document.getElementById(other + '-book');
+    if (sel && otherSel && optionValueExists(otherSel, sel.value)) {
+      otherSel.value = sel.value;
+    }
+  }
+
+  function migrateLegacyTestamentMode(testamentSel) {
+    const v = testamentSel?.value;
+    if (v === 'old' || v === 'new') {
+      testamentSel.dataset.legacyBook = v;
+      testamentSel.value = 'custom';
+      return 'custom';
+    }
+    return v;
   }
 
   function isReadBibleMode(p) {
@@ -3159,7 +3779,7 @@
   let _readLoadId = { d: 0, m: 0 };
   let _layoutMode = null;
   let _layoutIsMobile = null;
-  /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
+  /** Verse Generator: 'verses' = search passage; 'random' = reveal random verse */
   let _customGenIntent = { d: 'random', m: 'random' };
   let _versionChangeTimer = null;
   let _refSearchCandidates = null;
@@ -3392,6 +4012,10 @@
         data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
       } else if (isBollsMode(version)) {
         data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
+      } else if (isApiBibleMode(version)) {
+        data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, null, null), chapterTimeout, null);
+      } else if (isWldhMode(version)) {
+        data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
       } else {
         const bookApi = getApiBookName(bookEn, version);
         data = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${chapter}`), chapterTimeout, null);
@@ -3604,6 +4228,12 @@
       if (isBollsMode(version)) {
         return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null);
       }
+      if (isApiBibleMode(version)) {
+        return fetchApiBiblePassage(version, parsed.book, parsed.chapter, null, null);
+      }
+      if (isWldhMode(version)) {
+        return fetchWldhPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      }
       const bookApi = getApiBookName(parsed.book, version);
       return fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`);
     }
@@ -3612,6 +4242,12 @@
     }
     if (isBollsMode(version)) {
       return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+    }
+    if (isApiBibleMode(version)) {
+      return fetchApiBiblePassage(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+    }
+    if (isWldhMode(version)) {
+      return fetchWldhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
     }
     const bookApi = getApiBookName(parsed.book, version);
     const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
@@ -3916,6 +4552,26 @@
         if (bookEn && ALL.includes(bookEn)) {
           data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
         }
+      } else if (isApiBibleMode(version)) {
+        const bookSelEl = document.getElementById(p + '-read-book');
+        const chSelEl   = document.getElementById(p + '-read-chapter');
+        const bookEn = bookSelEl?.value || null;
+        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+        if (bookEn && ALL.includes(bookEn)) {
+          data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
+        } else {
+          data = await withTimeout(fetchApiBiblePassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
+        }
+      } else if (isWldhMode(version)) {
+        const bookSelEl = document.getElementById(p + '-read-book');
+        const chSelEl   = document.getElementById(p + '-read-chapter');
+        const bookEn = bookSelEl?.value || null;
+        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+        if (bookEn && ALL.includes(bookEn)) {
+          data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
+        } else {
+          data = await withTimeout(fetchWldhPassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
+        }
       } else {
         data = await withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
       }
@@ -3988,6 +4644,26 @@
       } finally {
         clearReadDisplayLoading(p);
       }
+    } else if (isApiBibleMode(version)) {
+      const display = document.getElementById(p + '-verseDisplay');
+      setReadDisplayLoading(p, !hasReadPassageContent(display));
+      try {
+        const data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, verse, verse), passageTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
+    } else if (isWldhMode(version)) {
+      const display = document.getElementById(p + '-verseDisplay');
+      setReadDisplayLoading(p, !hasReadPassageContent(display));
+      try {
+        const data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else {
       await loadReadPassage(p, buildReadReference(bookEn, chapter, verse, verse, version));
     }
@@ -4050,6 +4726,36 @@
       } finally {
         clearReadDisplayLoading(p);
       }
+    } else if (isApiBibleMode(version)) {
+      const chapterData = await withTimeout(fetchApiBiblePassage(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
+      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
+      _readSyncLock = true;
+      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
+      _readSyncLock = false;
+      const display = document.getElementById(p + '-verseDisplay');
+      setReadDisplayLoading(p, !hasReadPassageContent(display));
+      try {
+        const data = await withTimeout(fetchApiBiblePassage(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
+    } else if (isWldhMode(version)) {
+      const chapterData = await withTimeout(fetchWldhPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
+      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
+      _readSyncLock = true;
+      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
+      _readSyncLock = false;
+      const display = document.getElementById(p + '-verseDisplay');
+      setReadDisplayLoading(p, !hasReadPassageContent(display));
+      try {
+        const data = await withTimeout(fetchWldhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
+        if (data) renderReadPassage(p, data);
+        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+      } finally {
+        clearReadDisplayLoading(p);
+      }
     } else {
       const bookApi = getApiBookName(parsed.book, version);
       const probe = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`), readSearchTimeout, null);
@@ -4067,6 +4773,7 @@
   async function refreshReadBibleLabels(p) {
     const version = document.getElementById(p + '-version').value;
     if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
     else await ensureBssBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
@@ -4095,6 +4802,7 @@
   async function initReadBiblePanel(p, resetToGenesis = false) {
     const version = document.getElementById(p + '-version').value;
     if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
     else await ensureBssBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
@@ -4115,11 +4823,14 @@
     options = options || {};
     const version   = document.getElementById(p+'-version').value;
     if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
     else await ensureBssBooksDiscovered(version);
     const langCode  = getTranslationLang(version);
     const ui        = getUiStrings(langCode);
     const testamentSel = document.getElementById(p + '-testament');
-    const testament = testamentSel.value;
+    const legacyBook = testamentSel.dataset.legacyBook || null;
+    if (legacyBook) delete testamentSel.dataset.legacyBook;
+    const testament = migrateLegacyTestamentMode(testamentSel);
     const prevTest = testamentSel.dataset.prevValue ?? '';
     testamentSel.dataset.prevValue = testament;
     const sel       = document.getElementById(p+'-book');
@@ -4127,7 +4838,11 @@
     const readWrap  = document.getElementById(p+'-readBibleWrapper');
     const showBooks = testament === 'custom';
     const readMode  = testament === 'read';
-    const savedBook = sel.value;
+    let savedBook = sel.value;
+    if (legacyBook) savedBook = legacyBook;
+    else if ((prevTest === 'old' || prevTest === 'new') && testament === 'custom') {
+      savedBook = prevTest;
+    }
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
 
@@ -4139,6 +4854,14 @@
       whole.value = 'whole';
       whole.textContent = ui.whole;
       frag.appendChild(whole);
+      const oldOpt = document.createElement('option');
+      oldOpt.value = 'old';
+      oldOpt.textContent = ui.old;
+      frag.appendChild(oldOpt);
+      const newOpt = document.createElement('option');
+      newOpt.value = 'new';
+      newOpt.textContent = ui.new;
+      frag.appendChild(newOpt);
       const otG = document.createElement('optgroup');
       otG.label = ui.ot;
       OT.forEach(b => {
@@ -4161,7 +4884,7 @@
       if (ntG.children.length) frag.appendChild(ntG);
       sel.replaceChildren(frag);
       if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
-        // When switching to "Choose Book", default to "Whole Bible (Random)"
+        // When switching to Verse Generator, default to Whole Bible (Random)
         sel.value = 'whole';
       } else if (optionValueExists(sel, savedBook)) {
         sel.value = savedBook;
@@ -4181,14 +4904,12 @@
 
     const opts = testamentSel.options;
     for (let i = 0; i < opts.length; i++) {
-      if (opts[i].value === 'old')    opts[i].text = ui.old;
-      if (opts[i].value === 'new')    opts[i].text = ui.new;
-      if (opts[i].value === 'custom') opts[i].text = ui.custom;
+      if (opts[i].value === 'custom') opts[i].text = ui.verseGenerator || ui.custom;
       if (opts[i].value === 'read')   opts[i].text = ui.readBible || 'Read Bible';
     }
 
     const testLabel = document.getElementById(p+'-testament-label');
-    if (testLabel) testLabel.textContent = ui.testament;
+    if (testLabel) testLabel.textContent = ui.mode || ui.testament;
 
     const bookLabel = document.getElementById(p+'-book-label');
     if (bookLabel) bookLabel.textContent = ui.book;
@@ -4210,6 +4931,7 @@
       setReadModeActions(p, true);
       initReadSwipe();
       if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+      else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
       else await ensureBssBooksDiscovered(version);
       if (prevTest !== 'read' || options.forceReadInit) {
         await initReadBiblePanel(p, true);
@@ -4363,7 +5085,7 @@
   ];
 
   function refMatchesBook(ref, bookEn, version) {
-    if (!bookEn || bookEn === 'whole') return true;
+    if (!bookEn || bookEn === 'whole' || bookEn === 'old' || bookEn === 'new') return true;
     const names = version ? getBookMatchNames(bookEn, version) : [bookEn];
     return names.some(name => {
       const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -4374,13 +5096,12 @@
   function resolveBookScope(p) {
     const testament = document.getElementById(p + '-testament').value;
     const bookSel   = document.getElementById(p + '-book');
-    if (testament === 'old') return { book: null, randomScope: 'OT' };
-    if (testament === 'new') return { book: null, randomScope: 'NT' };
-    if (testament === 'custom') {
-      if (bookSel.value === 'whole') return { book: null, randomScope: null };
-      return { book: bookSel.value, randomScope: null };
-    }
-    return { book: null, randomScope: null };
+    if (testament !== 'custom' || !bookSel) return { book: null, randomScope: null };
+    const val = bookSel.value;
+    if (val === 'whole') return { book: null, randomScope: null };
+    if (val === 'old') return { book: null, randomScope: 'OT' };
+    if (val === 'new') return { book: null, randomScope: 'NT' };
+    return { book: val, randomScope: null };
   }
 
   function getLocalVerse(book, version) {
@@ -4422,10 +5143,16 @@
   async function onVersionChangeImpl(p) {
     const version = document.getElementById(p + '-version').value;
     readChapterCache = {};
+    Object.keys(API_BIBLE_PASSAGE_CACHE).forEach(k => delete API_BIBLE_PASSAGE_CACHE[k]);
+    Object.keys(WLDH_CHAPTER_CACHE).forEach(k => delete WLDH_CHAPTER_CACHE[k]);
     if (isBollsMode(version)) {
       delete BOLLS_BOOK_IDS_BY_MODULE[version];
       delete VERSION_BOOK_IDS_CACHE[version];
       await discoverBollsBooks(version);
+    } else if (isWldhMode(version)) {
+      delete WLDH_BOOK_IDS_BY_MODULE[version];
+      delete VERSION_BOOK_IDS_CACHE[version];
+      await discoverWldhBooks(version);
     } else if (bssNeedsBookDiscovery(version)) {
       delete BSS_BOOK_IDS_BY_MODULE[version];
       delete VERSION_BOOK_IDS_CACHE[version];
@@ -5222,10 +5949,12 @@
     initReadSwipe();
     clearAllVersePanelLoading();
 
-    const version = document.getElementById('d-version')?.value || 'kjv';
+    const version = resolveLegacyModule(document.getElementById('d-version')?.value || 'wldh-en-kjv');
     try {
       if (isBollsMode(version)) {
         await withTimeout(discoverBollsBooks(version), apiFetchTimeoutMs());
+      } else if (isWldhMode(version)) {
+        await withTimeout(discoverWldhBooks(version), apiFetchTimeoutMs());
       } else if (bssNeedsBookDiscovery(version)) {
         await withTimeout(discoverBssBooks(version), apiFetchTimeoutMs());
       }
