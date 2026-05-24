@@ -467,6 +467,81 @@
     }
     .mob-verse-box.read-swipeable { touch-action: pan-y; }
     .verse-placeholder { color:var(--ink-light); font-style:italic; font-size:1rem; opacity:0.6; }
+    .read-passage-error { width: 100%; }
+    .read-passage-error-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .read-passage-error-msg {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      text-align: left;
+      line-height: 1.5;
+    }
+    .read-passage-refresh-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      min-height: 40px;
+      border: 1px solid var(--gold-dark);
+      border-radius: 4px;
+      background: rgba(255,255,255,0.55);
+      color: var(--ink);
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .read-passage-refresh-btn:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: rgba(255,255,255,0.8);
+    }
+    .read-passage-refresh-btn:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+    .read-passage-refresh-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .read-passage-refresh-icon {
+      display: inline-block;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .read-passage-refresh-btn.is-loading .read-passage-refresh-icon {
+      animation: read-refresh-spin 0.85s linear infinite;
+    }
+    #d-verseDisplay.read-retry-loading,
+    .mob-verse-box.read-retry-loading {
+      opacity: 0.88;
+      transition: opacity 0.2s ease;
+    }
+    @keyframes read-refresh-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .read-passage-refresh-btn.is-loading .read-passage-refresh-icon {
+        animation: read-refresh-pulse 1s ease-in-out infinite;
+      }
+      @keyframes read-refresh-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+    }
+    @media (max-width: 520px) {
+      .read-passage-error-row { flex-wrap: wrap; }
+      .read-passage-refresh-btn { margin-left: auto; }
+    }
     .verse-text {
       color:var(--crimson); font-family:'EB Garamond', serif;
       font-size: var(--verse-size);
@@ -4297,6 +4372,140 @@
     return !!display?.querySelector('.read-passage-text');
   }
 
+  const READ_PASSAGE_ERROR_DEFAULT =
+    'Could not load this passage. Check the reference and try again.';
+
+  let _readPassageRetrying = { d: false, m: false };
+
+  function clearReadChapterCacheForVersion(version) {
+    const prefix = version + '|';
+    Object.keys(readChapterCache).forEach(key => {
+      if (key.startsWith(prefix)) delete readChapterCache[key];
+    });
+  }
+
+  function showReadPassageError(p, message) {
+    if (!isReadBibleMode(p)) return;
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    clearReadDisplayLoading(p);
+    const isDesk = p === 'd';
+    const msg = message || READ_PASSAGE_ERROR_DEFAULT;
+    const msgClass = isDesk ? 'verse-placeholder' : 'mob-placeholder';
+    display.innerHTML =
+      '<div class="read-passage-error">' +
+        '<div class="read-passage-error-row">' +
+          `<p class="${msgClass} read-passage-error-msg">${escapeHtml(msg)}</p>` +
+          `<button type="button" class="read-passage-refresh-btn" data-read-passage-refresh data-panel="${p}" aria-label="Refresh and load an available passage">` +
+            '<span class="read-passage-refresh-icon" aria-hidden="true">↻</span>' +
+            '<span class="read-passage-refresh-label">Refresh</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    setReadModeActions(p, true);
+    updateReadChapterNav(p);
+  }
+
+  function setReadPassageRetryLoading(p, loading) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    const btn = display.querySelector('[data-read-passage-refresh]');
+    if (loading) {
+      display.classList.add('read-retry-loading');
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+        btn.setAttribute('aria-busy', 'true');
+      } else if (!hasReadPassageContent(display)) {
+        setReadDisplayLoading(p, true);
+      }
+    } else {
+      display.classList.remove('read-retry-loading');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+        btn.removeAttribute('aria-busy');
+      }
+    }
+  }
+
+  async function tryFetchReadChapter(version, bookEn, chapter, timeoutMs) {
+    if (isHaoMode(version)) {
+      return withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
+    }
+    if (isBollsMode(version)) {
+      return withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
+    }
+    if (isApiBibleMode(version)) {
+      return withTimeout(fetchApiBiblePassage(version, bookEn, chapter, null, null), timeoutMs, null);
+    }
+    if (isWldhMode(version)) {
+      return withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
+    }
+    const bookApi = getApiBookName(bookEn, version);
+    return withTimeout(fetchBssPassageVerses(version, `${bookApi} ${chapter}`), timeoutMs, null);
+  }
+
+  async function retryReadPassageFromAvailable(p) {
+    if (_readPassageRetrying[p] || !isReadBibleMode(p)) return;
+    _readPassageRetrying[p] = true;
+    const version = getSelectedVersion(p);
+    const hadError = !!document.getElementById(p + '-verseDisplay')?.querySelector('.read-passage-error');
+    try {
+      if (hadError) setReadPassageRetryLoading(p, true);
+      else setReadDisplayLoading(p, true);
+
+      clearReadChapterCacheForVersion(version);
+      invalidateBookDiscovery(version);
+      await ensureBooksDiscovered(version, { force: true });
+
+      const langCode = getTranslationLang(version);
+      const ui = getUiStrings(langCode);
+      const langBooks = await loadBooksForLang(langCode);
+      populateReadBookSelect(p, langBooks, ui, version);
+
+      const bookIds = getAvailableBookIds(version);
+      const timeoutMs = isWldhMode(version)
+        ? apiFetchTimeoutMs() + 14000
+        : apiFetchTimeoutMs() + 4000;
+
+      for (let i = 0; i < bookIds.length; i++) {
+        const bookId = bookIds[i];
+        const bookEn = ALL[bookId - 1];
+        if (!bookEn) continue;
+        const data = await tryFetchReadChapter(version, bookEn, 1, timeoutMs);
+        if (data?.verses?.length) {
+          const key = readChapterCacheKey(version, bookEn, 1);
+          storeReadChapterCache(key, data);
+          applyReadChapterData(p, bookEn, 1, data);
+          return;
+        }
+      }
+
+      showReadPassageError(p);
+    } catch {
+      showReadPassageError(p);
+    } finally {
+      _readPassageRetrying[p] = false;
+      setReadPassageRetryLoading(p, false);
+      clearReadDisplayLoading(p);
+    }
+  }
+
+  function bindReadPassageRefreshOnce() {
+    if (window._readPassageRefreshBound) return;
+    window._readPassageRefreshBound = true;
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-read-passage-refresh]');
+      if (!btn || btn.disabled) return;
+      const panel = btn.getAttribute('data-panel');
+      if (panel === 'd' || panel === 'm') {
+        e.preventDefault();
+        void retryReadPassageFromAvailable(panel);
+      }
+    });
+  }
+
   function clearReadDisplayLoading(p) {
     const display = document.getElementById(p + '-verseDisplay');
     if (display) display.classList.remove('loading', 'read-updating');
@@ -4379,18 +4588,7 @@
       const chapterTimeout = isWldhMode(version)
         ? apiFetchTimeoutMs() + 14000
         : apiFetchTimeoutMs() + 2000;
-      if (isHaoMode(version)) {
-        data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
-      } else if (isBollsMode(version)) {
-        data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
-      } else if (isApiBibleMode(version)) {
-        data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, null, null), chapterTimeout, null);
-      } else if (isWldhMode(version)) {
-        data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
-      } else {
-        const bookApi = getApiBookName(bookEn, version);
-        data = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${chapter}`), chapterTimeout, null);
-      }
+      data = await tryFetchReadChapter(version, bookEn, chapter, chapterTimeout);
     } finally {
       if (loadId === _readLoadId[p]) clearReadDisplayLoading(p);
     }
@@ -4956,8 +5154,10 @@
       }
       if (data) {
         renderReadPassage(p, data);
+      } else if (isReadBibleMode(p)) {
+        showReadPassageError(p);
       } else {
-        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">${READ_PASSAGE_ERROR_DEFAULT}</p>`;
       }
     } finally {
       clearReadDisplayLoading(p);
@@ -5090,7 +5290,7 @@
       try {
         const data = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
         if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+        else showReadPassageError(p);
       } finally {
         clearReadDisplayLoading(p);
       }
@@ -5105,7 +5305,7 @@
       try {
         const data = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
         if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+        else showReadPassageError(p);
       } finally {
         clearReadDisplayLoading(p);
       }
@@ -5120,7 +5320,7 @@
       try {
         const data = await withTimeout(fetchApiBiblePassage(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
         if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+        else showReadPassageError(p);
       } finally {
         clearReadDisplayLoading(p);
       }
@@ -5135,7 +5335,7 @@
       try {
         const data = await withTimeout(fetchWldhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
         if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
+        else showReadPassageError(p);
       } finally {
         clearReadDisplayLoading(p);
       }
@@ -6324,6 +6524,7 @@
 
     await initLayout();
     initReadSwipe();
+    bindReadPassageRefreshOnce();
     clearAllVersePanelLoading();
 
     const version = getSelectedVersion('d');
