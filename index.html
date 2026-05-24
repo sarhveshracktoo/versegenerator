@@ -2317,7 +2317,8 @@
     try {
       const data = await apiGetJson(`${BOLLS_API}/get-books/${bollsId}/`);
       if (!data) {
-        BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
+        const fallback = guessBookIdsFromMetadata(module);
+        BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
       } else {
         BOLLS_BOOK_IDS_BY_MODULE[module] = (Array.isArray(data) ? data : [])
           .map(b => Number(b.bookid))
@@ -2325,10 +2326,12 @@
           .sort((a, b) => a - b);
       }
     } catch {
-      BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
+      const fallback = guessBookIdsFromMetadata(module);
+      BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
     }
     if (!BOLLS_BOOK_IDS_BY_MODULE[module]?.length) {
-      BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
+      const fallback = guessBookIdsFromMetadata(module);
+      BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
     }
     return setVersionBookIds(module, BOLLS_BOOK_IDS_BY_MODULE[module]);
   }
@@ -2442,9 +2445,10 @@
   /* ══════════════════════════════════════
      Per-translation book discovery (API-verified)
   ══════════════════════════════════════ */
-  const BOOK_IDS_CACHE_KEY = 'version-book-ids-v1';
+  const BOOK_IDS_CACHE_KEY = 'version-book-ids-v4';
   const BOOK_IDS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   const BOOK_DISCOVERY_PROMISE = {};
+  const BOOK_DISCOVERY_READY = new Set();
   const APIBIBLE_BOOK_IDS_BY_MODULE = {};
   const HAO_BOOK_IDS_BY_MODULE = {};
 
@@ -2455,7 +2459,7 @@
       const all = JSON.parse(raw);
       const entry = all[module];
       if (!entry?.ids?.length || Date.now() - (entry.at || 0) > BOOK_IDS_CACHE_TTL_MS) return null;
-      return entry.ids;
+      return applyBookIdOverride(module, entry.ids);
     } catch { return null; }
   }
 
@@ -2469,8 +2473,8 @@
   }
 
   function setVersionBookIds(module, ids) {
-    const list = [...new Set(ids)].filter(id => id >= 1 && id <= 66).sort((a, b) => a - b);
-    const safe = list.length ? list : [1];
+    const list = applyBookIdOverride(module, ids);
+    const safe = list.length ? list : [defaultBookIdForModule(module)];
     if (isBollsMode(module)) BOLLS_BOOK_IDS_BY_MODULE[module] = [...safe];
     else if (isWldhMode(module)) WLDH_BOOK_IDS_BY_MODULE[module] = [...safe];
     else if (isApiBibleMode(module)) APIBIBLE_BOOK_IDS_BY_MODULE[module] = [...safe];
@@ -2480,7 +2484,17 @@
     return safe;
   }
 
+  function markBookDiscoveryReady(module) {
+    BOOK_DISCOVERY_READY.add(resolveLegacyModule(module));
+  }
+
+  function clearBookDiscoveryReady(module) {
+    BOOK_DISCOVERY_READY.delete(resolveLegacyModule(module));
+  }
+
   function invalidateBookDiscovery(module) {
+    module = resolveLegacyModule(module);
+    clearBookDiscoveryReady(module);
     delete BOOK_DISCOVERY_PROMISE[module];
     delete VERSION_BOOK_IDS_CACHE[module];
     if (isBollsMode(module)) delete BOLLS_BOOK_IDS_BY_MODULE[module];
@@ -2551,15 +2565,40 @@
       } catch { /* fall through */ }
     }
     if (preset?.length) {
-      const validated = await probeAllBssBookIds(module, preset);
-      if (validated?.length) return setVersionBookIds(module, validated);
-      return setVersionBookIds(module, preset);
+      const ids = setVersionBookIds(module, preset);
+      saveBookIdsCache(module, ids);
+      markBookDiscoveryReady(module);
+      void refineDiscoveredBooksInBackground(module, preset);
+      return ids;
     }
     const quick = await detectBssScopeByProbe(module);
-    if (quick?.length) return setVersionBookIds(module, quick);
+    if (quick?.length) {
+      const validated = await probeAllBssBookIds(module, quick);
+      const ids = setVersionBookIds(module, validated?.length ? validated : quick);
+      markBookDiscoveryReady(module);
+      return ids;
+    }
     const full = await probeAllBssBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
-    if (full?.length) return setVersionBookIds(module, full);
-    return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    const ids = setVersionBookIds(module, full?.length ? full : [defaultBookIdForModule(module)]);
+    markBookDiscoveryReady(module);
+    return ids;
+  }
+
+  async function refineDiscoveredBooksInBackground(module, candidateIds) {
+    try {
+      const validated = await probeAllBssBookIds(module, candidateIds);
+      if (!validated?.length) return;
+      const ids = setVersionBookIds(module, validated);
+      saveBookIdsCache(module, ids);
+      const active = activePanel();
+      if (getSelectedVersion(active) !== module || !isReadBibleMode(active)) return;
+      await refreshReadBibleLabels(active);
+      const bookEn = document.getElementById(active + '-read-book')?.value;
+      const avail = getAvailableBooks(module);
+      if (!bookEn || !avail.includes(bookEn)) {
+        await loadReadChapterAt(active, getFirstAvailableBook(module), 1, { scrollToTop: false });
+      }
+    } catch { /* non-fatal */ }
   }
 
   async function probeWldhBookAvailable(wldhId, bookId) {
@@ -2579,7 +2618,10 @@
     if (!wldhId) return setVersionBookIds(module, [1]);
     const candidates = wldhBookIdsForScope(meta?.scope);
     const quick = await detectWldhScopeByProbe(wldhId);
-    if (quick?.length) return setVersionBookIds(module, quick);
+    if (quick?.length) {
+      const validated = await runBookProbePool(quick, 6, id => probeWldhBookAvailable(wldhId, id));
+      if (validated.length) return setVersionBookIds(module, validated);
+    }
     const found = await runBookProbePool(candidates, 6, id => probeWldhBookAvailable(wldhId, id));
     if (found.length) return setVersionBookIds(module, found);
     const bssMod = getWldhBssFallback(module);
@@ -2602,9 +2644,15 @@
 
   async function discoverApiBibleBooks(module) {
     const bibleId = getApiBibleId(module);
-    if (!bibleId) return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    if (!bibleId) {
+      const fallback = guessBookIdsFromMetadata(module);
+      return setVersionBookIds(module, fallback.length ? fallback : [defaultBookIdForModule(module)]);
+    }
     const data = await apiBibleGetJson('/bibles/' + encodeURIComponent(bibleId) + '/books');
-    if (!data?.data?.length) return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    if (!data?.data?.length) {
+      const fallback = guessBookIdsFromMetadata(module);
+      return setVersionBookIds(module, fallback.length ? fallback : [defaultBookIdForModule(module)]);
+    }
     const ids = [];
     for (const b of data.data) {
       const en = HAO_CODE_TO_EN[b.id] || resolveBookEnFromRaw(b.name || '');
@@ -2612,7 +2660,8 @@
       if (id) ids.push(id);
     }
     const unique = [...new Set(ids)].sort((a, b) => a - b);
-    return setVersionBookIds(module, unique.length ? unique : Array.from({ length: 66 }, (_, i) => i + 1));
+    const fallback = guessBookIdsFromMetadata(module);
+    return setVersionBookIds(module, unique.length ? unique : (fallback.length ? fallback : [defaultBookIdForModule(module)]));
   }
 
   async function probeHaoBookAvailable(module, bookId) {
@@ -2631,7 +2680,8 @@
     else if (quick.includes(1) && !quick.includes(40)) candidates = Array.from({ length: 39 }, (_, i) => i + 1);
     else candidates = Array.from({ length: 66 }, (_, i) => i + 1);
     const found = await runBookProbePool(candidates, 5, id => probeHaoBookAvailable(module, id));
-    return setVersionBookIds(module, found.length ? found : [1]);
+    const fallback = guessBookIdsFromMetadata(module);
+    return setVersionBookIds(module, found.length ? found : (fallback.length ? fallback : [defaultBookIdForModule(module)]));
   }
 
   async function refreshBookDiscoveryInBackground(module) {
@@ -2651,11 +2701,13 @@
     if (!options.force) {
       const cached = readBookIdsCache(module);
       if (cached?.length) {
-        setVersionBookIds(module, cached);
+        const ids = setVersionBookIds(module, cached);
+        saveBookIdsCache(module, ids);
+        markBookDiscoveryReady(module);
         if (Date.now() - (JSON.parse(localStorage.getItem(BOOK_IDS_CACHE_KEY) || '{}')[module]?.at || 0) > 3 * 24 * 60 * 60 * 1000) {
           void refreshBookDiscoveryInBackground(module);
         }
-        return cached;
+        return ids;
       }
     }
     if (BOOK_DISCOVERY_PROMISE[module]) return BOOK_DISCOVERY_PROMISE[module];
@@ -2677,6 +2729,7 @@
         }
         ids = setVersionBookIds(module, ids);
         saveBookIdsCache(module, ids);
+        markBookDiscoveryReady(module);
         return ids;
       } finally {
         delete BOOK_DISCOVERY_PROMISE[module];
@@ -3026,7 +3079,8 @@
         japanese: 'ja', norwegian: 'nb', swedish: 'sv', thai: 'th', turkish: 'tr',
         ukrainian: 'uk', vietnamese: 'vi', romanian: 'ro', croatian: 'hr',
         slovak: 'sk', slovenian: 'sl', bulgarian: 'bg', hindi: 'hi', catalan: 'ca',
-        malay: 'ms', tagalog: 'fil', filipino: 'fil', amharic: 'am', hausa: 'ha'
+        malay: 'ms', tagalog: 'fil', filipino: 'fil', amharic: 'am', hausa: 'ha',
+        tajik: 'tg', javanese: 'jv', swahili: 'sw', wolof: 'wo'
       };
       for (const [key, code] of Object.entries(fromName)) {
         if (name.includes(key)) return code;
@@ -3052,10 +3106,19 @@
     am_amh: Array.from({ length: 27 }, (_, i) => i + 40),
     // Hausa — Litafi Mai-tsarki (ha_lit; NT only in API)
     ha_lit: Array.from({ length: 27 }, (_, i) => i + 40),
+    // Hebrew — תנ״ך עברי מודרני (Tanakh / OT only in API)
     he_modern: Array.from({ length: 39 }, (_, i) => i + 1),
+    // Tajik — Части Библии в таджикском (partial NT; API-verified May 2026)
+    tg_tgk: [40, 41, 42, 43, 52, 57, 59, 62, 63, 64, 65],
     // Westminster Leningrad Codex — Hebrew OT only (39 books; verified via BSS + Bolls WLC)
     wlc: Array.from({ length: 39 }, (_, i) => i + 1),
   };
+
+  // BSS passage API expects English USFM-style book names for these modules.
+  const BSS_PASSAGE_ENGLISH_BOOK_MODULES = new Set([
+    'cadman', 'tg_tgk', 'tr', 'trparsed', 'ha_lit', 'jv_jvn', 'rv_1858',
+    'swahili', 'wo_wol_nt_2010', 'he_modern'
+  ]);
 
   const UI_LANG = {
     en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', mode:'Mode', testament:'Mode', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', verseGenerator:'Verse Generator', custom:'Verse Generator', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
@@ -3101,6 +3164,37 @@
     return VERSION_BOOK_OVERRIDES[version] || null;
   }
 
+  function defaultBookIdForModule(module) {
+    const override = getVersionBookOverride(module);
+    if (override?.length) return override[0];
+    return 1;
+  }
+
+  function applyBookIdOverride(version, ids) {
+    const override = getVersionBookOverride(version);
+    const list = [...new Set(ids || [])].filter(id => id >= 1 && id <= 66).sort((a, b) => a - b);
+    if (!override?.length) return list;
+    const allowed = new Set(override);
+    const filtered = list.filter(id => allowed.has(id));
+    return filtered.length ? filtered : [...override];
+  }
+
+  function guessBookIdsFromMetadata(version) {
+    const override = getVersionBookOverride(version);
+    if (override?.length) return [...override];
+    if (isWldhMode(version)) {
+      return wldhBookIdsForScope(WLDH_BIBLES[version]?.scope || 'Bible');
+    }
+    const meta = BSS_BIBLES[version] || API_BIBLE_BIBLES[version] || HAO_BIBLES[version] || BOLLS_BIBLES[version] || WLDH_BIBLES[version];
+    if (!meta) return [];
+    const blob = ((meta.name || '') + ' ' + (meta.description || '') + ' ' + (meta.shortname || '')).toLowerCase();
+    const hasNt = /\bnew testament\b|nouveau testament|nuevo testamento|neues testament|nuovo testamento|novo testamento|новый завет|新约|신약|العهد الجديد|ברית חדשה|\bnt only\b|\bnt\b/.test(blob);
+    const hasOt = /\bold testament\b|ancien testament|antiguo testamento|altes testament|ветхий завет|旧约|구약|العهد القديم|תנ.?ך|tanakh|\bot only\b/.test(blob);
+    if (hasNt && !hasOt) return Array.from({ length: 27 }, (_, i) => i + 40);
+    if (hasOt && !hasNt) return Array.from({ length: 39 }, (_, i) => i + 1);
+    return [];
+  }
+
   function isOtOnlyVersion(version) {
     if (isWldhMode(version)) {
       const scope = WLDH_BIBLES[version]?.scope || '';
@@ -3109,6 +3203,23 @@
     const ids = getVersionBookOverride(version);
     if (!ids?.length) return false;
     return ids.every(id => id >= 1 && id <= 39);
+  }
+
+  function isNtOnlyVersion(version) {
+    if (isWldhMode(version)) {
+      const scope = WLDH_BIBLES[version]?.scope || '';
+      return /New Testament/i.test(scope) && !/Old Testament/i.test(scope);
+    }
+    const ids = getVersionBookOverride(version);
+    if (!ids?.length) return false;
+    return ids.every(id => id >= 40 && id <= 66);
+  }
+
+  function isPartialNtVersion(version) {
+    const ids = getVersionBookOverride(version);
+    if (!ids?.length) return false;
+    const ntCount = ids.filter(id => id >= 40).length;
+    return ntCount > 0 && ntCount < 27;
   }
 
   async function discoverBssBooks(module) {
@@ -3124,49 +3235,29 @@
   }
 
   function getAvailableBookIds(version) {
-    if (VERSION_BOOK_IDS_CACHE[version]) return VERSION_BOOK_IDS_CACHE[version];
-    if (isBollsMode(version)) {
-      const discovered = BOLLS_BOOK_IDS_BY_MODULE[version];
-      if (discovered) {
-        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
-        return VERSION_BOOK_IDS_CACHE[version];
-      }
-      return [];
+    version = resolveLegacyModule(version);
+    let ids = null;
+    if (VERSION_BOOK_IDS_CACHE[version]?.length) {
+      ids = [...VERSION_BOOK_IDS_CACHE[version]];
+    } else if (isBollsMode(version) && BOLLS_BOOK_IDS_BY_MODULE[version]?.length) {
+      ids = [...BOLLS_BOOK_IDS_BY_MODULE[version]];
+    } else if (isApiBibleMode(version) && APIBIBLE_BOOK_IDS_BY_MODULE[version]?.length) {
+      ids = [...APIBIBLE_BOOK_IDS_BY_MODULE[version]];
+    } else if (isWldhMode(version) && WLDH_BOOK_IDS_BY_MODULE[version]?.length) {
+      ids = [...WLDH_BOOK_IDS_BY_MODULE[version]];
+    } else if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
+      ids = [...BSS_BOOK_IDS_BY_MODULE[version]];
+    } else if (isHaoMode(version) && HAO_BOOK_IDS_BY_MODULE[version]?.length) {
+      ids = [...HAO_BOOK_IDS_BY_MODULE[version]];
+    } else if (!BOOK_DISCOVERY_READY.has(version)) {
+      ids = guessBookIdsFromMetadata(version);
+    } else {
+      ids = guessBookIdsFromMetadata(version);
+      if (!ids.length) ids = [defaultBookIdForModule(version)];
     }
-    if (isApiBibleMode(version)) {
-      const discovered = APIBIBLE_BOOK_IDS_BY_MODULE[version];
-      if (discovered?.length) {
-        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
-        return VERSION_BOOK_IDS_CACHE[version];
-      }
-      return wldhBookIdsForScope('Bible');
-    }
-    if (isWldhMode(version)) {
-      const discovered = WLDH_BOOK_IDS_BY_MODULE[version];
-      if (discovered?.length) {
-        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
-        return VERSION_BOOK_IDS_CACHE[version];
-      }
-      return wldhBookIdsForScope(WLDH_BIBLES[version]?.scope);
-    }
-    if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
-      VERSION_BOOK_IDS_CACHE[version] = [...BSS_BOOK_IDS_BY_MODULE[version]];
-      return VERSION_BOOK_IDS_CACHE[version];
-    }
-    if (isHaoMode(version)) {
-      const discovered = HAO_BOOK_IDS_BY_MODULE[version];
-      if (discovered?.length) {
-        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
-        return VERSION_BOOK_IDS_CACHE[version];
-      }
-      return Array.from({ length: 66 }, (_, i) => i + 1);
-    }
-    const override = getVersionBookOverride(version);
-    if (override?.length) {
-      VERSION_BOOK_IDS_CACHE[version] = [...override];
-      return VERSION_BOOK_IDS_CACHE[version];
-    }
-    return Array.from({ length: 66 }, (_, i) => i + 1);
+    const finalIds = applyBookIdOverride(version, ids);
+    if (finalIds.length) VERSION_BOOK_IDS_CACHE[version] = [...finalIds];
+    return finalIds;
   }
 
   function getAvailableBooks(version) {
@@ -3174,29 +3265,54 @@
   }
 
   function getFirstAvailableBook(version) {
-    return getAvailableBooks(version)[0] || 'Genesis';
+    const books = getAvailableBooks(version);
+    if (books.length) return books[0];
+    if (isNtOnlyVersion(version) || isPartialNtVersion(version)) return 'Matthew';
+    return 'Genesis';
   }
 
   function getVersionRefPool(version, refs, fallbackEntries) {
+    const allowedIds = new Set(getAvailableBookIds(version));
     const allowed = new Set(getAvailableBooks(version));
+    const limited = allowedIds.size > 0 && allowedIds.size < 66;
     const outRefs = [];
     const outFallback = [];
-    for (let i = 0; i < refs.length; i++) {
-      const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
-      if (!allowed.size || allowed.has(book)) {
-        outRefs.push(refs[i]);
-        outFallback.push(fallbackEntries[i]);
+    const pushIfAllowed = (ref, entry) => {
+      const book = ref.replace(/\s+\d+:\d+(?:-\d+)?$/, '');
+      const idx = ALL.indexOf(book);
+      if (!limited) {
+        if (!allowed.size || allowed.has(book)) {
+          outRefs.push(ref);
+          outFallback.push(entry);
+        }
+        return;
       }
-    }
+      if (idx >= 0 && allowedIds.has(idx + 1)) {
+        outRefs.push(ref);
+        outFallback.push(entry);
+      }
+    };
+    for (let i = 0; i < refs.length; i++) pushIfAllowed(refs[i], fallbackEntries[i]);
     if (!outRefs.length && isOtOnlyVersion(version)) {
       for (let i = 0; i < refs.length; i++) {
         const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
         const idx = ALL.indexOf(book);
-        if (idx >= 0 && idx < 39) {
-          outRefs.push(refs[i]);
-          outFallback.push(fallbackEntries[i]);
-        }
+        if (idx >= 0 && idx < 39) pushIfAllowed(refs[i], fallbackEntries[i]);
       }
+    }
+    if (!outRefs.length && (isNtOnlyVersion(version) || isPartialNtVersion(version))) {
+      for (let i = 0; i < refs.length; i++) {
+        const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
+        const idx = ALL.indexOf(book);
+        if (idx >= 0 && idx >= 39) pushIfAllowed(refs[i], fallbackEntries[i]);
+      }
+    }
+    if (!outRefs.length && limited) {
+      const firstBook = getFirstAvailableBook(version);
+      const pick = refs.find(r => r.startsWith(firstBook + ' ')) || `${firstBook} 1:1`;
+      const pickIdx = refs.indexOf(pick);
+      outRefs.push(pick);
+      outFallback.push(pickIdx >= 0 ? fallbackEntries[pickIdx] : fallbackEntries[0]);
     }
     if (!outRefs.length) return { refs, fallbackEntries };
     return { refs: outRefs, fallbackEntries: outFallback };
@@ -3342,9 +3458,10 @@
     const bookId = ids[Math.floor(Math.random() * ids.length)];
     const bookIdx = bookId - 1;
     const bookName = ALL[bookIdx];
+    const bookApi = getApiBookName(bookName, module);
     const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookIdx]) + 1;
     const verse = Math.floor(Math.random() * 30) + 1;
-    const entry = await fetchBssReference(module, `${bookName} ${chapter}:${verse}`);
+    const entry = await fetchBssReference(module, `${bookApi} ${chapter}:${verse}`);
     if (entry) return entry;
     return fetchRandomBssVerse(module, scope, attempt + 1);
   }
@@ -4319,9 +4436,8 @@
   }
 
   function getApiBookName(bookEn, version) {
-    // Cadman (Vietnamese): passage API accepts English USFM-style names; localized
-    // Vietnamese names from /books often return 400 for references.
-    if (version === 'cadman') return bookEn;
+    // Several BSS modules require English USFM-style names for passage lookup.
+    if (BSS_PASSAGE_ENGLISH_BOOK_MODULES.has(version)) return bookEn;
     const lang = getTranslationLang(version);
     const langBooks = BSS_BOOKS_CACHE[lang];
     if (langBooks) return getTranslatedBookName(bookEn, langBooks);
@@ -5064,7 +5180,8 @@
     if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
   }
 
-  async function initReadBiblePanel(p, resetToGenesis = false) {
+  async function loadReadBibleFromFirstBook(p, options) {
+    options = options || {};
     const version = getSelectedVersion(p);
     await ensureBooksDiscovered(version);
     const langCode = getTranslationLang(version);
@@ -5073,13 +5190,29 @@
     populateReadBookSelect(p, langBooks, ui, version);
     const searchInput = document.getElementById(p + '-read-search');
     if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
-    if (resetToGenesis) {
+    const firstBook = getFirstAvailableBook(version);
+    await loadReadChapterAt(p, firstBook, 1, { scrollToTop: !!options.scrollToTop });
+  }
+
+  async function initReadBiblePanel(p, resetToFirstBook = false) {
+    const version = getSelectedVersion(p);
+    await ensureBooksDiscovered(version);
+    const langCode = getTranslationLang(version);
+    const ui = getUiStrings(langCode);
+    const langBooks = await loadBooksForLang(langCode);
+    populateReadBookSelect(p, langBooks, ui, version);
+    const searchInput = document.getElementById(p + '-read-search');
+    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
+    if (resetToFirstBook) {
       await loadReadChapterAt(p, getFirstAvailableBook(version), 1);
-    } else {
-      const bookEn = document.getElementById(p + '-read-book').value || getFirstAvailableBook(version);
-      const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10) || 1;
-      await loadReadChapterAt(p, bookEn, chapter);
+      return;
     }
+    const readBookSel = document.getElementById(p + '-read-book');
+    const avail = getAvailableBooks(version);
+    let bookEn = readBookSel?.value;
+    if (!bookEn || !avail.includes(bookEn)) bookEn = getFirstAvailableBook(version);
+    const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10) || 1;
+    await loadReadChapterAt(p, bookEn, chapter);
   }
 
   async function updateBooks(p, options) {
@@ -5414,7 +5547,7 @@
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: false });
+    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead });
     await loadDailyAndWeekly(version);
 
     const other = active === 'd' ? 'm' : 'd';
@@ -5422,17 +5555,7 @@
     const tOther = document.getElementById(other + '-testament');
     if (tActive && tOther) tOther.value = tActive.value;
 
-    if (inRead) {
-      const langCode = getTranslationLang(version);
-      const ui = getUiStrings(langCode);
-      const langBooks = await loadBooksForLang(langCode);
-      populateReadBookSelect(active, langBooks, ui, version);
-      let bookEn = document.getElementById(active + '-read-book').value;
-      const avail = getAvailableBooks(version);
-      if (!bookEn || !avail.includes(bookEn)) bookEn = getFirstAvailableBook(version);
-      const chapter = parseInt(document.getElementById(active + '-read-chapter').value, 10) || 1;
-      await loadReadChapterAt(active, bookEn, chapter, { scrollToTop: false });
-    } else if (current[active]) {
+    if (!inRead && current[active]) {
       await retranslateCurrentVerse(active, version);
     }
   }
