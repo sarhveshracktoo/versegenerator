@@ -1663,8 +1663,9 @@
     });
   }
 
-  async function apiGetJson(url, timeoutMs) {
-    if (apiCircuitOpen()) return null;
+  async function apiGetJson(url, timeoutMs, opts) {
+    opts = opts || {};
+    if (!opts.ignoreCircuit && apiCircuitOpen()) return null;
     timeoutMs = timeoutMs || apiFetchTimeoutMs();
 
     async function tryFetch() {
@@ -1681,13 +1682,21 @@
       try {
         const data = await run();
         if (data != null) {
-          markApiSuccess();
+          if (!opts.softFail) markApiSuccess();
           return data;
         }
       } catch { /* try next transport */ }
     }
-    markApiFailure();
+    if (!opts.softFail) markApiFailure();
     return null;
+  }
+
+  /** Remove pilcrow / paragraph markers from Bible verse text (common in KJV sources). */
+  function stripParagraphMarkers(text) {
+    return (text || '')
+      .replace(/&para;|&#182;|&#xB6;/gi, '')
+      .replace(/\u00B6/g, '')
+      .replace(/¶/g, '');
   }
 
   function fetchWithTimeout(url, timeoutMs, extraOpts) {
@@ -1813,7 +1822,7 @@
   }
 
   function cleanApiBibleText(content) {
-    return (content || '')
+    return stripParagraphMarkers(content || '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
@@ -2072,6 +2081,11 @@
     return WLDH_LEGACY_MODULE_MAP[module] || module;
   }
 
+  function getSelectedVersion(p) {
+    const raw = document.getElementById(p + '-version')?.value || 'wldh-en-kjv';
+    return resolveLegacyModule(raw);
+  }
+
   function wldhBookIdsForScope(scope) {
     const s = scope || 'Bible';
     if (/^New Testament/i.test(s)) return Array.from({ length: 27 }, (_, i) => i + 40);
@@ -2135,14 +2149,18 @@
     else tries.push(['genesis', 1, 1], ['john', 3, 16]);
     for (const [book, ch, v] of tries) {
       const url = `${WLDH_API}/${entry.id}/books/${book}/chapters/${ch}/verses/${v}.json`;
-      const data = await withTimeout(apiGetJson(url, 6000), 6500, null);
+      const data = await withTimeout(
+        apiGetJson(url, 6000, { ignoreCircuit: true, softFail: true }),
+        6500,
+        null
+      );
       if (data?.text || data?.data) return true;
     }
     return false;
   }
 
   async function refreshWldhCatalogInBackground() {
-    const list = await apiGetJson(WLDH_BIBLES_LIST_URL, 15000);
+    const list = await apiGetJson(WLDH_BIBLES_LIST_URL, 15000, { ignoreCircuit: true, softFail: true });
     if (!Array.isArray(list) || !list.length) return;
     const candidates = list.filter(b => b.id && b.scope !== 'Portions');
     const working = [];
@@ -2172,8 +2190,15 @@
     if (isWldhMode(version)) await updateBooks(active, { refreshReadLabels: isReadBibleMode(active) });
   }
 
+  function getWldhBssFallback(module) {
+    for (const [bssMod, wldhMod] of Object.entries(WLDH_BSS_REPLACE)) {
+      if (wldhMod === module) return bssMod;
+    }
+    return null;
+  }
+
   function cleanWldhText(text) {
-    return (text || '')
+    return stripParagraphMarkers(text || '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
       .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
@@ -2197,20 +2222,38 @@
     const cacheKey = `${module}:${slug}:${chapter}`;
     if (WLDH_CHAPTER_CACHE[cacheKey]) return WLDH_CHAPTER_CACHE[cacheKey];
     const url = `${WLDH_API}/${encodeURIComponent(wldhId)}/books/${slug}/chapters/${chapter}.json`;
-    const data = await apiGetJson(url);
+    const chapterTimeout = apiFetchTimeoutMs() + 10000;
+    const data = await apiGetJson(url, chapterTimeout);
     const verses = parseWldhChapterPayload(data, chapter);
     if (!verses?.length) return null;
     WLDH_CHAPTER_CACHE[cacheKey] = verses;
     return verses;
   }
 
+  async function fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd) {
+    const bssMod = getWldhBssFallback(module);
+    if (!bssMod) return null;
+    const bookApi = getApiBookName(bookEn, bssMod);
+    let ref;
+    if (verseStart == null) ref = `${bookApi} ${chapter}`;
+    else if (verseEnd == null || verseEnd === verseStart) ref = `${bookApi} ${chapter}:${verseStart}`;
+    else ref = `${bookApi} ${chapter}:${verseStart}-${verseEnd}`;
+    const bss = await fetchBssPassageVerses(bssMod, ref, verseStart, verseEnd);
+    if (!bss?.verses?.length) return null;
+    return { ...bss, version: module };
+  }
+
   async function fetchWldhPassageVerses(module, bookEn, chapter, verseStart, verseEnd) {
-    const verses = await fetchWldhChapter(module, bookEn, chapter);
-    if (!verses) return null;
+    let verses = await fetchWldhChapter(module, bookEn, chapter);
+    if (!verses?.length) {
+      return fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd);
+    }
     let slice = verses;
     if (verseStart != null) slice = slice.filter(v => v.num >= verseStart);
     if (verseEnd != null) slice = slice.filter(v => v.num <= verseEnd);
-    if (!slice.length) return null;
+    if (!slice.length) {
+      return fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd);
+    }
     const start = slice[0].num;
     const end = slice[slice.length - 1].num;
     const ref = start === end ? `${bookEn} ${chapter}:${start}` : `${bookEn} ${chapter}:${start}-${end}`;
@@ -2256,20 +2299,8 @@
     return { text: v.text, ref: `${bookEn} ${chapter}:${v.num}`, version: module };
   }
 
-  async function discoverWldhBooks(module) {
-    if (!isWldhMode(module)) return [];
-    const meta = WLDH_BIBLES[module];
-    const ids = wldhBookIdsForScope(meta?.scope);
-    WLDH_BOOK_IDS_BY_MODULE[module] = ids;
-    delete VERSION_BOOK_IDS_CACHE[module];
-    VERSION_BOOK_IDS_CACHE[module] = [...ids];
-    return ids;
-  }
-
   async function ensureWldhBooksDiscovered(module) {
-    if (!isWldhMode(module)) return;
-    if (WLDH_BOOK_IDS_BY_MODULE[module]) return;
-    await discoverWldhBooks(module);
+    return ensureBooksDiscovered(module);
   }
 
   function isBollsMode(module) {
@@ -2299,19 +2330,15 @@
     if (!BOLLS_BOOK_IDS_BY_MODULE[module]?.length) {
       BOLLS_BOOK_IDS_BY_MODULE[module] = Array.from({ length: 66 }, (_, i) => i + 1);
     }
-    delete VERSION_BOOK_IDS_CACHE[module];
-    VERSION_BOOK_IDS_CACHE[module] = [...BOLLS_BOOK_IDS_BY_MODULE[module]];
-    return BOLLS_BOOK_IDS_BY_MODULE[module];
+    return setVersionBookIds(module, BOLLS_BOOK_IDS_BY_MODULE[module]);
   }
 
   async function ensureBollsBooksDiscovered(module) {
-    if (!isBollsMode(module)) return;
-    if (BOLLS_BOOK_IDS_BY_MODULE[module]) return;
-    await discoverBollsBooks(module);
+    return ensureBooksDiscovered(module);
   }
 
   function cleanBollsText(html) {
-    return (html || '')
+    return stripParagraphMarkers(html || '')
       .replace(/<[^>]+>/g, '')
       .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
       .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
@@ -2408,6 +2435,255 @@
     '2 Peter':'2PE','1 John':'1JN','2 John':'2JN','3 John':'3JN','Jude':'JUD',
     'Revelation':'REV'
   };
+
+  const HAO_CODE_TO_EN = {};
+  Object.entries(HAO_BOOK_CODES).forEach(([en, code]) => { HAO_CODE_TO_EN[code] = en; });
+
+  /* ══════════════════════════════════════
+     Per-translation book discovery (API-verified)
+  ══════════════════════════════════════ */
+  const BOOK_IDS_CACHE_KEY = 'version-book-ids-v1';
+  const BOOK_IDS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const BOOK_DISCOVERY_PROMISE = {};
+  const APIBIBLE_BOOK_IDS_BY_MODULE = {};
+  const HAO_BOOK_IDS_BY_MODULE = {};
+
+  function readBookIdsCache(module) {
+    try {
+      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
+      if (!raw) return null;
+      const all = JSON.parse(raw);
+      const entry = all[module];
+      if (!entry?.ids?.length || Date.now() - (entry.at || 0) > BOOK_IDS_CACHE_TTL_MS) return null;
+      return entry.ids;
+    } catch { return null; }
+  }
+
+  function saveBookIdsCache(module, ids) {
+    try {
+      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
+      const all = raw ? JSON.parse(raw) : {};
+      all[module] = { at: Date.now(), ids: [...ids] };
+      localStorage.setItem(BOOK_IDS_CACHE_KEY, JSON.stringify(all));
+    } catch { /* quota */ }
+  }
+
+  function setVersionBookIds(module, ids) {
+    const list = [...new Set(ids)].filter(id => id >= 1 && id <= 66).sort((a, b) => a - b);
+    const safe = list.length ? list : [1];
+    if (isBollsMode(module)) BOLLS_BOOK_IDS_BY_MODULE[module] = [...safe];
+    else if (isWldhMode(module)) WLDH_BOOK_IDS_BY_MODULE[module] = [...safe];
+    else if (isApiBibleMode(module)) APIBIBLE_BOOK_IDS_BY_MODULE[module] = [...safe];
+    else if (isHaoMode(module)) HAO_BOOK_IDS_BY_MODULE[module] = [...safe];
+    else BSS_BOOK_IDS_BY_MODULE[module] = [...safe];
+    VERSION_BOOK_IDS_CACHE[module] = [...safe];
+    return safe;
+  }
+
+  function invalidateBookDiscovery(module) {
+    delete BOOK_DISCOVERY_PROMISE[module];
+    delete VERSION_BOOK_IDS_CACHE[module];
+    if (isBollsMode(module)) delete BOLLS_BOOK_IDS_BY_MODULE[module];
+    else if (isWldhMode(module)) delete WLDH_BOOK_IDS_BY_MODULE[module];
+    else if (isApiBibleMode(module)) delete APIBIBLE_BOOK_IDS_BY_MODULE[module];
+    else if (isHaoMode(module)) delete HAO_BOOK_IDS_BY_MODULE[module];
+    else delete BSS_BOOK_IDS_BY_MODULE[module];
+    try {
+      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
+      if (!raw) return;
+      const all = JSON.parse(raw);
+      delete all[module];
+      localStorage.setItem(BOOK_IDS_CACHE_KEY, JSON.stringify(all));
+    } catch { /* ignore */ }
+  }
+
+  async function runBookProbePool(candidates, concurrency, probeFn) {
+    const found = [];
+    let i = 0;
+    const n = Math.max(1, Math.min(concurrency, candidates.length || 1));
+    await Promise.all(Array.from({ length: n }, async () => {
+      while (i < candidates.length) {
+        const item = candidates[i++];
+        if (await probeFn(item)) found.push(item);
+      }
+    }));
+    return found.sort((a, b) => a - b);
+  }
+
+  async function probeBssBookAvailable(module, bookId) {
+    const bookEn = ALL[bookId - 1];
+    if (!bookEn) return false;
+    const bookApi = getApiBookName(bookEn, module);
+    const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(bookApi + ' 1')}&data_format=passage`;
+    const data = await apiGetJson(url, 9000, { ignoreCircuit: true, softFail: true });
+    if (!data || data.error_level >= 4) return false;
+    const verses = data.results?.[0]?.verses?.[module];
+    const ch = verses?.['1'];
+    return !!(ch && Object.keys(ch).length);
+  }
+
+  async function detectBssScopeByProbe(module) {
+    const ot = await probeBssBookAvailable(module, 1);
+    const nt = await probeBssBookAvailable(module, 40);
+    if (ot && nt) return Array.from({ length: 66 }, (_, i) => i + 1);
+    if (!ot && nt) return Array.from({ length: 27 }, (_, i) => i + 40);
+    if (ot && !nt) return Array.from({ length: 39 }, (_, i) => i + 1);
+    return null;
+  }
+
+  async function probeAllBssBookIds(module, candidateIds) {
+    const found = await runBookProbePool(candidateIds, 6, id => probeBssBookAvailable(module, id));
+    return found.length ? found : null;
+  }
+
+  async function discoverBssBooksProbed(module) {
+    const preset = getVersionBookOverride(module);
+    if (module === 'wlc') {
+      try {
+        const data = await apiGetJson(`${BOLLS_API}/get-books/WLC/`, 12000, { ignoreCircuit: true, softFail: true });
+        if (data) {
+          const ids = (Array.isArray(data) ? data : [])
+            .map(b => Number(b.bookid))
+            .filter(id => id >= 1 && id <= 39)
+            .sort((a, b) => a - b);
+          if (ids.length) return setVersionBookIds(module, ids);
+        }
+      } catch { /* fall through */ }
+    }
+    if (preset?.length) {
+      const validated = await probeAllBssBookIds(module, preset);
+      if (validated?.length) return setVersionBookIds(module, validated);
+      return setVersionBookIds(module, preset);
+    }
+    const quick = await detectBssScopeByProbe(module);
+    if (quick?.length) return setVersionBookIds(module, quick);
+    const full = await probeAllBssBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    if (full?.length) return setVersionBookIds(module, full);
+    return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+  }
+
+  async function probeWldhBookAvailable(wldhId, bookId) {
+    const bookEn = ALL[bookId - 1];
+    const slug = WLDH_BOOK_SLUGS[bookEn];
+    if (!slug) return false;
+    const url = `${WLDH_API}/${encodeURIComponent(wldhId)}/books/${slug}/chapters/1/verses/1.json`;
+    const data = await apiGetJson(url, 9000, { ignoreCircuit: true, softFail: true });
+    if (data?.text) return true;
+    if (Array.isArray(data?.data) && data.data.length) return true;
+    return false;
+  }
+
+  async function discoverWldhBooksProbed(module) {
+    const meta = WLDH_BIBLES[module];
+    const wldhId = getWldhId(module);
+    if (!wldhId) return setVersionBookIds(module, [1]);
+    const candidates = wldhBookIdsForScope(meta?.scope);
+    const quick = await detectWldhScopeByProbe(wldhId);
+    if (quick?.length) return setVersionBookIds(module, quick);
+    const found = await runBookProbePool(candidates, 6, id => probeWldhBookAvailable(wldhId, id));
+    if (found.length) return setVersionBookIds(module, found);
+    const bssMod = getWldhBssFallback(module);
+    if (bssMod) {
+      await discoverBssBooksProbed(bssMod);
+      const bssIds = BSS_BOOK_IDS_BY_MODULE[bssMod];
+      if (bssIds?.length) return setVersionBookIds(module, [...bssIds]);
+    }
+    return setVersionBookIds(module, candidates.length ? candidates : [1]);
+  }
+
+  async function detectWldhScopeByProbe(wldhId) {
+    const ot = await probeWldhBookAvailable(wldhId, 1);
+    const nt = await probeWldhBookAvailable(wldhId, 40);
+    if (ot && nt) return Array.from({ length: 66 }, (_, i) => i + 1);
+    if (!ot && nt) return Array.from({ length: 27 }, (_, i) => i + 40);
+    if (ot && !nt) return Array.from({ length: 39 }, (_, i) => i + 1);
+    return null;
+  }
+
+  async function discoverApiBibleBooks(module) {
+    const bibleId = getApiBibleId(module);
+    if (!bibleId) return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    const data = await apiBibleGetJson('/bibles/' + encodeURIComponent(bibleId) + '/books');
+    if (!data?.data?.length) return setVersionBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
+    const ids = [];
+    for (const b of data.data) {
+      const en = HAO_CODE_TO_EN[b.id] || resolveBookEnFromRaw(b.name || '');
+      const id = BOOK_NUM[en];
+      if (id) ids.push(id);
+    }
+    const unique = [...new Set(ids)].sort((a, b) => a - b);
+    return setVersionBookIds(module, unique.length ? unique : Array.from({ length: 66 }, (_, i) => i + 1));
+  }
+
+  async function probeHaoBookAvailable(module, bookId) {
+    const bookEn = ALL[bookId - 1];
+    if (!bookEn) return false;
+    const data = await fetchHaoChapter(module, bookEn, 1);
+    const verses = parseHaoVerses(data);
+    return verses.length > 0;
+  }
+
+  async function discoverHaoBooksProbed(module) {
+    const quick = await runBookProbePool([1, 40], 2, id => probeHaoBookAvailable(module, id));
+    let candidates;
+    if (quick.includes(1) && quick.includes(40)) candidates = Array.from({ length: 66 }, (_, i) => i + 1);
+    else if (!quick.includes(1) && quick.includes(40)) candidates = Array.from({ length: 27 }, (_, i) => i + 40);
+    else if (quick.includes(1) && !quick.includes(40)) candidates = Array.from({ length: 39 }, (_, i) => i + 1);
+    else candidates = Array.from({ length: 66 }, (_, i) => i + 1);
+    const found = await runBookProbePool(candidates, 5, id => probeHaoBookAvailable(module, id));
+    return setVersionBookIds(module, found.length ? found : [1]);
+  }
+
+  async function refreshBookDiscoveryInBackground(module) {
+    try {
+      invalidateBookDiscovery(module);
+      await ensureBooksDiscovered(module, { force: true });
+      const active = activePanel();
+      if (getSelectedVersion(active) === module && isReadBibleMode(active)) {
+        await updateBooks(active, { refreshReadLabels: true });
+      }
+    } catch { /* non-fatal */ }
+  }
+
+  async function ensureBooksDiscovered(module, options) {
+    options = options || {};
+    module = resolveLegacyModule(module);
+    if (!options.force) {
+      const cached = readBookIdsCache(module);
+      if (cached?.length) {
+        setVersionBookIds(module, cached);
+        if (Date.now() - (JSON.parse(localStorage.getItem(BOOK_IDS_CACHE_KEY) || '{}')[module]?.at || 0) > 3 * 24 * 60 * 60 * 1000) {
+          void refreshBookDiscoveryInBackground(module);
+        }
+        return cached;
+      }
+    }
+    if (BOOK_DISCOVERY_PROMISE[module]) return BOOK_DISCOVERY_PROMISE[module];
+
+    BOOK_DISCOVERY_PROMISE[module] = (async () => {
+      try {
+        let ids;
+        if (isBollsMode(module)) {
+          await discoverBollsBooks(module);
+          ids = BOLLS_BOOK_IDS_BY_MODULE[module] || [];
+        } else if (isWldhMode(module)) {
+          ids = await discoverWldhBooksProbed(module);
+        } else if (isApiBibleMode(module)) {
+          ids = await discoverApiBibleBooks(module);
+        } else if (isHaoMode(module)) {
+          ids = await discoverHaoBooksProbed(module);
+        } else {
+          ids = await discoverBssBooksProbed(module);
+        }
+        ids = setVersionBookIds(module, ids);
+        saveBookIdsCache(module, ids);
+        return ids;
+      } finally {
+        delete BOOK_DISCOVERY_PROMISE[module];
+      }
+    })();
+    return BOOK_DISCOVERY_PROMISE[module];
+  }
 
   // Cache for HAO chapter data
   const HAO_CHAPTER_CACHE = {};
@@ -2836,43 +3112,15 @@
   }
 
   async function discoverBssBooks(module) {
-    if (BSS_BOOK_IDS_BY_MODULE[module]) return BSS_BOOK_IDS_BY_MODULE[module];
-    const preset = getVersionBookOverride(module);
-    if (module === 'wlc') {
-      try {
-        const data = await apiGetJson(`${BOLLS_API}/get-books/WLC/`);
-        if (data) {
-          const ids = (Array.isArray(data) ? data : [])
-            .map(b => Number(b.bookid))
-            .filter(id => id >= 1 && id <= 39)
-            .sort((a, b) => a - b);
-          if (ids.length) {
-            BSS_BOOK_IDS_BY_MODULE[module] = ids;
-            delete VERSION_BOOK_IDS_CACHE[module];
-            VERSION_BOOK_IDS_CACHE[module] = [...ids];
-            return ids;
-          }
-        }
-      } catch { /* fall through to preset */ }
-    }
-    if (preset?.length) {
-      BSS_BOOK_IDS_BY_MODULE[module] = [...preset];
-      delete VERSION_BOOK_IDS_CACHE[module];
-      VERSION_BOOK_IDS_CACHE[module] = [...preset];
-      return preset;
-    }
-    return null;
+    return discoverBssBooksProbed(module);
   }
 
   async function ensureBssBooksDiscovered(module) {
-    if (isBollsMode(module) || isHaoMode(module) || isWldhMode(module)) return;
-    if (!getVersionBookOverride(module) && module !== 'wlc') return;
-    if (BSS_BOOK_IDS_BY_MODULE[module]) return;
-    await discoverBssBooks(module);
+    return ensureBooksDiscovered(module);
   }
 
   function bssNeedsBookDiscovery(module) {
-    return module === 'wlc' || !!getVersionBookOverride(module);
+    return !isBollsMode(module) && !isHaoMode(module) && !isWldhMode(module) && !isApiBibleMode(module);
   }
 
   function getAvailableBookIds(version) {
@@ -2886,8 +3134,12 @@
       return [];
     }
     if (isApiBibleMode(version)) {
-      VERSION_BOOK_IDS_CACHE[version] = Array.from({ length: 66 }, (_, i) => i + 1);
-      return VERSION_BOOK_IDS_CACHE[version];
+      const discovered = APIBIBLE_BOOK_IDS_BY_MODULE[version];
+      if (discovered?.length) {
+        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
+        return VERSION_BOOK_IDS_CACHE[version];
+      }
+      return wldhBookIdsForScope('Bible');
     }
     if (isWldhMode(version)) {
       const discovered = WLDH_BOOK_IDS_BY_MODULE[version];
@@ -2895,18 +3147,19 @@
         VERSION_BOOK_IDS_CACHE[version] = [...discovered];
         return VERSION_BOOK_IDS_CACHE[version];
       }
-      const meta = WLDH_BIBLES[version];
-      const ids = wldhBookIdsForScope(meta?.scope);
-      VERSION_BOOK_IDS_CACHE[version] = ids;
-      return ids;
+      return wldhBookIdsForScope(WLDH_BIBLES[version]?.scope);
     }
     if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
       VERSION_BOOK_IDS_CACHE[version] = [...BSS_BOOK_IDS_BY_MODULE[version]];
       return VERSION_BOOK_IDS_CACHE[version];
     }
     if (isHaoMode(version)) {
-      VERSION_BOOK_IDS_CACHE[version] = Array.from({ length: 66 }, (_, i) => i + 1);
-      return VERSION_BOOK_IDS_CACHE[version];
+      const discovered = HAO_BOOK_IDS_BY_MODULE[version];
+      if (discovered?.length) {
+        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
+        return VERSION_BOOK_IDS_CACHE[version];
+      }
+      return Array.from({ length: 66 }, (_, i) => i + 1);
     }
     const override = getVersionBookOverride(version);
     if (override?.length) {
@@ -2994,11 +3247,8 @@
   }
 
   function cleanBssText(text) {
-    return (text || '')
+    return stripParagraphMarkers(text || '')
       .replace(/<[^>]+>/g, '')
-      .replace(/&para;|&#182;|&#xB6;/gi, '')
-      .replace(/\u00B6/g, '')
-      .replace(/¶/g, '')
       .trim()
       .replace(/\s+/g, ' ');
   }
@@ -3223,7 +3473,9 @@
 
     await loadBooksForLang('en');
     await updateBooks(activePanel());
-    if (!readWldhCatalogCache()) void refreshWldhCatalogInBackground();
+    if (!readWldhCatalogCache()) {
+      setTimeout(() => void refreshWldhCatalogInBackground(), 12000);
+    }
   }
 
   /* ══════════════════════════════════════
@@ -3980,7 +4232,7 @@
   async function loadReadChapterAt(p, bookEn, chapter, options) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
-    const version = document.getElementById(p + '-version').value;
+    const version = getSelectedVersion(p);
     const avail = getAvailableBookIds(version);
     const bi = ALL.indexOf(bookEn);
     if (bi < 0 || !avail.includes(bi + 1)) {
@@ -4007,7 +4259,9 @@
 
     let data;
     try {
-      const chapterTimeout = apiFetchTimeoutMs() + 2000;
+      const chapterTimeout = isWldhMode(version)
+        ? apiFetchTimeoutMs() + 14000
+        : apiFetchTimeoutMs() + 2000;
       if (isHaoMode(version)) {
         data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
       } else if (isBollsMode(version)) {
@@ -4079,7 +4333,14 @@
   }
 
   function formatVersesHtml(verses) {
-    return verses.map(v => `<sup class="verse-num">${v.num}</sup>${escapeHtml(v.text)}`).join(' ');
+    return verses.map(v => {
+      const text = cleanVerseDisplayText(v.text);
+      return `<sup class="verse-num">${v.num}</sup>${escapeHtml(text)}`;
+    }).join(' ');
+  }
+
+  function cleanVerseDisplayText(text) {
+    return stripParagraphMarkers(text || '').trim().replace(/\s+/g, ' ');
   }
 
   function populateSelectOptions(sel, count, startAt = 1) {
@@ -4471,7 +4732,7 @@
       ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
       : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
 
-    const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
+    const fullText = data.verses.map(v => `${v.num} ${cleanVerseDisplayText(v.text)}`).join(' ');
     const bookEn = document.getElementById(p + '-read-book')?.value;
     const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
     const verseStart = data.verses[0]?.num;
@@ -4528,10 +4789,12 @@
   }
 
   async function loadReadPassage(p, reference, filterStart, filterEnd) {
-    const version = document.getElementById(p + '-version').value;
+    const version = getSelectedVersion(p);
     const display = document.getElementById(p + '-verseDisplay');
     setReadDisplayLoading(p, !hasReadPassageContent(display));
-    const passageTimeout = apiFetchTimeoutMs() + 3000;
+    const passageTimeout = isWldhMode(version)
+      ? apiFetchTimeoutMs() + 14000
+      : apiFetchTimeoutMs() + 3000;
     let data = null;
     try {
       if (isHaoMode(version)) {
@@ -4601,7 +4864,7 @@
   async function onReadVerseChange(p) {
     if (_readSyncLock) return;
     const verseVal = document.getElementById(p + '-read-verse').value;
-    const version = document.getElementById(p + '-version').value;
+    const version = getSelectedVersion(p);
     const bookEn = document.getElementById(p + '-read-book').value;
     const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10);
 
@@ -4623,7 +4886,9 @@
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
-    const passageTimeout = apiFetchTimeoutMs() + 3000;
+    const passageTimeout = isWldhMode(version)
+      ? apiFetchTimeoutMs() + 14000
+      : apiFetchTimeoutMs() + 3000;
     if (isHaoMode(version)) {
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
@@ -4677,8 +4942,11 @@
       showToast('Enter a reference like Matthew 6, Matthew 24:5, or Matthew 24:5-15');
       return;
     }
-    const version = document.getElementById(p + '-version').value;
+    const version = getSelectedVersion(p);
     const bookSel = document.getElementById(p + '-read-book');
+    const readSearchTimeout = isWldhMode(version)
+      ? apiFetchTimeoutMs() + 14000
+      : apiFetchTimeoutMs() + 5000;
 
     if (parsed.wholeChapter) {
       _readSyncLock = true;
@@ -4695,7 +4963,6 @@
     syncReadSelectors(p, parsed.book, parsed.chapter, parsed.verseStart);
     _readSyncLock = false;
 
-    const readSearchTimeout = apiFetchTimeoutMs() + 3000;
     if (isHaoMode(version)) {
       const chapterData = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
       if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
@@ -4771,10 +5038,8 @@
   }
 
   async function refreshReadBibleLabels(p) {
-    const version = document.getElementById(p + '-version').value;
-    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
-    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
-    else await ensureBssBooksDiscovered(version);
+    const version = getSelectedVersion(p);
+    await ensureBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
     const langBooks = await loadBooksForLang(langCode);
@@ -4800,10 +5065,8 @@
   }
 
   async function initReadBiblePanel(p, resetToGenesis = false) {
-    const version = document.getElementById(p + '-version').value;
-    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
-    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
-    else await ensureBssBooksDiscovered(version);
+    const version = getSelectedVersion(p);
+    await ensureBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
     const langBooks = await loadBooksForLang(langCode);
@@ -4821,10 +5084,8 @@
 
   async function updateBooks(p, options) {
     options = options || {};
-    const version   = document.getElementById(p+'-version').value;
-    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
-    else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
-    else await ensureBssBooksDiscovered(version);
+    const version = getSelectedVersion(p);
+    await ensureBooksDiscovered(version);
     const langCode  = getTranslationLang(version);
     const ui        = getUiStrings(langCode);
     const testamentSel = document.getElementById(p + '-testament');
@@ -4930,9 +5191,7 @@
     if (readMode) {
       setReadModeActions(p, true);
       initReadSwipe();
-      if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
-      else if (isWldhMode(version)) await ensureWldhBooksDiscovered(version);
-      else await ensureBssBooksDiscovered(version);
+      await ensureBooksDiscovered(version);
       if (prevTest !== 'read' || options.forceReadInit) {
         await initReadBiblePanel(p, true);
       } else if (options.refreshReadLabels) {
@@ -4973,7 +5232,7 @@
   function renderVerse(p, entry) {
     const display = document.getElementById(p+'-verseDisplay');
     const isDesk  = p === 'd';
-    const cleanText = entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
+    const cleanText = cleanVerseDisplayText(entry.text).replace(/\s+"/g, '"').replace(/\s+'/g, "'");
     const safeText = escapeHtml(cleanText);
     const label = escapeHtml(getTranslationLabel(entry.version));
     const safeRef = escapeHtml(entry.ref);
@@ -5141,23 +5400,12 @@
   }
 
   async function onVersionChangeImpl(p) {
-    const version = document.getElementById(p + '-version').value;
+    const version = getSelectedVersion(p);
     readChapterCache = {};
     Object.keys(API_BIBLE_PASSAGE_CACHE).forEach(k => delete API_BIBLE_PASSAGE_CACHE[k]);
     Object.keys(WLDH_CHAPTER_CACHE).forEach(k => delete WLDH_CHAPTER_CACHE[k]);
-    if (isBollsMode(version)) {
-      delete BOLLS_BOOK_IDS_BY_MODULE[version];
-      delete VERSION_BOOK_IDS_CACHE[version];
-      await discoverBollsBooks(version);
-    } else if (isWldhMode(version)) {
-      delete WLDH_BOOK_IDS_BY_MODULE[version];
-      delete VERSION_BOOK_IDS_CACHE[version];
-      await discoverWldhBooks(version);
-    } else if (bssNeedsBookDiscovery(version)) {
-      delete BSS_BOOK_IDS_BY_MODULE[version];
-      delete VERSION_BOOK_IDS_CACHE[version];
-      await discoverBssBooks(version);
-    }
+    invalidateBookDiscovery(version);
+    await ensureBooksDiscovered(version);
     syncVersionSelects(version);
 
     const active = activePanel();
@@ -5175,7 +5423,13 @@
     if (tActive && tOther) tOther.value = tActive.value;
 
     if (inRead) {
-      const bookEn = document.getElementById(active + '-read-book').value || getFirstAvailableBook(version);
+      const langCode = getTranslationLang(version);
+      const ui = getUiStrings(langCode);
+      const langBooks = await loadBooksForLang(langCode);
+      populateReadBookSelect(active, langBooks, ui, version);
+      let bookEn = document.getElementById(active + '-read-book').value;
+      const avail = getAvailableBooks(version);
+      if (!bookEn || !avail.includes(bookEn)) bookEn = getFirstAvailableBook(version);
       const chapter = parseInt(document.getElementById(active + '-read-chapter').value, 10) || 1;
       await loadReadChapterAt(active, bookEn, chapter, { scrollToTop: false });
     } else if (current[active]) {
@@ -5949,15 +6203,9 @@
     initReadSwipe();
     clearAllVersePanelLoading();
 
-    const version = resolveLegacyModule(document.getElementById('d-version')?.value || 'wldh-en-kjv');
+    const version = getSelectedVersion('d');
     try {
-      if (isBollsMode(version)) {
-        await withTimeout(discoverBollsBooks(version), apiFetchTimeoutMs());
-      } else if (isWldhMode(version)) {
-        await withTimeout(discoverWldhBooks(version), apiFetchTimeoutMs());
-      } else if (bssNeedsBookDiscovery(version)) {
-        await withTimeout(discoverBssBooks(version), apiFetchTimeoutMs());
-      }
+      await withTimeout(ensureBooksDiscovered(version), apiFetchTimeoutMs() + 15000);
     } catch { /* preset / fallback book lists */ }
 
     void loadDailyAndWeekly(version);
