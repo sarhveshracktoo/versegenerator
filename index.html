@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verse Generator</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -18,7 +18,6 @@
       --crimson: #8b1a1a;
       --shadow: rgba(42,26,10,0.4);
       --verse-size: 1.4rem;
-      --devotional-text-size: 15px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -149,205 +148,6 @@
       font-style: italic;
     }
 
-    /* Daily Devotional panel */
-    .devotional-banner {
-      width: 100%;
-      max-width: 760px;
-      border-radius: 6px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #181008, #241608);
-      border: 1px solid rgba(201,168,76,0.22);
-      animation: fadeUp 0.8s ease 0.12s both;
-      position: relative;
-    }
-    button.devotional-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      width: 100%;
-      padding: 12px 16px;
-      min-height: 48px;
-      margin: 0;
-      border: none;
-      border-radius: 6px 6px 0 0;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: background 0.2s ease;
-    }
-    button.devotional-header:hover,
-    button.devotional-header:focus-visible {
-      background: rgba(201,168,76,0.08);
-      outline: none;
-    }
-    button.devotional-header:active {
-      background: rgba(201,168,76,0.12);
-    }
-    button.devotional-header .banner-label {
-      margin-bottom: 0;
-      flex: 1;
-      text-align: left;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      pointer-events: none;
-    }
-    .devotional-chevron {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border: 1px solid rgba(201,168,76,0.35);
-      border-radius: 6px;
-      background: rgba(0,0,0,0.2);
-      color: var(--gold);
-      pointer-events: none;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    button.devotional-header:hover .devotional-chevron,
-    button.devotional-header:focus-visible .devotional-chevron {
-      background: rgba(201,168,76,0.12);
-      border-color: var(--gold);
-    }
-    .devotional-chevron svg {
-      width: 20px;
-      height: 20px;
-      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-      transform: rotate(0deg);
-    }
-    .devotional-banner.is-open .devotional-chevron svg {
-      transform: rotate(180deg);
-    }
-    .devotional-collapse {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .devotional-banner.is-open .devotional-collapse {
-      grid-template-rows: 1fr;
-    }
-    .devotional-inner {
-      overflow: hidden;
-      min-height: 0;
-    }
-    .devotional-panel-body {
-      padding: 0 18px 16px;
-      border-top: 1px solid rgba(201,168,76,0.12);
-    }
-    .devotional-date {
-      font-family: 'Cinzel', serif;
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--gold-light);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin: 12px 0 8px;
-    }
-    .devotional-heading {
-      font-family: 'Cinzel Decorative', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--parchment);
-      letter-spacing: 0.06em;
-      margin-bottom: 10px;
-      line-height: 1.35;
-    }
-    .devotional-scripture {
-      font-family: 'EB Garamond', serif;
-      font-size: 0.98rem;
-      font-style: italic;
-      color: rgba(232,201,122,0.95);
-      line-height: 1.55;
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      background: rgba(0,0,0,0.15);
-      border-radius: 4px;
-      border-left: 3px solid var(--gold-dark);
-    }
-    .devotional-slider-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 8px 0 12px;
-      padding: 8px 10px;
-      background: rgba(0,0,0,0.14);
-      border-radius: 4px;
-      border: 1px solid rgba(201,168,76,0.18);
-    }
-    .devotional-slider-label {
-      font-family: 'Cinzel', serif;
-      font-size: 0.58rem;
-      font-weight: 600;
-      color: var(--gold);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .devotional-slider-row input[type=range] {
-      flex: 1;
-      min-width: 0;
-      accent-color: var(--gold);
-      cursor: pointer;
-      height: 28px;
-    }
-    .devotional-content {
-      font-family: 'EB Garamond', serif;
-      font-size: var(--devotional-text-size);
-      color: rgba(245,234,214,0.88);
-      line-height: 1.65;
-      max-height: 55vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      transition: font-size 0.12s ease;
-    }
-    .devotional-content p {
-      margin-bottom: 0.5em;
-      font-size: inherit;
-      text-align: left;
-    }
-    .devotional-content p:last-child {
-      margin-bottom: 0;
-    }
-    .devotional-content p + p {
-      margin-top: 0.65em;
-    }
-    .devotional-loading {
-      font-style: italic;
-      color: rgba(245,234,214,0.55);
-      font-size: 0.9rem;
-      padding: 8px 0 4px;
-    }
-    .mob-devotional-banner {
-      border-radius: 10px;
-      margin-bottom: 0;
-    }
-    .mob-devotional-banner .devotional-header {
-      padding: 10px 12px;
-    }
-    .mob-devotional-banner .devotional-panel-body {
-      padding: 0 12px 14px;
-    }
-    .mob-devotional-banner .devotional-content {
-      max-height: 50vh;
-    }
-    .mob-devotional-banner .devotional-slider-row {
-      margin: 6px 0 10px;
-      padding: 8px 8px;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .devotional-collapse,
-      .devotional-chevron svg {
-        transition: none !important;
-      }
-    }
-
     /* Scroll card */
     .scroll-card {
       width:100%; max-width:760px; min-width:0; overflow:hidden; box-sizing:border-box;
@@ -456,92 +256,8 @@
       content-visibility: auto;
       contain-intrinsic-size: auto 88px;
     }
-    body.compat-mobile .daily-banner,
-    body.compat-mobile .weekly-banner,
-    body.compat-mobile .mob-daily-banner,
-    body.compat-mobile .mob-weekly-banner,
-    body.compat-mobile .devotional-banner,
-    body.compat-mobile .mob-devotional-banner {
-      content-visibility: visible;
-      contain-intrinsic-size: auto;
-    }
     .mob-verse-box.read-swipeable { touch-action: pan-y; }
     .verse-placeholder { color:var(--ink-light); font-style:italic; font-size:1rem; opacity:0.6; }
-    .read-passage-error { width: 100%; }
-    .read-passage-error-row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .read-passage-error-msg {
-      flex: 1;
-      min-width: 0;
-      margin: 0;
-      text-align: left;
-      line-height: 1.5;
-    }
-    .read-passage-refresh-btn {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      min-height: 40px;
-      border: 1px solid var(--gold-dark);
-      border-radius: 4px;
-      background: rgba(255,255,255,0.55);
-      color: var(--ink);
-      font-family: 'Cinzel', serif;
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s, opacity 0.2s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .read-passage-refresh-btn:hover:not(:disabled) {
-      border-color: var(--gold);
-      background: rgba(255,255,255,0.8);
-    }
-    .read-passage-refresh-btn:focus-visible {
-      outline: 2px solid var(--gold);
-      outline-offset: 2px;
-    }
-    .read-passage-refresh-btn:disabled {
-      opacity: 0.7;
-      cursor: wait;
-    }
-    .read-passage-refresh-icon {
-      display: inline-block;
-      font-size: 1.2rem;
-      line-height: 1;
-    }
-    .read-passage-refresh-btn.is-loading .read-passage-refresh-icon {
-      animation: read-refresh-spin 0.85s linear infinite;
-    }
-    #d-verseDisplay.read-retry-loading,
-    .mob-verse-box.read-retry-loading {
-      opacity: 0.88;
-      transition: opacity 0.2s ease;
-    }
-    @keyframes read-refresh-spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .read-passage-refresh-btn.is-loading .read-passage-refresh-icon {
-        animation: read-refresh-pulse 1s ease-in-out infinite;
-      }
-      @keyframes read-refresh-pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-      }
-    }
-    @media (max-width: 520px) {
-      .read-passage-error-row { flex-wrap: wrap; }
-      .read-passage-refresh-btn { margin-left: auto; }
-    }
     .verse-text {
       color:var(--crimson); font-family:'EB Garamond', serif;
       font-size: var(--verse-size);
@@ -991,64 +707,12 @@
       .scroll-card, .mob-card { animation-duration: 0.45s; }
       .mob-bottom { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
     }
-    /* Tablet-sized phones in landscape: extra bottom padding for fixed bar */
-    @media (max-width: 1100px) and (min-width: 600px) and (orientation: landscape) {
-      body.layout-mobile .mob-content { padding-bottom: 200px; }
-    }
     @media (hover: none) and (pointer: coarse) {
       .verse-reveal { animation: fadeUp 0.28s ease both; }
       @keyframes scrollUnfurl {
         0%   { opacity:0; transform: translateY(8px); }
         100% { opacity:1; transform: translateY(0); }
       }
-    }
-
-    /* ══ TABLET LAYOUT (desktop shell, 769px–1100px) ══ */
-    @media (min-width: 769px) and (max-width: 1100px) {
-      #desktop-view { padding: 28px 18px 52px; }
-      .header { margin-bottom: 22px; }
-      h1 { font-size: clamp(1.2rem, 3.2vw, 1.85rem); }
-      .daily-banner, .weekly-banner, .devotional-banner,
-      .scroll-card {
-        max-width: min(720px, 94vw);
-      }
-      .scroll-card { padding: 26px 24px; }
-      .banner-verse { font-size: 1rem; }
-      .controls { gap: 12px; margin-bottom: 16px; }
-      .control-group select,
-      .read-search-input { font-size: 0.95rem; padding: 10px 28px 10px 10px; }
-      .btn-generate { padding: 14px; font-size: 0.9rem; margin-bottom: 18px; }
-      .btn-action { min-height: 44px; padding: 10px 14px; }
-      #d-verseDisplay { padding: 18px 14px; min-height: 100px; }
-      #d-imageCanvas { max-width: min(460px, 78vw); max-height: 78vh; }
-      .image-action-row { gap: 10px; }
-      .fav-panel { max-height: 220px; }
-      .share-modal { max-width: 420px; }
-    }
-    @media (min-width: 769px) and (max-width: 1100px) and (orientation: landscape) {
-      #desktop-view { padding: 20px 22px 44px; }
-      .daily-banner, .weekly-banner, .devotional-banner,
-      .scroll-card { max-width: min(880px, 92vw); }
-      .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .control-group.full-width,
-      .read-bible-panel { grid-column: 1 / -1; }
-      .read-bible-row { grid-template-columns: 1fr 1fr 1fr; }
-      .read-bible-row .control-group:last-child { grid-column: span 1; }
-    }
-    @media (min-width: 769px) and (max-width: 900px) and (orientation: portrait) {
-      .controls { grid-template-columns: 1fr; }
-      .control-group.full-width { grid-column: 1; }
-      .read-bible-row { grid-template-columns: 1fr; }
-    }
-    body.layout-tablet .btn-generate,
-    body.layout-tablet .btn-action,
-    body.layout-tablet select,
-    body.layout-tablet .ref-search-btn {
-      -webkit-tap-highlight-color: transparent;
-    }
-    body.layout-tablet #desktop-view {
-      padding-left: max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
     }
   </style>
 </head>
@@ -1090,41 +754,17 @@
     <p class="weekly-note" id="d-weekly-note"></p>
   </div>
 
-  <!-- Daily Devotional -->
-  <div class="devotional-banner" id="d-devotional-banner">
-    <button type="button" class="devotional-header" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
-      <span class="banner-label">Daily Devotional</span>
-      <span class="devotional-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </span>
-    </button>
-    <div class="devotional-collapse" id="d-devotional-collapse">
-      <div class="devotional-inner">
-        <div class="devotional-panel-body">
-          <p class="devotional-date" id="d-devotional-date">Loading…</p>
-          <h2 class="devotional-heading" id="d-devotional-title"></h2>
-          <p class="devotional-scripture" id="d-devotional-scripture"></p>
-          <div class="devotional-slider-row">
-            <span class="devotional-slider-label">Text Size</span>
-            <input type="range" id="d-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
-          </div>
-          <div class="devotional-content" id="d-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="scroll-card">
     <div class="card-ornament">· · ✦ · ·</div>
     <div class="verse-counter" id="d-counter" style="display:none;"></div>
 
     <div class="controls">
       <div class="control-group">
-        <label for="d-testament" id="d-testament-label">Mode</label>
+        <label for="d-testament" id="d-testament-label">Testament</label>
         <select id="d-testament" onchange="updateBooks('d')">
-          <option value="custom" selected>Verse Generator</option>
+          <option value="custom" selected>Choose Book</option>
+          <option value="old">Old Testament</option>
+          <option value="new">New Testament</option>
           <option value="read">Read Bible</option>
         </select>
       </div>
@@ -1136,13 +776,13 @@
       </div>
       <div class="control-group full-width" id="d-bookWrapper">
         <label for="d-book" id="d-book-label">Book</label>
-        <select id="d-book" onchange="onBookSelectChange('d')"></select>
+        <select id="d-book"></select>
       </div>
 
       <div class="control-group full-width" id="d-customSearchWrapper">
         <label for="d-custom-search" id="d-custom-search-label">Search</label>
         <div class="ref-search-wrap">
-          <input type="text" id="d-custom-search" class="read-search-input ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('d')" onfocus="onCustomSearchFocus('d')" onkeydown="onSearchKeydown(event,'d','custom')">
+          <input type="text" id="d-custom-search" class="read-search-input ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('d')" onkeydown="if(event.key==='Enter')onCustomSearch('d')">
           <button type="button" class="ref-search-btn" onclick="onCustomSearch('d')" aria-label="Search" title="Search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           </button>
@@ -1167,7 +807,7 @@
         <div class="control-group full-width">
           <label for="d-read-search" id="d-read-search-label">Search</label>
           <div class="ref-search-wrap">
-            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'d','read')">
+            <input type="text" id="d-read-search" class="read-search-input ref-search-input" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('d')">
             <button type="button" class="ref-search-btn" onclick="onReadSearch('d')" aria-label="Search" title="Search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
             </button>
@@ -1264,41 +904,17 @@
       <p class="weekly-note" id="m-weekly-note"></p>
     </div>
 
-    <!-- Mobile Daily Devotional -->
-    <div class="devotional-banner mob-devotional-banner" id="m-devotional-banner">
-      <button type="button" class="devotional-header" id="m-devotional-toggle" aria-expanded="false" aria-controls="m-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
-        <span class="banner-label">Daily Devotional</span>
-        <span class="devotional-chevron" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </span>
-      </button>
-      <div class="devotional-collapse" id="m-devotional-collapse">
-        <div class="devotional-inner">
-          <div class="devotional-panel-body">
-            <p class="devotional-date" id="m-devotional-date">Loading…</p>
-            <h2 class="devotional-heading" id="m-devotional-title"></h2>
-            <p class="devotional-scripture" id="m-devotional-scripture"></p>
-            <div class="devotional-slider-row">
-              <span class="devotional-slider-label">Text Size</span>
-              <input type="range" id="m-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
-            </div>
-            <div class="devotional-content" id="m-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="mob-card">
       <div class="mob-card-orn">· ✦ ·</div>
       <div class="mob-verse-counter" id="m-counter" style="display:none;"></div>
 
       <div class="mob-select-row">
         <div class="mob-field">
-          <span class="mob-label" id="m-testament-label">Mode</span>
+          <span class="mob-label" id="m-testament-label">Testament</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="custom" selected>Verse Generator</option>
+            <option value="custom" selected>Choose Book</option>
+            <option value="old">Old Testament</option>
+            <option value="new">New Testament</option>
             <option value="read">Read Bible</option>
           </select>
         </div>
@@ -1313,14 +929,14 @@
       <div class="mob-select-row" id="m-bookWrapper">
         <div class="mob-field full">
           <span class="mob-label" id="m-book-label">Book</span>
-          <select class="mob-select" id="m-book" onchange="onBookSelectChange('m')"></select>
+          <select class="mob-select" id="m-book"></select>
         </div>
       </div>
 
       <div class="mob-field full" id="m-customSearchWrapper" style="margin-bottom:9px;">
         <span class="mob-label" id="m-custom-search-label">Search</span>
         <div class="ref-search-wrap">
-          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onfocus="onCustomSearchFocus('m')" onkeydown="onSearchKeydown(event,'m','custom')">
+          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onkeydown="if(event.key==='Enter')onCustomSearch('m')">
           <button type="button" class="ref-search-btn" onclick="onCustomSearch('m')" aria-label="Search" title="Search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           </button>
@@ -1346,7 +962,7 @@
         </div>
         <div class="mob-field full" style="margin-bottom:9px;">
           <span class="mob-label" id="m-read-search-label">Search</span>
-          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
+          <input type="text" id="m-read-search" class="read-search-input mob-read-search" placeholder="e.g. Matthew 24:5 or Matthew 24:5-15" onkeydown="if(event.key==='Enter')onReadSearch('m')">
         </div>
       </div>
 
@@ -1656,148 +1272,6 @@
   };
 
   /* ══════════════════════════════════════
-     MOBILE / WEBVIEW API COMPAT (Mi Browser, etc.)
-     fetch() can hang without rejecting — use timeouts + XHR fallback.
-  ══════════════════════════════════════ */
-  const API_FETCH_TIMEOUT_MS = 10000;
-  const API_FETCH_TIMEOUT_MOBILE_MS = 8000;
-  let _apiFailStreak = 0;
-  let _apiCircuitOpenUntil = 0;
-
-  function isRestrictedMobileBrowser() {
-    const ua = navigator.userAgent || '';
-    if (/MiuiBrowser|MiBrowser|XiaoMi|MIUI|HeyTapBrowser|OppoBrowser|VivoBrowser|HuaweiBrowser|UCBrowser|UBrowser|Quark|SamsungBrowser/i.test(ua)) return true;
-    if (/(Android|webOS)/i.test(ua) && /wv\)|; wv|WebView|FB_IAB|Instagram/i.test(ua)) return true;
-    return false;
-  }
-
-  function apiFetchTimeoutMs() {
-    return isRestrictedMobileBrowser() ? API_FETCH_TIMEOUT_MOBILE_MS : API_FETCH_TIMEOUT_MS;
-  }
-
-  function apiCircuitOpen() {
-    return Date.now() < _apiCircuitOpenUntil;
-  }
-
-  function markApiSuccess() {
-    _apiFailStreak = 0;
-    _apiCircuitOpenUntil = 0;
-  }
-
-  function markApiFailure() {
-    _apiFailStreak++;
-    if (_apiFailStreak >= 2) {
-      _apiCircuitOpenUntil = Date.now() + (isRestrictedMobileBrowser() ? 45000 : 20000);
-    }
-  }
-
-  function markCompatMobileBrowser() {
-    if (isRestrictedMobileBrowser()) document.body.classList.add('compat-mobile');
-  }
-
-  function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  function withTimeout(promise, ms, fallback) {
-    return Promise.race([
-      promise,
-      delay(ms).then(() => {
-        if (fallback !== undefined) return fallback;
-        throw new Error('timeout');
-      })
-    ]);
-  }
-
-  function xhrGet(url, timeoutMs, asJson) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      let done = false;
-      const finish = (fn, val) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        fn(val);
-      };
-      const timer = setTimeout(() => {
-        try { xhr.abort(); } catch (_) {}
-        finish(reject, new Error('timeout'));
-      }, timeoutMs);
-      xhr.open('GET', url, true);
-      xhr.setRequestHeader('Accept', asJson ? 'application/json' : '*/*');
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          if (!asJson) return finish(resolve, xhr.responseText);
-          try { finish(resolve, JSON.parse(xhr.responseText)); }
-          catch (e) { finish(reject, e); }
-        } else finish(reject, new Error('http ' + xhr.status));
-      };
-      xhr.onerror = () => finish(reject, new Error('network'));
-      xhr.onabort = () => finish(reject, new Error('abort'));
-      try { xhr.send(); } catch (e) { finish(reject, e); }
-    });
-  }
-
-  async function apiGetJson(url, timeoutMs, opts) {
-    opts = opts || {};
-    if (!opts.ignoreCircuit && apiCircuitOpen()) return null;
-    timeoutMs = timeoutMs || apiFetchTimeoutMs();
-
-    async function tryFetch() {
-      const res = await fetchWithTimeout(url, timeoutMs);
-      if (!res || !res.ok) throw new Error('http');
-      return await res.json();
-    }
-
-    const attempts = isRestrictedMobileBrowser()
-      ? [() => xhrGet(url, timeoutMs, true), tryFetch]
-      : [tryFetch, () => xhrGet(url, timeoutMs, true)];
-
-    for (const run of attempts) {
-      try {
-        const data = await run();
-        if (data != null) {
-          if (!opts.softFail) markApiSuccess();
-          return data;
-        }
-      } catch { /* try next transport */ }
-    }
-    if (!opts.softFail) markApiFailure();
-    return null;
-  }
-
-  /** Remove pilcrow / paragraph markers from Bible verse text (common in KJV sources). */
-  function stripParagraphMarkers(text) {
-    return (text || '')
-      .replace(/&para;|&#182;|&#xB6;/gi, '')
-      .replace(/\u00B6/g, '')
-      .replace(/¶/g, '');
-  }
-
-  function fetchWithTimeout(url, timeoutMs, extraOpts) {
-    const opts = { credentials: 'omit', mode: 'cors', cache: 'default', ...(extraOpts || {}) };
-    if (typeof AbortController !== 'undefined') {
-      const controller = new AbortController();
-      const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
-      return fetch(url, { ...opts, signal: controller.signal })
-        .finally(() => clearTimeout(timer));
-    }
-    return withTimeout(fetch(url, opts), timeoutMs);
-  }
-
-  function clearAllVersePanelLoading() {
-    ['d', 'm'].forEach(p => {
-      clearReadDisplayLoading(p);
-      const display = document.getElementById(p + '-verseDisplay');
-      if (!display) return;
-      display.classList.remove('loading');
-      if (/Seeking the Word|Loading Scripture/i.test(display.textContent || '')) {
-        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Tap the button below to reveal a verse.</p>`;
-      }
-    });
-  }
-
-  /* ══════════════════════════════════════
      HELLO AO BIBLE API (second source)
      Only BSB and NET confirmed available
   ══════════════════════════════════════ */
@@ -1837,547 +1311,6 @@
   // Per-module canonical book IDs discovered from get-books (1–66)
   const BOLLS_BOOK_IDS_BY_MODULE = {};
 
-  /* ══════════════════════════════════════
-     API.BIBLE (rest.api.bible) — 3 translations
-  ══════════════════════════════════════ */
-  const API_BIBLE_BASE = 'https://rest.api.bible/v1';
-  const API_BIBLE_KEY = '-xMulho1difcgD2nYHEVy';
-
-  const API_BIBLE_BIBLES = {
-    'apib-KJV': {
-      name: 'King James (Authorised) Version',
-      shortname: 'KJV (API)',
-      module: 'apib-KJV',
-      lang: 'English',
-      lang_short: 'en',
-      source: 'apibible',
-      bibleId: 'de4e12af7f28f599-02',
-      hideInSelect: true
-    },
-    'apib-CSB': {
-      name: 'Christian Standard Bible',
-      shortname: 'CSB',
-      module: 'apib-CSB',
-      lang: 'English',
-      lang_short: 'en',
-      source: 'apibible',
-      bibleId: 'a556c5305ee15c3f-01'
-    },
-    'apib-NKJV': {
-      name: 'New King James Version',
-      shortname: 'NKJV',
-      module: 'apib-NKJV',
-      lang: 'English',
-      lang_short: 'en',
-      source: 'apibible',
-      bibleId: '63097d2a0a2f7db3-01',
-      insertAfterModule: 'kjvpce'
-    }
-  };
-
-  const API_BIBLE_PASSAGE_CACHE = {};
-
-  function isApiBibleMode(module) {
-    return (module || '').startsWith('apib-');
-  }
-
-  function getApiBibleId(module) {
-    return API_BIBLE_BIBLES[module]?.bibleId || '';
-  }
-
-  function getApiBibleBookCode(bookEn) {
-    return HAO_BOOK_CODES[bookEn] || bookEn.toUpperCase().slice(0, 3);
-  }
-
-  function buildApiBiblePassageId(bookEn, chapter, verseStart, verseEnd) {
-    const code = getApiBibleBookCode(bookEn);
-    if (verseStart == null && verseEnd == null) return code + '.' + chapter;
-    if (verseEnd == null || verseEnd === verseStart) return code + '.' + chapter + '.' + verseStart;
-    return code + '.' + chapter + '.' + verseStart + '-' + code + '.' + chapter + '.' + verseEnd;
-  }
-
-  function cleanApiBibleText(content) {
-    return stripParagraphMarkers(content || '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
-      .replace(/\[\d+\]\s*/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function parseApiBiblePassageContent(content, bookEn, chapter) {
-    const verses = [];
-    const re = /\[(\d+)\]\s*([^[]*)/g;
-    let m;
-    while ((m = re.exec(content || '')) !== null) {
-      const num = parseInt(m[1], 10);
-      const text = cleanApiBibleText(m[2]);
-      if (text) verses.push({ num, chapter, text });
-    }
-    if (!verses.length) {
-      const text = cleanApiBibleText(content);
-      if (text) verses.push({ num: 1, chapter, text });
-    }
-    return verses;
-  }
-
-  async function apiBibleGetJson(path, query) {
-    if (apiCircuitOpen() || !API_BIBLE_KEY) return null;
-    const q = query && Object.keys(query).length
-      ? '?' + new URLSearchParams(query).toString()
-      : '';
-    const url = API_BIBLE_BASE + path + q;
-    const timeout = apiFetchTimeoutMs() + 4000;
-    const headers = { 'api-key': API_BIBLE_KEY, Accept: 'application/json' };
-
-    async function tryFetch() {
-      const res = await fetchWithTimeout(url, timeout, { headers });
-      if (!res || !res.ok) throw new Error('http');
-      return await res.json();
-    }
-
-    try {
-      const data = await tryFetch();
-      if (data != null) {
-        markApiSuccess();
-        return data;
-      }
-    } catch {
-      try {
-        const data = await xhrGetWithHeaders(url, timeout, true, headers);
-        if (data != null) {
-          markApiSuccess();
-          return data;
-        }
-      } catch { /* fall through */ }
-    }
-    markApiFailure();
-    return null;
-  }
-
-  function xhrGetWithHeaders(url, timeoutMs, asJson, headers) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      let done = false;
-      const finish = (fn, val) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        fn(val);
-      };
-      const timer = setTimeout(() => {
-        try { xhr.abort(); } catch (_) {}
-        finish(reject, new Error('timeout'));
-      }, timeoutMs);
-      xhr.open('GET', url, true);
-      Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          if (!asJson) return finish(resolve, xhr.responseText);
-          try { finish(resolve, JSON.parse(xhr.responseText)); }
-          catch (e) { finish(reject, e); }
-        } else finish(reject, new Error('http ' + xhr.status));
-      };
-      xhr.onerror = () => finish(reject, new Error('network'));
-      xhr.onabort = () => finish(reject, new Error('abort'));
-      try { xhr.send(); } catch (e) { finish(reject, e); }
-    });
-  }
-
-  async function fetchApiBiblePassage(module, bookEn, chapter, verseStart, verseEnd) {
-    const bibleId = getApiBibleId(module);
-    if (!bibleId || !bookEn) return null;
-    const passageId = buildApiBiblePassageId(bookEn, chapter, verseStart, verseEnd);
-    const cacheKey = module + ':' + passageId;
-    if (API_BIBLE_PASSAGE_CACHE[cacheKey]) return API_BIBLE_PASSAGE_CACHE[cacheKey];
-
-    const data = await apiBibleGetJson(
-      '/bibles/' + encodeURIComponent(bibleId) + '/passages/' + encodeURIComponent(passageId),
-      { 'content-type': 'text' }
-    );
-    if (!data?.data?.content) return null;
-
-    let verses = parseApiBiblePassageContent(data.data.content, bookEn, chapter);
-    if (verseStart != null) verses = verses.filter(v => v.num >= verseStart);
-    if (verseEnd != null) verses = verses.filter(v => v.num <= verseEnd);
-    if (!verses.length) return null;
-
-    const ref = data.data.reference || formatPassageRef(bookEn, chapter, verses);
-    const result = {
-      verses,
-      ref,
-      bookName: bookEn,
-      chapter,
-      version: module
-    };
-    API_BIBLE_PASSAGE_CACHE[cacheKey] = result;
-    return result;
-  }
-
-  async function fetchApiBibleReference(module, bookEn, chapter, verseNum) {
-    const data = await fetchApiBiblePassage(module, bookEn, chapter, verseNum, verseNum);
-    if (!data?.verses?.length) return null;
-    const v = data.verses[0];
-    return { text: v.text, ref: data.ref, version: module };
-  }
-
-  async function fetchApiBibleReferenceFromString(module, ref) {
-    const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
-    if (!m) return null;
-    const bookEn = resolveBookEnFromRaw(m[1].trim());
-    if (!bookEn) return null;
-    return fetchApiBibleReference(module, bookEn, parseInt(m[2], 10), parseInt(m[3], 10));
-  }
-
-  async function fetchApiBiblePassageFromString(module, reference, filterStart, filterEnd) {
-    const m = reference.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?/);
-    if (!m) return null;
-    const bookEn = resolveBookEnFromRaw(m[1].trim());
-    if (!bookEn) return null;
-    const chapter = parseInt(m[2], 10);
-    const vStart = m[3] ? parseInt(m[3], 10) : filterStart;
-    const vEnd = m[4] ? parseInt(m[4], 10) : (filterEnd != null ? filterEnd : vStart);
-    if (vStart == null) return fetchApiBiblePassage(module, bookEn, chapter, null, null);
-    return fetchApiBiblePassage(module, bookEn, chapter, vStart, vEnd);
-  }
-
-  async function fetchApiBibleRandomVerse(module, scope, attempt = 0) {
-    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
-    const ids = pickRandomBookIds(scope, module);
-    const bookId = ids[Math.floor(Math.random() * ids.length)];
-    const bookIdx = bookId - 1;
-    const bookEn = ALL[bookIdx];
-    const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookIdx]) + 1;
-    const verse = Math.floor(Math.random() * 30) + 1;
-    const entry = await fetchApiBibleReference(module, bookEn, chapter, verse);
-    if (entry) return entry;
-    return fetchApiBibleRandomVerse(module, scope, attempt + 1);
-  }
-
-  /* ══════════════════════════════════════
-     WLDH Bible API (cdn.jsdelivr.net/gh/wldeh/bible-api)
-  ══════════════════════════════════════ */
-  const WLDH_API = 'https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles';
-  const WLDH_BIBLES_LIST_URL = WLDH_API + '/bibles.json';
-  const WLDH_CATALOG_CACHE_KEY = 'wldh-bible-catalog-v2';
-  const WLDH_CATALOG_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-  const WLDH_BSS_REPLACE = { kjv: 'wldh-en-kjv', web: 'wldh-en-web', asv: 'wldh-en-asv' };
-  const WLDH_LEGACY_MODULE_MAP = { ...WLDH_BSS_REPLACE, 'hao-BSB': 'wldh-en-bsb' };
-
-  const WLDH_LANG_SHORT = {
-    eng: 'en', en: 'en', heb: 'he', nld: 'nl', de: 'de', es: 'es', fra: 'fr', fr: 'fr',
-    san: 'sa', nya: 'ny', kpg: 'kpg', nag: 'nag', nho: 'nho', mni: 'mni', kfw: 'kfw', sch: 'sch'
-  };
-  const WLDH_LANG_LABELS = {
-    eng: 'English', heb: 'Hebrew', nld: 'Dutch', de: 'German', es: 'Spanish', fra: 'French',
-    san: 'Sanskrit', nya: 'Chichewa', kpg: 'Kapingamarangi', nag: 'Naga Pidgin', nho: 'Takuu',
-    mni: 'Meitei', kfw: 'Kharam', sch: 'Sakachep'
-  };
-  const WLDH_RANK = {
-    'en-kjv': 11, 'en-web': 21, 'en-asv': 31, 'en-bsb': 25, 'en-lsv': 35, 'en-dra': 40,
-    'en-rv': 45, 'en-gnv': 50, 'en-fbv': 55, 'en-wmb': 60
-  };
-
-  const WLDH_VERIFIED_CATALOG = [
-    { id: 'en-kjv', scope: 'Bible with Deuterocanon', abbr: 'KJV', name: 'King James Version', lang: 'eng', langName: 'English' },
-    { id: 'en-web', scope: 'Bible with Deuterocanon', abbr: 'WEB', name: 'World English Bible (American Edition)', lang: 'eng', langName: 'English' },
-    { id: 'en-asv', scope: 'Bible', abbr: 'ASV', name: 'American Standard Version of 1901', lang: 'eng', langName: 'English' },
-    { id: 'en-bsb', scope: 'Bible', abbr: 'BSB', name: 'Berean Study Bible', lang: 'eng', langName: 'English' },
-    { id: 'en-lsv', scope: 'Bible', abbr: 'LSV', name: 'Literal Standard Version', lang: 'eng', langName: 'English' },
-    { id: 'en-dra', scope: 'Bible with Deuterocanon', abbr: 'DRA', name: 'Douay-Rheims American Edition 1899', lang: 'eng', langName: 'English' },
-    { id: 'en-rv', scope: 'Bible with Deuterocanon', abbr: 'RV', name: 'Revised Version 1885', lang: 'eng', langName: 'English' },
-    { id: 'en-gnv', scope: 'Bible', abbr: 'GNV', name: 'Geneva Bible 1599', lang: 'eng', langName: 'English' },
-    { id: 'en-fbv', scope: 'Bible', abbr: 'FBV', name: 'Free Bible Version', lang: 'eng', langName: 'English' },
-    { id: 'en-t4t', scope: 'Bible', abbr: 'T4T', name: 'Translation for Translators', lang: 'eng', langName: 'English' },
-    { id: 'en-wmb', scope: 'Bible', abbr: 'WMB', name: 'World Messianic Bible (American English)', lang: 'eng', langName: 'English' },
-    { id: 'en-wmbbe', scope: 'Bible', abbr: 'WMBBE', name: 'World Messianic Bible British Edition', lang: 'eng', langName: 'English' },
-    { id: 'en-webus', scope: 'Bible with Deuterocanon', abbr: 'WEBUS', name: 'World English Bible USA', lang: 'eng', langName: 'English' },
-    { id: 'en-webbe', scope: 'Bible with Deuterocanon', abbr: 'WEBBE', name: 'World English Bible British Edition', lang: 'eng', langName: 'English' },
-    { id: 'en-ojps', scope: 'Old Testament', abbr: 'OJPS', name: 'Old JPS TaNaKH', lang: 'eng', langName: 'English' },
-    { id: 'en-engbrent', scope: 'Old Testament + Deuterocanon', abbr: 'LXX', name: 'Brenton English Septuagint', lang: 'eng', langName: 'English' },
-    { id: 'en-US-lxxup', scope: 'Old Testament + Deuterocanon', abbr: 'LXXup', name: 'Brenton Septuagint (Updated)', lang: 'eng', langName: 'English' },
-    { id: 'en-US-kjvcpb', scope: 'Bible with Deuterocanon', abbr: 'KJVCPB', name: 'Cambridge Paragraph Bible (KJV)', lang: 'eng', langName: 'English' },
-    { id: 'en-US-asvbt', scope: 'Bible with Deuterocanon', abbr: 'ASVBT', name: 'ASV Byzantine Text with Apocrypha', lang: 'eng', langName: 'English' },
-    { id: 'en-US-emtv', scope: 'New Testament', abbr: 'EMTV', name: 'English Majority Text Version', lang: 'eng', langName: 'English' },
-    { id: 'en-US-f35', scope: 'New Testament', abbr: 'F35', name: 'English NT (Family 35)', lang: 'eng', langName: 'English' },
-    { id: 'en-tcent', scope: 'New Testament', abbr: 'TCENT', name: 'Text-Critical English NT', lang: 'eng', langName: 'English' },
-    { id: 'he-wlc', scope: 'Old Testament', abbr: 'WLC', name: 'Westminster Leningrad Codex', lang: 'heb', langName: 'Hebrew' },
-    { id: 'nl-nld1939', scope: 'Bible with Deuterocanon', abbr: 'NLD1939', name: 'De Heilige Schrift (Canisius, 1939)', lang: 'nld', langName: 'Dutch' },
-    { id: 'ny-tccl', scope: 'Bible', abbr: 'TCCl', name: 'Open God\'s Word in Contemporary Chichewa', lang: 'nya', langName: 'Chichewa' },
-    { id: 'kpg-kpg', scope: 'Bible', abbr: 'KPG', name: 'Kapingamarangi Bible', lang: 'kpg', langName: 'Kapingamarangi' },
-    { id: 'mni-rsm', scope: 'Bible', abbr: 'RSM', name: 'Meitei Roman Script Translation', lang: 'mni', langName: 'Meitei' },
-    { id: 'nag-isvnag', scope: 'New Testament', abbr: 'ISVNag', name: 'Indian Standard Version (Nagamese)', lang: 'nag', langName: 'Naga Pidgin' },
-    { id: 'kfw-khmnt', scope: 'Bible', abbr: 'KHMNT', name: 'Kharam NT', lang: 'kfw', langName: 'Naga, Kharam' },
-    { id: 'sch-sak', scope: 'Bible', abbr: 'SAK', name: 'Sakachep Bible', lang: 'sch', langName: 'Sakachep' },
-    { id: 'sa-Beng-IN-laukika-sanas', scope: 'New Testament', abbr: 'SANAS', name: 'Sanskrit Bible (NT, Assamese script)', lang: 'san', langName: 'Sanskrit' },
-    { id: 'nho-nho', scope: 'New Testament', abbr: 'NHO', name: 'Takuu New Testament', lang: 'nho', langName: 'Takuu' }
-  ];
-
-  const WLDH_BOOK_SLUGS = {
-    'Genesis':'genesis','Exodus':'exodus','Leviticus':'leviticus','Numbers':'numbers','Deuteronomy':'deuteronomy',
-    'Joshua':'joshua','Judges':'judges','Ruth':'ruth','1 Samuel':'1samuel','2 Samuel':'2samuel',
-    '1 Kings':'1kings','2 Kings':'2kings','1 Chronicles':'1chronicles','2 Chronicles':'2chronicles',
-    'Ezra':'ezra','Nehemiah':'nehemiah','Esther':'esther','Job':'job','Psalms':'psalms',
-    'Proverbs':'proverbs','Ecclesiastes':'ecclesiastes','Song of Solomon':'songofsolomon','Isaiah':'isaiah',
-    'Jeremiah':'jeremiah','Lamentations':'lamentations','Ezekiel':'ezekiel','Daniel':'daniel','Hosea':'hosea',
-    'Joel':'joel','Amos':'amos','Obadiah':'obadiah','Jonah':'jonah','Micah':'micah',
-    'Nahum':'nahum','Habakkuk':'habakkuk','Zephaniah':'zephaniah','Haggai':'haggai','Zechariah':'zechariah',
-    'Malachi':'malachi','Matthew':'matthew','Mark':'mark','Luke':'luke','John':'john',
-    'Acts':'acts','Romans':'romans','1 Corinthians':'1corinthians','2 Corinthians':'2corinthians',
-    'Galatians':'galatians','Ephesians':'ephesians','Philippians':'philippians','Colossians':'colossians',
-    '1 Thessalonians':'1thessalonians','2 Thessalonians':'2thessalonians','1 Timothy':'1timothy','2 Timothy':'2timothy',
-    'Titus':'titus','Philemon':'philemon','Hebrews':'hebrews','James':'james','1 Peter':'1peter',
-    '2 Peter':'2peter','1 John':'1john','2 John':'2john','3 John':'3john','Jude':'jude',
-    'Revelation':'revelation'
-  };
-
-  let WLDH_BIBLES = {};
-  const WLDH_CHAPTER_CACHE = {};
-  const WLDH_BOOK_IDS_BY_MODULE = {};
-
-  function isWldhMode(module) {
-    return (module || '').startsWith('wldh-');
-  }
-
-  function getWldhId(module) {
-    return WLDH_BIBLES[module]?.wldhId || module.replace(/^wldh-/, '');
-  }
-
-  function bssReplacedByWldh(module) {
-    const wldhMod = WLDH_BSS_REPLACE[module];
-    return !!(wldhMod && WLDH_BIBLES[wldhMod]);
-  }
-
-  function resolveLegacyModule(module) {
-    return WLDH_LEGACY_MODULE_MAP[module] || module;
-  }
-
-  function getSelectedVersion(p) {
-    const raw = document.getElementById(p + '-version')?.value || 'wldh-en-kjv';
-    return resolveLegacyModule(raw);
-  }
-
-  function wldhBookIdsForScope(scope) {
-    const s = scope || 'Bible';
-    if (/^New Testament/i.test(s)) return Array.from({ length: 27 }, (_, i) => i + 40);
-    if (/Old Testament/i.test(s) && !/New Testament/i.test(s)) return Array.from({ length: 39 }, (_, i) => i + 1);
-    return Array.from({ length: 66 }, (_, i) => i + 1);
-  }
-
-  function buildWldhBibleFromCatalog(item) {
-    const module = 'wldh-' + item.id;
-    const langShort = WLDH_LANG_SHORT[item.lang] || (item.lang || 'en').slice(0, 2);
-    const langLabel = item.langName || WLDH_LANG_LABELS[item.lang] || item.lang || 'Other';
-    let shortname = (item.abbr || '').trim();
-    if (!shortname) shortname = item.id.split('-').pop().toUpperCase().slice(0, 10);
-    return {
-      name: item.name,
-      shortname,
-      module,
-      wldhId: item.id,
-      lang: langLabel,
-      lang_short: langShort,
-      source: 'wldh',
-      scope: item.scope,
-      rank: String(WLDH_RANK[item.id] || 600)
-    };
-  }
-
-  function readWldhCatalogCache() {
-    try {
-      const raw = localStorage.getItem(WLDH_CATALOG_CACHE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed?.items?.length || Date.now() - (parsed.at || 0) > WLDH_CATALOG_TTL_MS) return null;
-      return parsed;
-    } catch { return null; }
-  }
-
-  function writeWldhCatalogCache(items) {
-    try {
-      localStorage.setItem(WLDH_CATALOG_CACHE_KEY, JSON.stringify({ at: Date.now(), items }));
-    } catch { /* quota */ }
-  }
-
-  function rebuildWldhBiblesFromCatalog(items) {
-    WLDH_BIBLES = {};
-    items.forEach(item => {
-      const entry = buildWldhBibleFromCatalog(item);
-      WLDH_BIBLES[entry.module] = entry;
-    });
-  }
-
-  function loadWldhBibleCatalog() {
-    const cached = readWldhCatalogCache();
-    rebuildWldhBiblesFromCatalog(cached?.items?.length ? cached.items : WLDH_VERIFIED_CATALOG);
-  }
-
-  async function probeWldhCatalogEntry(entry) {
-    const tries = [];
-    const scope = entry.scope || '';
-    if (/Old Testament/i.test(scope) && !/New Testament/i.test(scope)) tries.push(['genesis', 1, 1]);
-    else if (/^New Testament/i.test(scope)) tries.push(['john', 3, 16], ['matthew', 1, 1]);
-    else tries.push(['genesis', 1, 1], ['john', 3, 16]);
-    for (const [book, ch, v] of tries) {
-      const url = `${WLDH_API}/${entry.id}/books/${book}/chapters/${ch}/verses/${v}.json`;
-      const data = await withTimeout(
-        apiGetJson(url, 6000, { ignoreCircuit: true, softFail: true }),
-        6500,
-        null
-      );
-      if (data?.text || data?.data) return true;
-    }
-    return false;
-  }
-
-  async function refreshWldhCatalogInBackground() {
-    const list = await apiGetJson(WLDH_BIBLES_LIST_URL, 15000, { ignoreCircuit: true, softFail: true });
-    if (!Array.isArray(list) || !list.length) return;
-    const candidates = list.filter(b => b.id && b.scope !== 'Portions');
-    const working = [];
-    let i = 0;
-    const workers = 8;
-    await Promise.all(Array.from({ length: workers }, async () => {
-      while (i < candidates.length) {
-        const b = candidates[i++];
-        const item = {
-          id: b.id,
-          scope: b.scope,
-          abbr: (b.localVersionAbbreviation || '').trim(),
-          name: (b.version || b.description || b.id).slice(0, 120),
-          lang: b.language?.code || '',
-          langName: b.language?.name || ''
-        };
-        if (await probeWldhCatalogEntry(item)) working.push(item);
-      }
-    }));
-    if (working.length < 5) return;
-    working.sort((a, b) => (a.langName || '').localeCompare(b.langName || '') || a.id.localeCompare(b.id));
-    writeWldhCatalogCache(working);
-    rebuildWldhBiblesFromCatalog(working);
-    populateTranslationSelects();
-    const active = activePanel();
-    const version = document.getElementById(active + '-version')?.value;
-    if (isWldhMode(version)) await updateBooks(active, { refreshReadLabels: isReadBibleMode(active) });
-  }
-
-  function getWldhBssFallback(module) {
-    for (const [bssMod, wldhMod] of Object.entries(WLDH_BSS_REPLACE)) {
-      if (wldhMod === module) return bssMod;
-    }
-    return null;
-  }
-
-  function cleanWldhText(text) {
-    return stripParagraphMarkers(text || '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
-      .trim().replace(/\s+/g, ' ');
-  }
-
-  function parseWldhChapterPayload(data, chapter) {
-    const rows = data?.data;
-    if (!Array.isArray(rows) || !rows.length) return null;
-    return rows.map(row => ({
-      num: parseInt(row.verse, 10),
-      chapter: parseInt(row.chapter, 10) || chapter,
-      text: cleanWldhText(row.text)
-    })).filter(v => v.text && !isNaN(v.num));
-  }
-
-  async function fetchWldhChapter(module, bookEn, chapter) {
-    const wldhId = getWldhId(module);
-    const slug = WLDH_BOOK_SLUGS[bookEn];
-    if (!wldhId || !slug) return null;
-    const cacheKey = `${module}:${slug}:${chapter}`;
-    if (WLDH_CHAPTER_CACHE[cacheKey]) return WLDH_CHAPTER_CACHE[cacheKey];
-    const url = `${WLDH_API}/${encodeURIComponent(wldhId)}/books/${slug}/chapters/${chapter}.json`;
-    const chapterTimeout = apiFetchTimeoutMs() + 10000;
-    const data = await apiGetJson(url, chapterTimeout);
-    const verses = parseWldhChapterPayload(data, chapter);
-    if (!verses?.length) return null;
-    WLDH_CHAPTER_CACHE[cacheKey] = verses;
-    return verses;
-  }
-
-  async function fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd) {
-    const bssMod = getWldhBssFallback(module);
-    if (!bssMod) return null;
-    const bookApi = getApiBookName(bookEn, bssMod);
-    let ref;
-    if (verseStart == null) ref = `${bookApi} ${chapter}`;
-    else if (verseEnd == null || verseEnd === verseStart) ref = `${bookApi} ${chapter}:${verseStart}`;
-    else ref = `${bookApi} ${chapter}:${verseStart}-${verseEnd}`;
-    const bss = await fetchBssPassageVerses(bssMod, ref, verseStart, verseEnd);
-    if (!bss?.verses?.length) return null;
-    return { ...bss, version: module };
-  }
-
-  async function fetchWldhPassageVerses(module, bookEn, chapter, verseStart, verseEnd) {
-    let verses = await fetchWldhChapter(module, bookEn, chapter);
-    if (!verses?.length) {
-      return fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd);
-    }
-    let slice = verses;
-    if (verseStart != null) slice = slice.filter(v => v.num >= verseStart);
-    if (verseEnd != null) slice = slice.filter(v => v.num <= verseEnd);
-    if (!slice.length) {
-      return fetchWldhPassageFromBssFallback(module, bookEn, chapter, verseStart, verseEnd);
-    }
-    const start = slice[0].num;
-    const end = slice[slice.length - 1].num;
-    const ref = start === end ? `${bookEn} ${chapter}:${start}` : `${bookEn} ${chapter}:${start}-${end}`;
-    return { verses: slice, ref, bookName: bookEn, chapter, version: module };
-  }
-
-  async function fetchWldhReference(module, bookEn, chapter, verseNum) {
-    const data = await fetchWldhPassageVerses(module, bookEn, chapter, verseNum, verseNum);
-    if (!data?.verses?.length) return null;
-    return { text: data.verses[0].text, ref: data.ref, version: module };
-  }
-
-  async function fetchWldhReferenceFromString(module, ref) {
-    const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
-    if (!m) return null;
-    const bookEn = resolveBookEnFromRaw(m[1].trim());
-    if (!bookEn) return null;
-    return fetchWldhReference(module, bookEn, parseInt(m[2], 10), parseInt(m[3], 10));
-  }
-
-  async function fetchWldhPassageFromString(module, reference, filterStart, filterEnd) {
-    const m = reference.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?/);
-    if (!m) return null;
-    const bookEn = resolveBookEnFromRaw(m[1].trim());
-    if (!bookEn) return null;
-    const chapter = parseInt(m[2], 10);
-    const vStart = m[3] ? parseInt(m[3], 10) : filterStart;
-    const vEnd = m[4] ? parseInt(m[4], 10) : (filterEnd != null ? filterEnd : vStart);
-    if (vStart == null) return fetchWldhPassageVerses(module, bookEn, chapter, null, null);
-    return fetchWldhPassageVerses(module, bookEn, chapter, vStart, vEnd);
-  }
-
-  async function fetchWldhRandomVerse(module, scope, attempt = 0) {
-    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
-    const ids = pickRandomBookIds(scope, module);
-    if (!ids.length) return null;
-    const bookId = ids[Math.floor(Math.random() * ids.length)];
-    const bookEn = ALL[bookId - 1];
-    const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookId - 1]) + 1;
-    const verses = await fetchWldhChapter(module, bookEn, chapter);
-    if (!verses?.length) return fetchWldhRandomVerse(module, scope, attempt + 1);
-    const v = verses[Math.floor(Math.random() * verses.length)];
-    return { text: v.text, ref: `${bookEn} ${chapter}:${v.num}`, version: module };
-  }
-
-  async function ensureWldhBooksDiscovered(module) {
-    return ensureBooksDiscovered(module);
-  }
-
   function isBollsMode(module) {
     return (module || '').startsWith('bolls-');
   }
@@ -2390,33 +1323,32 @@
     if (!isBollsMode(module)) return [];
     const bollsId = getBollsId(module);
     try {
-      const data = await apiGetJson(`${BOLLS_API}/get-books/${bollsId}/`);
-      if (!data) {
-        const fallback = guessBookIdsFromMetadata(module);
-        BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
+      const res = await fetch(`${BOLLS_API}/get-books/${bollsId}/`);
+      if (!res.ok) {
+        BOLLS_BOOK_IDS_BY_MODULE[module] = [];
       } else {
+        const data = await res.json();
         BOLLS_BOOK_IDS_BY_MODULE[module] = (Array.isArray(data) ? data : [])
           .map(b => Number(b.bookid))
           .filter(id => id >= 1 && id <= 66)
           .sort((a, b) => a - b);
       }
     } catch {
-      const fallback = guessBookIdsFromMetadata(module);
-      BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
+      BOLLS_BOOK_IDS_BY_MODULE[module] = [];
     }
-    if (!BOLLS_BOOK_IDS_BY_MODULE[module]?.length) {
-      const fallback = guessBookIdsFromMetadata(module);
-      BOLLS_BOOK_IDS_BY_MODULE[module] = fallback.length ? fallback : [defaultBookIdForModule(module)];
-    }
-    return setVersionBookIds(module, BOLLS_BOOK_IDS_BY_MODULE[module]);
+    delete VERSION_BOOK_IDS_CACHE[module];
+    VERSION_BOOK_IDS_CACHE[module] = [...BOLLS_BOOK_IDS_BY_MODULE[module]];
+    return BOLLS_BOOK_IDS_BY_MODULE[module];
   }
 
   async function ensureBollsBooksDiscovered(module) {
-    return ensureBooksDiscovered(module);
+    if (!isBollsMode(module)) return;
+    if (BOLLS_BOOK_IDS_BY_MODULE[module]) return;
+    await discoverBollsBooks(module);
   }
 
   function cleanBollsText(html) {
-    return stripParagraphMarkers(html || '')
+    return (html || '')
       .replace(/<[^>]+>/g, '')
       .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
       .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
@@ -2432,7 +1364,9 @@
     if (BOLLS_CHAPTER_CACHE[cacheKey]) return BOLLS_CHAPTER_CACHE[cacheKey];
     try {
       const url = `${BOLLS_API}/get-text/${bollsId}/${bookId}/${chapter}/`;
-      const data = await apiGetJson(url);
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
       if (!Array.isArray(data) || !data.length) return null;
       BOLLS_CHAPTER_CACHE[cacheKey] = data;
       return data;
@@ -2482,7 +1416,7 @@
   }
 
   async function fetchBollsRandomVerse(module, scope, attempt = 0) {
-    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
+    if (attempt > 5) return null;
     const ids = pickRandomBookIds(scope, module);
     if (!ids.length) return null;
     const bookId = ids[Math.floor(Math.random() * ids.length)];
@@ -2514,305 +1448,6 @@
     'Revelation':'REV'
   };
 
-  const HAO_CODE_TO_EN = {};
-  Object.entries(HAO_BOOK_CODES).forEach(([en, code]) => { HAO_CODE_TO_EN[code] = en; });
-
-  /* ══════════════════════════════════════
-     Per-translation book discovery (API-verified)
-  ══════════════════════════════════════ */
-  const BOOK_IDS_CACHE_KEY = 'version-book-ids-v4';
-  const BOOK_IDS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-  const BOOK_DISCOVERY_PROMISE = {};
-  const BOOK_DISCOVERY_READY = new Set();
-  const APIBIBLE_BOOK_IDS_BY_MODULE = {};
-  const HAO_BOOK_IDS_BY_MODULE = {};
-
-  function readBookIdsCache(module) {
-    try {
-      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
-      if (!raw) return null;
-      const all = JSON.parse(raw);
-      const entry = all[module];
-      if (!entry?.ids?.length || Date.now() - (entry.at || 0) > BOOK_IDS_CACHE_TTL_MS) return null;
-      return applyBookIdOverride(module, entry.ids);
-    } catch { return null; }
-  }
-
-  function saveBookIdsCache(module, ids) {
-    try {
-      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
-      const all = raw ? JSON.parse(raw) : {};
-      all[module] = { at: Date.now(), ids: [...ids] };
-      localStorage.setItem(BOOK_IDS_CACHE_KEY, JSON.stringify(all));
-    } catch { /* quota */ }
-  }
-
-  function setVersionBookIds(module, ids) {
-    const list = applyBookIdOverride(module, ids);
-    const safe = list.length ? list : [defaultBookIdForModule(module)];
-    if (isBollsMode(module)) BOLLS_BOOK_IDS_BY_MODULE[module] = [...safe];
-    else if (isWldhMode(module)) WLDH_BOOK_IDS_BY_MODULE[module] = [...safe];
-    else if (isApiBibleMode(module)) APIBIBLE_BOOK_IDS_BY_MODULE[module] = [...safe];
-    else if (isHaoMode(module)) HAO_BOOK_IDS_BY_MODULE[module] = [...safe];
-    else BSS_BOOK_IDS_BY_MODULE[module] = [...safe];
-    VERSION_BOOK_IDS_CACHE[module] = [...safe];
-    return safe;
-  }
-
-  function markBookDiscoveryReady(module) {
-    BOOK_DISCOVERY_READY.add(resolveLegacyModule(module));
-  }
-
-  function clearBookDiscoveryReady(module) {
-    BOOK_DISCOVERY_READY.delete(resolveLegacyModule(module));
-  }
-
-  function invalidateBookDiscovery(module) {
-    module = resolveLegacyModule(module);
-    clearBookDiscoveryReady(module);
-    delete BOOK_DISCOVERY_PROMISE[module];
-    delete VERSION_BOOK_IDS_CACHE[module];
-    if (isBollsMode(module)) delete BOLLS_BOOK_IDS_BY_MODULE[module];
-    else if (isWldhMode(module)) delete WLDH_BOOK_IDS_BY_MODULE[module];
-    else if (isApiBibleMode(module)) delete APIBIBLE_BOOK_IDS_BY_MODULE[module];
-    else if (isHaoMode(module)) delete HAO_BOOK_IDS_BY_MODULE[module];
-    else delete BSS_BOOK_IDS_BY_MODULE[module];
-    try {
-      const raw = localStorage.getItem(BOOK_IDS_CACHE_KEY);
-      if (!raw) return;
-      const all = JSON.parse(raw);
-      delete all[module];
-      localStorage.setItem(BOOK_IDS_CACHE_KEY, JSON.stringify(all));
-    } catch { /* ignore */ }
-  }
-
-  async function runBookProbePool(candidates, concurrency, probeFn) {
-    const found = [];
-    let i = 0;
-    const n = Math.max(1, Math.min(concurrency, candidates.length || 1));
-    await Promise.all(Array.from({ length: n }, async () => {
-      while (i < candidates.length) {
-        const item = candidates[i++];
-        if (await probeFn(item)) found.push(item);
-      }
-    }));
-    return found.sort((a, b) => a - b);
-  }
-
-  async function probeBssBookAvailable(module, bookId) {
-    const bookEn = ALL[bookId - 1];
-    if (!bookEn) return false;
-    const bookApi = getApiBookName(bookEn, module);
-    const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(bookApi + ' 1')}&data_format=passage`;
-    const data = await apiGetJson(url, 9000, { ignoreCircuit: true, softFail: true });
-    if (!data || data.error_level >= 4) return false;
-    const verses = data.results?.[0]?.verses?.[module];
-    const ch = verses?.['1'];
-    return !!(ch && Object.keys(ch).length);
-  }
-
-  async function detectBssScopeByProbe(module) {
-    const ot = await probeBssBookAvailable(module, 1);
-    const nt = await probeBssBookAvailable(module, 40);
-    if (ot && nt) return Array.from({ length: 66 }, (_, i) => i + 1);
-    if (!ot && nt) return Array.from({ length: 27 }, (_, i) => i + 40);
-    if (ot && !nt) return Array.from({ length: 39 }, (_, i) => i + 1);
-    return null;
-  }
-
-  async function probeAllBssBookIds(module, candidateIds) {
-    const found = await runBookProbePool(candidateIds, 6, id => probeBssBookAvailable(module, id));
-    return found.length ? found : null;
-  }
-
-  async function discoverBssBooksProbed(module) {
-    const preset = getVersionBookOverride(module);
-    if (module === 'wlc') {
-      try {
-        const data = await apiGetJson(`${BOLLS_API}/get-books/WLC/`, 12000, { ignoreCircuit: true, softFail: true });
-        if (data) {
-          const ids = (Array.isArray(data) ? data : [])
-            .map(b => Number(b.bookid))
-            .filter(id => id >= 1 && id <= 39)
-            .sort((a, b) => a - b);
-          if (ids.length) return setVersionBookIds(module, ids);
-        }
-      } catch { /* fall through */ }
-    }
-    if (preset?.length) {
-      const ids = setVersionBookIds(module, preset);
-      saveBookIdsCache(module, ids);
-      markBookDiscoveryReady(module);
-      void refineDiscoveredBooksInBackground(module, preset);
-      return ids;
-    }
-    const quick = await detectBssScopeByProbe(module);
-    if (quick?.length) {
-      const validated = await probeAllBssBookIds(module, quick);
-      const ids = setVersionBookIds(module, validated?.length ? validated : quick);
-      markBookDiscoveryReady(module);
-      return ids;
-    }
-    const full = await probeAllBssBookIds(module, Array.from({ length: 66 }, (_, i) => i + 1));
-    const ids = setVersionBookIds(module, full?.length ? full : [defaultBookIdForModule(module)]);
-    markBookDiscoveryReady(module);
-    return ids;
-  }
-
-  async function refineDiscoveredBooksInBackground(module, candidateIds) {
-    try {
-      const validated = await probeAllBssBookIds(module, candidateIds);
-      if (!validated?.length) return;
-      const ids = setVersionBookIds(module, validated);
-      saveBookIdsCache(module, ids);
-      const active = activePanel();
-      if (getSelectedVersion(active) !== module || !isReadBibleMode(active)) return;
-      await refreshReadBibleLabels(active);
-      const bookEn = document.getElementById(active + '-read-book')?.value;
-      const avail = getAvailableBooks(module);
-      if (!bookEn || !avail.includes(bookEn)) {
-        await loadReadChapterAt(active, getFirstAvailableBook(module), 1, { scrollToTop: false });
-      }
-    } catch { /* non-fatal */ }
-  }
-
-  async function probeWldhBookAvailable(wldhId, bookId) {
-    const bookEn = ALL[bookId - 1];
-    const slug = WLDH_BOOK_SLUGS[bookEn];
-    if (!slug) return false;
-    const url = `${WLDH_API}/${encodeURIComponent(wldhId)}/books/${slug}/chapters/1/verses/1.json`;
-    const data = await apiGetJson(url, 9000, { ignoreCircuit: true, softFail: true });
-    if (data?.text) return true;
-    if (Array.isArray(data?.data) && data.data.length) return true;
-    return false;
-  }
-
-  async function discoverWldhBooksProbed(module) {
-    const meta = WLDH_BIBLES[module];
-    const wldhId = getWldhId(module);
-    if (!wldhId) return setVersionBookIds(module, [1]);
-    const candidates = wldhBookIdsForScope(meta?.scope);
-    const quick = await detectWldhScopeByProbe(wldhId);
-    if (quick?.length) {
-      const validated = await runBookProbePool(quick, 6, id => probeWldhBookAvailable(wldhId, id));
-      if (validated.length) return setVersionBookIds(module, validated);
-    }
-    const found = await runBookProbePool(candidates, 6, id => probeWldhBookAvailable(wldhId, id));
-    if (found.length) return setVersionBookIds(module, found);
-    const bssMod = getWldhBssFallback(module);
-    if (bssMod) {
-      await discoverBssBooksProbed(bssMod);
-      const bssIds = BSS_BOOK_IDS_BY_MODULE[bssMod];
-      if (bssIds?.length) return setVersionBookIds(module, [...bssIds]);
-    }
-    return setVersionBookIds(module, candidates.length ? candidates : [1]);
-  }
-
-  async function detectWldhScopeByProbe(wldhId) {
-    const ot = await probeWldhBookAvailable(wldhId, 1);
-    const nt = await probeWldhBookAvailable(wldhId, 40);
-    if (ot && nt) return Array.from({ length: 66 }, (_, i) => i + 1);
-    if (!ot && nt) return Array.from({ length: 27 }, (_, i) => i + 40);
-    if (ot && !nt) return Array.from({ length: 39 }, (_, i) => i + 1);
-    return null;
-  }
-
-  async function discoverApiBibleBooks(module) {
-    const bibleId = getApiBibleId(module);
-    if (!bibleId) {
-      const fallback = guessBookIdsFromMetadata(module);
-      return setVersionBookIds(module, fallback.length ? fallback : [defaultBookIdForModule(module)]);
-    }
-    const data = await apiBibleGetJson('/bibles/' + encodeURIComponent(bibleId) + '/books');
-    if (!data?.data?.length) {
-      const fallback = guessBookIdsFromMetadata(module);
-      return setVersionBookIds(module, fallback.length ? fallback : [defaultBookIdForModule(module)]);
-    }
-    const ids = [];
-    for (const b of data.data) {
-      const en = HAO_CODE_TO_EN[b.id] || resolveBookEnFromRaw(b.name || '');
-      const id = BOOK_NUM[en];
-      if (id) ids.push(id);
-    }
-    const unique = [...new Set(ids)].sort((a, b) => a - b);
-    const fallback = guessBookIdsFromMetadata(module);
-    return setVersionBookIds(module, unique.length ? unique : (fallback.length ? fallback : [defaultBookIdForModule(module)]));
-  }
-
-  async function probeHaoBookAvailable(module, bookId) {
-    const bookEn = ALL[bookId - 1];
-    if (!bookEn) return false;
-    const data = await fetchHaoChapter(module, bookEn, 1);
-    const verses = parseHaoVerses(data);
-    return verses.length > 0;
-  }
-
-  async function discoverHaoBooksProbed(module) {
-    const quick = await runBookProbePool([1, 40], 2, id => probeHaoBookAvailable(module, id));
-    let candidates;
-    if (quick.includes(1) && quick.includes(40)) candidates = Array.from({ length: 66 }, (_, i) => i + 1);
-    else if (!quick.includes(1) && quick.includes(40)) candidates = Array.from({ length: 27 }, (_, i) => i + 40);
-    else if (quick.includes(1) && !quick.includes(40)) candidates = Array.from({ length: 39 }, (_, i) => i + 1);
-    else candidates = Array.from({ length: 66 }, (_, i) => i + 1);
-    const found = await runBookProbePool(candidates, 5, id => probeHaoBookAvailable(module, id));
-    const fallback = guessBookIdsFromMetadata(module);
-    return setVersionBookIds(module, found.length ? found : (fallback.length ? fallback : [defaultBookIdForModule(module)]));
-  }
-
-  async function refreshBookDiscoveryInBackground(module) {
-    try {
-      invalidateBookDiscovery(module);
-      await ensureBooksDiscovered(module, { force: true });
-      const active = activePanel();
-      if (getSelectedVersion(active) === module && isReadBibleMode(active)) {
-        await updateBooks(active, { refreshReadLabels: true });
-      }
-    } catch { /* non-fatal */ }
-  }
-
-  async function ensureBooksDiscovered(module, options) {
-    options = options || {};
-    module = resolveLegacyModule(module);
-    if (!options.force) {
-      const cached = readBookIdsCache(module);
-      if (cached?.length) {
-        const ids = setVersionBookIds(module, cached);
-        saveBookIdsCache(module, ids);
-        markBookDiscoveryReady(module);
-        if (Date.now() - (JSON.parse(localStorage.getItem(BOOK_IDS_CACHE_KEY) || '{}')[module]?.at || 0) > 3 * 24 * 60 * 60 * 1000) {
-          void refreshBookDiscoveryInBackground(module);
-        }
-        return ids;
-      }
-    }
-    if (BOOK_DISCOVERY_PROMISE[module]) return BOOK_DISCOVERY_PROMISE[module];
-
-    BOOK_DISCOVERY_PROMISE[module] = (async () => {
-      try {
-        let ids;
-        if (isBollsMode(module)) {
-          await discoverBollsBooks(module);
-          ids = BOLLS_BOOK_IDS_BY_MODULE[module] || [];
-        } else if (isWldhMode(module)) {
-          ids = await discoverWldhBooksProbed(module);
-        } else if (isApiBibleMode(module)) {
-          ids = await discoverApiBibleBooks(module);
-        } else if (isHaoMode(module)) {
-          ids = await discoverHaoBooksProbed(module);
-        } else {
-          ids = await discoverBssBooksProbed(module);
-        }
-        ids = setVersionBookIds(module, ids);
-        saveBookIdsCache(module, ids);
-        markBookDiscoveryReady(module);
-        return ids;
-      } finally {
-        delete BOOK_DISCOVERY_PROMISE[module];
-      }
-    })();
-    return BOOK_DISCOVERY_PROMISE[module];
-  }
-
   // Cache for HAO chapter data
   const HAO_CHAPTER_CACHE = {};
 
@@ -2835,8 +1470,9 @@
     if (HAO_CHAPTER_CACHE[cacheKey]) return HAO_CHAPTER_CACHE[cacheKey];
     try {
       const url = `${HAO_API}/${haoId}/${bookCode}/${chapter}.json`;
-      const data = await apiGetJson(url);
-      if (!data) return null;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
       HAO_CHAPTER_CACHE[cacheKey] = data;
       return data;
     } catch {
@@ -2898,7 +1534,7 @@
   }
 
   async function fetchHaoRandomVerse(module, scope, attempt = 0) {
-    if (apiCircuitOpen() || attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
+    if (attempt > 5) return null;
     const ids = pickRandomBookIds(scope);
     const bookId = ids[Math.floor(Math.random() * ids.length)];
     const bookIdx = bookId - 1;
@@ -2972,21 +1608,11 @@
   let currentAudio = null;
 
   /* ══════════════════════════════════════
-     LAYOUT DETECTION (mobile / tablet / desktop)
+     LAYOUT DETECTION
   ══════════════════════════════════════ */
-  const LAYOUT_MOBILE_MAX = 768;
-  const LAYOUT_TABLET_MAX = 1100;
-
-  function getLayoutMode() {
-    const w = window.innerWidth;
-    if (w <= LAYOUT_MOBILE_MAX) return 'mobile';
-    if (w <= LAYOUT_TABLET_MAX) return 'tablet';
-    return 'desktop';
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent) || window.innerWidth <= 768;
   }
-
-  function isMobile() { return getLayoutMode() === 'mobile'; }
-  function isTablet() { return getLayoutMode() === 'tablet'; }
-  function isDesktop() { return getLayoutMode() === 'desktop'; }
 
   /* ══════════════════════════════════════
      FACEBOOK IN-APP BROWSER DETECTION
@@ -3023,59 +1649,10 @@
     document.getElementById('fb-iab-banner').classList.remove('show');
     document.body.classList.remove('has-iab-banner');
   }
-  function applyLayoutBodyClass(mode) {
-    document.documentElement.setAttribute('data-layout', mode);
-    document.body.classList.remove('layout-mobile', 'layout-tablet', 'layout-desktop');
-    document.body.classList.add('layout-' + mode);
-  }
-
-  function syncLayoutControls(from, to) {
-    ['testament', 'version'].forEach(suffix => {
-      const fromEl = document.getElementById(from + '-' + suffix);
-      const toEl = document.getElementById(to + '-' + suffix);
-      if (fromEl && toEl) toEl.value = fromEl.value;
-    });
-    const fromBook = document.getElementById(from + '-book');
-    const toBook = document.getElementById(to + '-book');
-    if (fromBook && toBook && fromBook.options.length) {
-      if (optionValueExists(toBook, fromBook.value)) toBook.value = fromBook.value;
-    }
-    const fromSearch = document.getElementById(from + '-custom-search');
-    const toSearch = document.getElementById(to + '-custom-search');
-    if (fromSearch && toSearch) toSearch.value = fromSearch.value;
-    _customGenIntent[to] = _customGenIntent[from] || 'random';
-    syncVersionSelects(document.getElementById(from + '-version')?.value);
-    updateCustomSearchUI(to);
-  }
-
-  async function onLayoutModeChange(prevMode, nextMode) {
-    if (prevMode === 'mobile' && nextMode !== 'mobile') {
-      syncLayoutControls('m', 'd');
-      if (current.m) {
-        current.d = current.m;
-        renderCurrentEntry('d', current.d);
-      }
-      verseCount.d = verseCount.m;
-    } else if (prevMode !== 'mobile' && nextMode === 'mobile') {
-      syncLayoutControls('d', 'm');
-      if (current.d) {
-        current.m = current.d;
-        renderCurrentEntry('m', current.m);
-      }
-      verseCount.m = verseCount.d;
-    }
-    restoreTestamentOptions(activePanel());
-    await updateBooks(activePanel());
-  }
-
   async function initLayout() {
     const mob  = document.getElementById('mobile-view');
     const desk = document.getElementById('desktop-view');
-    const mode = getLayoutMode();
-    const nowMobile = mode === 'mobile';
-
-    applyLayoutBodyClass(mode);
-
+    const nowMobile = isMobile();
     if (nowMobile) {
       desk.style.display = 'none';
       mob.style.display  = 'flex';
@@ -3083,19 +1660,11 @@
       mob.style.display  = 'none';
       desk.style.display = 'flex';
     }
-
-    const layoutChanged = _layoutMode !== mode;
-    const prevMode = _layoutMode;
-    _layoutMode = mode;
+    const layoutChanged = _layoutIsMobile !== nowMobile;
     _layoutIsMobile = nowMobile;
-
     if (layoutChanged) {
-      if (prevMode) {
-        await onLayoutModeChange(prevMode, mode);
-      } else {
-        restoreTestamentOptions(activePanel());
-        await updateBooks(activePanel());
-      }
+      restoreTestamentOptions(activePanel());
+      await updateBooks(activePanel());
     }
   }
 
@@ -3117,14 +1686,6 @@
       const b = BOLLS_BIBLES[module];
       return b ? b.shortname : module.replace('bolls-', '');
     }
-    if (isApiBibleMode(module)) {
-      const b = API_BIBLE_BIBLES[module];
-      return b ? b.shortname : module.replace('apib-', '');
-    }
-    if (isWldhMode(module)) {
-      const w = WLDH_BIBLES[module];
-      return w ? w.shortname : module.replace('wldh-', '');
-    }
     const b = BSS_BIBLES[module];
     return b ? (b.shortname || module.toUpperCase()) : module.toUpperCase();
   }
@@ -3135,12 +1696,6 @@
     }
     if (isBollsMode(module)) {
       return BOLLS_BIBLES[module]?.lang_short || 'en';
-    }
-    if (isApiBibleMode(module)) {
-      return API_BIBLE_BIBLES[module]?.lang_short || 'en';
-    }
-    if (isWldhMode(module)) {
-      return WLDH_BIBLES[module]?.lang_short || 'en';
     }
     const b = BSS_BIBLES[module];
     if (b?.lang_short) return b.lang_short;
@@ -3154,8 +1709,7 @@
         japanese: 'ja', norwegian: 'nb', swedish: 'sv', thai: 'th', turkish: 'tr',
         ukrainian: 'uk', vietnamese: 'vi', romanian: 'ro', croatian: 'hr',
         slovak: 'sk', slovenian: 'sl', bulgarian: 'bg', hindi: 'hi', catalan: 'ca',
-        malay: 'ms', tagalog: 'fil', filipino: 'fil', amharic: 'am', hausa: 'ha',
-        tajik: 'tg', javanese: 'jv', swahili: 'sw', wolof: 'wo'
+        malay: 'ms', tagalog: 'fil', filipino: 'fil', amharic: 'am', hausa: 'ha'
       };
       for (const [key, code] of Object.entries(fromName)) {
         if (name.includes(key)) return code;
@@ -3181,33 +1735,24 @@
     am_amh: Array.from({ length: 27 }, (_, i) => i + 40),
     // Hausa — Litafi Mai-tsarki (ha_lit; NT only in API)
     ha_lit: Array.from({ length: 27 }, (_, i) => i + 40),
-    // Hebrew — תנ״ך עברי מודרני (Tanakh / OT only in API)
     he_modern: Array.from({ length: 39 }, (_, i) => i + 1),
-    // Tajik — Части Библии в таджикском (partial NT; API-verified May 2026)
-    tg_tgk: [40, 41, 42, 43, 52, 57, 59, 62, 63, 64, 65],
     // Westminster Leningrad Codex — Hebrew OT only (39 books; verified via BSS + Bolls WLC)
     wlc: Array.from({ length: 39 }, (_, i) => i + 1),
   };
 
-  // BSS passage API expects English USFM-style book names for these modules.
-  const BSS_PASSAGE_ENGLISH_BOOK_MODULES = new Set([
-    'cadman', 'tg_tgk', 'tr', 'trparsed', 'ha_lit', 'jv_jvn', 'rv_1858',
-    'swahili', 'wo_wol_nt_2010', 'he_modern'
-  ]);
-
   const UI_LANG = {
-    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', mode:'Mode', testament:'Mode', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', verseGenerator:'Verse Generator', custom:'Verse Generator', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
-    fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', mode:'Mode', testament:'Mode', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 6, Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', verseGenerator:'Générateur de versets', custom:'Générateur de versets', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
-    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', mode:'Modo', testament:'Modo', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', verseGenerator:'Generador de versículos', custom:'Generador de versículos', readBible:'Leer la Biblia', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
-    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', mode:'Modus', testament:'Modus', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', verseGenerator:'Versgenerator', custom:'Versgenerator', readBible:'Bibel lesen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
-    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', mode:'Modo', testament:'Modo', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', verseGenerator:'Gerador de versículos', custom:'Gerador de versículos', readBible:'Ler a Bíblia', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
-    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', mode:'Modalità', testament:'Modalità', book:'Libro', search:'Cerca', searchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', customSearchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', verseGenerator:'Generatore di versetti', custom:'Generatore di versetti', readBible:'Leggi la Bibbia', generate:'✦ Rivela un versetto ✦', generateVerses:'✦ Rivela i versetti ✦' },
-    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', mode:'Modus', testament:'Modus', book:'Boek', search:'Zoeken', searchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', customSearchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', verseGenerator:'Versgenerator', custom:'Versgenerator', readBible:'Bijbel lezen', generate:'✦ Open een vers ✦', generateVerses:'✦ Open de verzen ✦' },
-    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', mode:'Режим', testament:'Режим', book:'Книга', search:'Поиск', searchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', customSearchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', verseGenerator:'Генератор стихов', custom:'Генератор стихов', readBible:'Читать Библию', generate:'✦ Показать стих ✦', generateVerses:'✦ Показать стихи ✦' },
-    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', mode:'模式', testament:'模式', book:'书卷', search:'搜索', searchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', customSearchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', old:'旧约', new:'新约', all:'全圣经', verseGenerator:'经文生成', custom:'经文生成', readBible:'阅读圣经', generate:'✦ 显示经文 ✦', generateVerses:'✦ 显示经文 ✦' },
-    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', mode:'모드', testament:'모드', book:'책', search:'검색', searchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', customSearchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', old:'구약', new:'신약', all:'성경 전체', verseGenerator:'구절 생성기', custom:'구절 생성기', readBible:'성경 읽기', generate:'✦ 구절 보기 ✦', generateVerses:'✦ 구절들 보기 ✦' },
-    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', mode:'الوضع', testament:'الوضع', book:'سفر', search:'بحث', searchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', customSearchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', verseGenerator:'مولّد الآيات', custom:'مولّد الآيات', readBible:'قراءة الكتاب المقدس', generate:'✦ اعرض آية ✦', generateVerses:'✦ اعرض الآيات ✦' },
-    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', mode:'מצב', testament:'מצב', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', customSearchPlaceholder:'לדוגמה: יוחנן א:א או א:א-ז', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', verseGenerator:'מחולל פסוקים', custom:'מחולל פסוקים', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦', generateVerses:'✦ גלה פסוקים ✦' }
+    en: { whole:'— Whole Bible (random) —', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. John 1:1 or John 1:1-7', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
+    fr: { whole:'— Toute la Bible (aléatoire) —', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
+    es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
+    de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
+    pt: { whole:'— Bíblia inteira (aleatório) —', ot:'Antigo Testamento', nt:'Novo Testamento', testament:'Testamento', book:'Livro', search:'Pesquisar', searchPlaceholder:'ex. João 1:1 ou João 1:1-7', customSearchPlaceholder:'ex. João 1:1 ou João 1:1-7', old:'Antigo Testamento', new:'Novo Testamento', all:'Bíblia inteira', custom:'Escolher livro', generate:'✦ Revelar versículo ✦', generateVerses:'✦ Revelar os versículos ✦' },
+    it: { whole:'— Bibbia intera (casuale) —', ot:'Antico Testamento', nt:'Nuovo Testamento', testament:'Testamento', book:'Libro', search:'Cerca', searchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', customSearchPlaceholder:'es. Giovanni 1:1 o Giovanni 1:1-7', old:'Antico Testamento', new:'Nuovo Testamento', all:'Bibbia intera', custom:'Scegli libro', generate:'✦ Rivela un versetto ✦', generateVerses:'✦ Rivela i versetti ✦' },
+    nl: { whole:'— Hele Bijbel (willekeurig) —', ot:'Oude Testament', nt:'Nieuwe Testament', testament:'Testament', book:'Boek', search:'Zoeken', searchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', customSearchPlaceholder:'bijv. Johannes 1:1 of Johannes 1:1-7', old:'Oude Testament', new:'Nieuwe Testament', all:'Hele Bijbel', custom:'Kies boek', generate:'✦ Open een vers ✦', generateVerses:'✦ Open de verzen ✦' },
+    ru: { whole:'— Вся Библия (случайно) —', ot:'Ветхий Завет', nt:'Новый Завет', testament:'Завет', book:'Книга', search:'Поиск', searchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', customSearchPlaceholder:'напр. Иоанна 1:1 или Иоанна 1:1-7', old:'Ветхий Завет', new:'Новый Завет', all:'Вся Библия', custom:'Выбрать книгу', generate:'✦ Показать стих ✦', generateVerses:'✦ Показать стихи ✦' },
+    zh: { whole:'— 全圣经（随机）—', ot:'旧约', nt:'新约', testament:'约', book:'书卷', search:'搜索', searchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', customSearchPlaceholder:'例如：约翰福音 1:1 或 1:1-7', old:'旧约', new:'新约', all:'全圣经', custom:'选择书卷', generate:'✦ 显示经文 ✦', generateVerses:'✦ 显示经文 ✦' },
+    ko: { whole:'— 성경 전체 (무작위) —', ot:'구약', nt:'신약', testament:'성경', book:'책', search:'검색', searchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', customSearchPlaceholder:'예: 요한복음 1:1 또는 1:1-7', old:'구약', new:'신약', all:'성경 전체', custom:'책 선택', generate:'✦ 구절 보기 ✦', generateVerses:'✦ 구절들 보기 ✦' },
+    ar: { whole:'— الكتاب المقدس كاملاً (عشوائي) —', ot:'العهد القديم', nt:'العهد الجديد', testament:'العهد', book:'سفر', search:'بحث', searchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', customSearchPlaceholder:'مثال: يوحنا 1:1 أو 1:1-7', old:'العهد القديم', new:'العهد الجديد', all:'الكتاب المقدس كاملاً', custom:'اختر سفراً', generate:'✦ اعرض آية ✦', generateVerses:'✦ اعرض الآيات ✦' },
+    he: { whole:'— כל התנ״ך (אקראי) —', ot:'תנ״ך', nt:'ברית חדשה', testament:'תנ״ך', book:'ספר', chapter:'פרק', verse:'פסוק', search:'חיפוש', searchPlaceholder:'לדוגמה: תהילים 23:1', customSearchPlaceholder:'לדוגמה: יוחנן א:א או א:א-ז', old:'תנ״ך', new:'ברית חדשה', all:'כל התנ״ך', custom:'בחר ספר', readBible:'קרא בתנ״ך', generate:'✦ גלה פסוק ✦', generateVerses:'✦ גלה פסוקים ✦' }
   };
 
   function getUiStrings(langCode) {
@@ -3218,7 +1763,8 @@
     langCode = langCode || 'en';
     if (BSS_BOOKS_CACHE[langCode]) return BSS_BOOKS_CACHE[langCode];
     try {
-      const data = await apiGetJson(`${BSS_API}/books?language=${encodeURIComponent(langCode)}`);
+      const res = await fetch(`${BSS_API}/books?language=${encodeURIComponent(langCode)}`);
+      const data = await res.json();
       if (data.results?.length) {
         BSS_BOOKS_CACHE[langCode] = data.results;
         const map = {};
@@ -3239,100 +1785,77 @@
     return VERSION_BOOK_OVERRIDES[version] || null;
   }
 
-  function defaultBookIdForModule(module) {
-    const override = getVersionBookOverride(module);
-    if (override?.length) return override[0];
-    return 1;
-  }
-
-  function applyBookIdOverride(version, ids) {
-    const override = getVersionBookOverride(version);
-    const list = [...new Set(ids || [])].filter(id => id >= 1 && id <= 66).sort((a, b) => a - b);
-    if (!override?.length) return list;
-    const allowed = new Set(override);
-    const filtered = list.filter(id => allowed.has(id));
-    return filtered.length ? filtered : [...override];
-  }
-
-  function guessBookIdsFromMetadata(version) {
-    const override = getVersionBookOverride(version);
-    if (override?.length) return [...override];
-    if (isWldhMode(version)) {
-      return wldhBookIdsForScope(WLDH_BIBLES[version]?.scope || 'Bible');
-    }
-    const meta = BSS_BIBLES[version] || API_BIBLE_BIBLES[version] || HAO_BIBLES[version] || BOLLS_BIBLES[version] || WLDH_BIBLES[version];
-    if (!meta) return [];
-    const blob = ((meta.name || '') + ' ' + (meta.description || '') + ' ' + (meta.shortname || '')).toLowerCase();
-    const hasNt = /\bnew testament\b|nouveau testament|nuevo testamento|neues testament|nuovo testamento|novo testamento|новый завет|新约|신약|العهد الجديد|ברית חדשה|\bnt only\b|\bnt\b/.test(blob);
-    const hasOt = /\bold testament\b|ancien testament|antiguo testamento|altes testament|ветхий завет|旧约|구약|العهد القديم|תנ.?ך|tanakh|\bot only\b/.test(blob);
-    if (hasNt && !hasOt) return Array.from({ length: 27 }, (_, i) => i + 40);
-    if (hasOt && !hasNt) return Array.from({ length: 39 }, (_, i) => i + 1);
-    return [];
-  }
-
   function isOtOnlyVersion(version) {
-    if (isWldhMode(version)) {
-      const scope = WLDH_BIBLES[version]?.scope || '';
-      return /Old Testament/i.test(scope) && !/New Testament/i.test(scope);
-    }
     const ids = getVersionBookOverride(version);
     if (!ids?.length) return false;
     return ids.every(id => id >= 1 && id <= 39);
   }
 
-  function isNtOnlyVersion(version) {
-    if (isWldhMode(version)) {
-      const scope = WLDH_BIBLES[version]?.scope || '';
-      return /New Testament/i.test(scope) && !/Old Testament/i.test(scope);
-    }
-    const ids = getVersionBookOverride(version);
-    if (!ids?.length) return false;
-    return ids.every(id => id >= 40 && id <= 66);
-  }
-
-  function isPartialNtVersion(version) {
-    const ids = getVersionBookOverride(version);
-    if (!ids?.length) return false;
-    const ntCount = ids.filter(id => id >= 40).length;
-    return ntCount > 0 && ntCount < 27;
-  }
-
   async function discoverBssBooks(module) {
-    return discoverBssBooksProbed(module);
+    if (BSS_BOOK_IDS_BY_MODULE[module]) return BSS_BOOK_IDS_BY_MODULE[module];
+    const preset = getVersionBookOverride(module);
+    if (module === 'wlc') {
+      try {
+        const res = await fetch(`${BOLLS_API}/get-books/WLC/`);
+        if (res.ok) {
+          const data = await res.json();
+          const ids = (Array.isArray(data) ? data : [])
+            .map(b => Number(b.bookid))
+            .filter(id => id >= 1 && id <= 39)
+            .sort((a, b) => a - b);
+          if (ids.length) {
+            BSS_BOOK_IDS_BY_MODULE[module] = ids;
+            delete VERSION_BOOK_IDS_CACHE[module];
+            VERSION_BOOK_IDS_CACHE[module] = [...ids];
+            return ids;
+          }
+        }
+      } catch { /* fall through to preset */ }
+    }
+    if (preset?.length) {
+      BSS_BOOK_IDS_BY_MODULE[module] = [...preset];
+      delete VERSION_BOOK_IDS_CACHE[module];
+      VERSION_BOOK_IDS_CACHE[module] = [...preset];
+      return preset;
+    }
+    return null;
   }
 
   async function ensureBssBooksDiscovered(module) {
-    return ensureBooksDiscovered(module);
+    if (isBollsMode(module) || isHaoMode(module)) return;
+    if (!getVersionBookOverride(module) && module !== 'wlc') return;
+    if (BSS_BOOK_IDS_BY_MODULE[module]) return;
+    await discoverBssBooks(module);
   }
 
   function bssNeedsBookDiscovery(module) {
-    return !isBollsMode(module) && !isHaoMode(module) && !isWldhMode(module) && !isApiBibleMode(module);
+    return module === 'wlc' || !!getVersionBookOverride(module);
   }
 
   function getAvailableBookIds(version) {
-    version = resolveLegacyModule(version);
-    let ids = null;
-    if (VERSION_BOOK_IDS_CACHE[version]?.length) {
-      ids = [...VERSION_BOOK_IDS_CACHE[version]];
-    } else if (isBollsMode(version) && BOLLS_BOOK_IDS_BY_MODULE[version]?.length) {
-      ids = [...BOLLS_BOOK_IDS_BY_MODULE[version]];
-    } else if (isApiBibleMode(version) && APIBIBLE_BOOK_IDS_BY_MODULE[version]?.length) {
-      ids = [...APIBIBLE_BOOK_IDS_BY_MODULE[version]];
-    } else if (isWldhMode(version) && WLDH_BOOK_IDS_BY_MODULE[version]?.length) {
-      ids = [...WLDH_BOOK_IDS_BY_MODULE[version]];
-    } else if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
-      ids = [...BSS_BOOK_IDS_BY_MODULE[version]];
-    } else if (isHaoMode(version) && HAO_BOOK_IDS_BY_MODULE[version]?.length) {
-      ids = [...HAO_BOOK_IDS_BY_MODULE[version]];
-    } else if (!BOOK_DISCOVERY_READY.has(version)) {
-      ids = guessBookIdsFromMetadata(version);
-    } else {
-      ids = guessBookIdsFromMetadata(version);
-      if (!ids.length) ids = [defaultBookIdForModule(version)];
+    if (VERSION_BOOK_IDS_CACHE[version]) return VERSION_BOOK_IDS_CACHE[version];
+    if (isBollsMode(version)) {
+      const discovered = BOLLS_BOOK_IDS_BY_MODULE[version];
+      if (discovered) {
+        VERSION_BOOK_IDS_CACHE[version] = [...discovered];
+        return VERSION_BOOK_IDS_CACHE[version];
+      }
+      return [];
     }
-    const finalIds = applyBookIdOverride(version, ids);
-    if (finalIds.length) VERSION_BOOK_IDS_CACHE[version] = [...finalIds];
-    return finalIds;
+    if (BSS_BOOK_IDS_BY_MODULE[version]?.length) {
+      VERSION_BOOK_IDS_CACHE[version] = [...BSS_BOOK_IDS_BY_MODULE[version]];
+      return VERSION_BOOK_IDS_CACHE[version];
+    }
+    if (isHaoMode(version)) {
+      VERSION_BOOK_IDS_CACHE[version] = Array.from({ length: 66 }, (_, i) => i + 1);
+      return VERSION_BOOK_IDS_CACHE[version];
+    }
+    const override = getVersionBookOverride(version);
+    if (override?.length) {
+      VERSION_BOOK_IDS_CACHE[version] = [...override];
+      return VERSION_BOOK_IDS_CACHE[version];
+    }
+    return Array.from({ length: 66 }, (_, i) => i + 1);
   }
 
   function getAvailableBooks(version) {
@@ -3340,54 +1863,29 @@
   }
 
   function getFirstAvailableBook(version) {
-    const books = getAvailableBooks(version);
-    if (books.length) return books[0];
-    if (isNtOnlyVersion(version) || isPartialNtVersion(version)) return 'Matthew';
-    return 'Genesis';
+    return getAvailableBooks(version)[0] || 'Genesis';
   }
 
   function getVersionRefPool(version, refs, fallbackEntries) {
-    const allowedIds = new Set(getAvailableBookIds(version));
     const allowed = new Set(getAvailableBooks(version));
-    const limited = allowedIds.size > 0 && allowedIds.size < 66;
     const outRefs = [];
     const outFallback = [];
-    const pushIfAllowed = (ref, entry) => {
-      const book = ref.replace(/\s+\d+:\d+(?:-\d+)?$/, '');
-      const idx = ALL.indexOf(book);
-      if (!limited) {
-        if (!allowed.size || allowed.has(book)) {
-          outRefs.push(ref);
-          outFallback.push(entry);
-        }
-        return;
+    for (let i = 0; i < refs.length; i++) {
+      const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
+      if (!allowed.size || allowed.has(book)) {
+        outRefs.push(refs[i]);
+        outFallback.push(fallbackEntries[i]);
       }
-      if (idx >= 0 && allowedIds.has(idx + 1)) {
-        outRefs.push(ref);
-        outFallback.push(entry);
-      }
-    };
-    for (let i = 0; i < refs.length; i++) pushIfAllowed(refs[i], fallbackEntries[i]);
+    }
     if (!outRefs.length && isOtOnlyVersion(version)) {
       for (let i = 0; i < refs.length; i++) {
         const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
         const idx = ALL.indexOf(book);
-        if (idx >= 0 && idx < 39) pushIfAllowed(refs[i], fallbackEntries[i]);
+        if (idx >= 0 && idx < 39) {
+          outRefs.push(refs[i]);
+          outFallback.push(fallbackEntries[i]);
+        }
       }
-    }
-    if (!outRefs.length && (isNtOnlyVersion(version) || isPartialNtVersion(version))) {
-      for (let i = 0; i < refs.length; i++) {
-        const book = refs[i].replace(/\s+\d+:\d+(?:-\d+)?$/, '');
-        const idx = ALL.indexOf(book);
-        if (idx >= 0 && idx >= 39) pushIfAllowed(refs[i], fallbackEntries[i]);
-      }
-    }
-    if (!outRefs.length && limited) {
-      const firstBook = getFirstAvailableBook(version);
-      const pick = refs.find(r => r.startsWith(firstBook + ' ')) || `${firstBook} 1:1`;
-      const pickIdx = refs.indexOf(pick);
-      outRefs.push(pick);
-      outFallback.push(pickIdx >= 0 ? fallbackEntries[pickIdx] : fallbackEntries[0]);
     }
     if (!outRefs.length) return { refs, fallbackEntries };
     return { refs: outRefs, fallbackEntries: outFallback };
@@ -3428,18 +1926,15 @@
     if (isBollsMode(module)) {
       return BOLLS_BIBLES[module]?.lang_short === 'fr' ? 'lsg' : 'kjv';
     }
-    if (isApiBibleMode(module)) {
-      return 'kjv';
-    }
-    if (isWldhMode(module)) {
-      return WLDH_BIBLES[module]?.lang_short === 'fr' ? 'lsg' : 'kjv';
-    }
     return module === 'segond_1910' ? 'lsg' : module;
   }
 
   function cleanBssText(text) {
-    return stripParagraphMarkers(text || '')
+    return (text || '')
       .replace(/<[^>]+>/g, '')
+      .replace(/&para;|&#182;|&#xB6;/gi, '')
+      .replace(/\u00B6/g, '')
+      .replace(/¶/g, '')
       .trim()
       .replace(/\s+/g, ' ');
   }
@@ -3489,8 +1984,7 @@
   async function fetchBssPassageVerses(module, reference, filterStart, filterEnd) {
     const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(reference)}&data_format=passage`;
     try {
-      const data = await apiGetJson(url);
-      if (!data) return null;
+      const data = await (await fetch(url)).json();
       const parsed = parseBssPassageVerses(data, module, filterStart, filterEnd);
       if (!parsed) return null;
       return { ...parsed, version: module };
@@ -3502,8 +1996,7 @@
   async function fetchBssReference(module, reference) {
     const url = `${BSS_API}?bible=${encodeURIComponent(module)}&reference=${encodeURIComponent(reference)}&data_format=passage`;
     try {
-      const data = await apiGetJson(url);
-      if (!data) return null;
+      const data = await (await fetch(url)).json();
       return parseBssPassage(data, module);
     } catch {
       return null;
@@ -3523,20 +2016,16 @@
   }
 
   async function fetchRandomBssVerse(module, scope, attempt = 0) {
-    if (apiCircuitOpen()) return null;
     if (isHaoMode(module)) return fetchHaoRandomVerse(module, scope, attempt);
     if (isBollsMode(module)) return fetchBollsRandomVerse(module, scope, attempt);
-    if (isApiBibleMode(module)) return fetchApiBibleRandomVerse(module, scope, attempt);
-    if (isWldhMode(module)) return fetchWldhRandomVerse(module, scope, attempt);
-    if (attempt > (isRestrictedMobileBrowser() ? 2 : 5)) return null;
+    if (attempt > 5) return null;
     const ids = pickRandomBookIds(scope, module);
     const bookId = ids[Math.floor(Math.random() * ids.length)];
     const bookIdx = bookId - 1;
     const bookName = ALL[bookIdx];
-    const bookApi = getApiBookName(bookName, module);
     const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookIdx]) + 1;
     const verse = Math.floor(Math.random() * 30) + 1;
-    const entry = await fetchBssReference(module, `${bookApi} ${chapter}:${verse}`);
+    const entry = await fetchBssReference(module, `${bookName} ${chapter}:${verse}`);
     if (entry) return entry;
     return fetchRandomBssVerse(module, scope, attempt + 1);
   }
@@ -3548,30 +2037,18 @@
     return 2;
   }
 
-  function insertTranslationAfter(list, afterModule, entry) {
-    if (!list || !entry) return;
-    const idx = list.findIndex(b => b.module === afterModule);
-    if (idx >= 0) list.splice(idx + 1, 0, entry);
-    else list.push(entry);
-  }
-
   function populateTranslationSelects() {
     // Merge BSS, HAO, and Bolls bibles into unified language groups
     const byLang = {};
-    const apiBiblesForSelect = Object.values(API_BIBLE_BIBLES).filter(b => !b.hideInSelect);
-    const wldhBiblesForSelect = Object.values(WLDH_BIBLES).filter(b => !b.hideInSelect);
 
     // Build a set of shortnames already provided by HAO or Bolls — BSS duplicates are skipped
     const overriddenShortnames = new Set([
       ...Object.values(HAO_BIBLES).map(b => b.shortname),
       ...Object.values(BOLLS_BIBLES).map(b => b.shortname),
-      ...apiBiblesForSelect.map(b => b.shortname),
-      ...wldhBiblesForSelect.map(b => b.shortname),
     ]);
 
     Object.values(BSS_BIBLES).forEach(b => {
       if (b.module === 'wo_kyg') return; // KYG removed from translation list per product request
-      if (bssReplacedByWldh(b.module)) return;
       if (overriddenShortnames.has(b.shortname)) return; // skip duplicate
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
@@ -3582,16 +2059,8 @@
       byLang[lang].sort((a, b) => (+a.rank || 999) - (+b.rank || 999));
     });
 
-    wldhBiblesForSelect.forEach(b => {
-      const lang = b.lang || 'Other';
-      if (!byLang[lang]) byLang[lang] = [];
-      if (b.insertAfterModule) insertTranslationAfter(byLang[lang], b.insertAfterModule, b);
-      else byLang[lang].push(b);
-    });
-
     // Append HAO translations into the same language buckets (after BSS ones)
     Object.values(HAO_BIBLES).forEach(b => {
-      if (b.shortname === 'BSB' && WLDH_BIBLES['wldh-en-bsb']) return;
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
       byLang[lang].push(b);
@@ -3602,17 +2071,6 @@
       const lang = b.lang || 'Other';
       if (!byLang[lang]) byLang[lang] = [];
       byLang[lang].push(b);
-    });
-
-    apiBiblesForSelect.forEach(b => {
-      const lang = b.lang || 'Other';
-      if (!byLang[lang]) byLang[lang] = [];
-      if (b.insertAfterModule) insertTranslationAfter(byLang[lang], b.insertAfterModule, b);
-      else byLang[lang].push(b);
-    });
-
-    Object.keys(byLang).forEach(lang => {
-      byLang[lang].sort((a, b) => (+a.rank || 999) - (+b.rank || 999));
     });
 
     const langOrder = Object.keys(byLang).sort((a, b) => {
@@ -3642,32 +2100,28 @@
       });
       sel.replaceChildren(frag);
 
-      const prevResolved = resolveLegacyModule(prev);
-      const hiddenModule = API_BIBLE_BIBLES[prevResolved]?.hideInSelect;
-      const hasPrev = !hiddenModule && optionValueExists(sel, prevResolved);
-      const defaultMod = WLDH_BIBLES['wldh-en-kjv'] ? 'wldh-en-kjv' : (BSS_BIBLES.kjv ? 'kjv' : sel.options[0]?.value || 'kjv');
-      sel.value = hasPrev ? prevResolved : defaultMod;
+      const hasPrev = optionValueExists(sel, prev);
+      sel.value = hasPrev ? prev : (BSS_BIBLES.kjv ? 'kjv' : sel.options[0]?.value || 'kjv');
     });
   }
 
   async function loadBibleList() {
-    BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-    loadWldhBibleCatalog();
+    try {
+      const res = await fetch(`${BSS_API}/bibles`);
+      const data = await res.json();
+      if (data.results && Object.keys(data.results).length) {
+        BSS_BIBLES = data.results;
+      } else {
+        BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
+      }
+    } catch {
+      BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
+    }
     populateTranslationSelects();
+    await loadBooksForLang('en');
     restoreTestamentOptions('d');
     restoreTestamentOptions('m');
-
-    const data = await apiGetJson(`${BSS_API}/bibles`);
-    if (data?.results && Object.keys(data.results).length) {
-      BSS_BIBLES = data.results;
-      populateTranslationSelects();
-    }
-
-    await loadBooksForLang('en');
     await updateBooks(activePanel());
-    if (!readWldhCatalogCache()) {
-      setTimeout(() => void refreshWldhCatalogInBackground(), 12000);
-    }
   }
 
   /* ══════════════════════════════════════
@@ -3679,153 +2133,39 @@
     "1 John 4:8","Hebrews 11:1","2 Timothy 3:16","Acts 2:38","Ephesians 2:8",
     "Proverbs 22:6","Matthew 11:28","Revelation 21:4","Psalm 27:1","Romans 6:23"
   ];
-  const WEEKLY_JSON_URL =
-    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
-  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v2';
-  let _weeklyVersesList = [];
-  let _weeklyVersesByWeek = {};
-  let _weeklyCatalogLoadPromise = null;
-  let _bannerCanonicalRefs = { daily: null, weekly: null };
-
-  const WEEKLY_VERSES_OFFLINE = [
-    { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life." },
-    { week: 2, reference: 'Genesis 1:1', verse: 'In the beginning God created the heaven and the earth.', note: 'God is the Creator of everything and the source of all life.' },
-    { week: 3, reference: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.', note: 'God can use every situation in life for the good of those who trust Him.' }
+  const WEEKLY_REFS = [
+    "John 3:16","Philippians 4:13","Psalm 23:1","Romans 8:28","Jeremiah 29:11",
+    "Isaiah 40:31","Matthew 5:9","Proverbs 3:5","1 Corinthians 13:4","Psalm 46:1",
+    "Galatians 5:22","Joshua 1:9"
   ];
-
-  function indexWeeklyVersesCatalog() {
-    _weeklyVersesByWeek = {};
-    _weeklyVersesList.forEach(item => {
-      if (item && item.week != null) _weeklyVersesByWeek[Number(item.week)] = item;
-    });
-  }
-
-  function ensureWeeklyCatalogIndexed() {
-    if (_weeklyVersesList.length && !Object.keys(_weeklyVersesByWeek).length) {
-      indexWeeklyVersesCatalog();
-    }
-  }
-
-  function hydrateWeeklyCatalogFromCache() {
-    if (_weeklyVersesList.length) return true;
-    try {
-      const raw = sessionStorage.getItem(WEEKLY_JSON_CACHE_KEY);
-      if (!raw) return false;
-      const data = JSON.parse(raw);
-      if (Array.isArray(data) && data.length) {
-        _weeklyVersesList = data;
-        indexWeeklyVersesCatalog();
-        return true;
-      }
-    } catch { /* ignore */ }
-    return false;
-  }
-
-  async function loadWeeklyVersesCatalog() {
-    if (_weeklyVersesList.length) return _weeklyVersesList;
-    if (_weeklyCatalogLoadPromise) return _weeklyCatalogLoadPromise;
-
-    _weeklyCatalogLoadPromise = (async () => {
-      hydrateWeeklyCatalogFromCache();
-      if (!_weeklyVersesList.length) {
-        _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
-        indexWeeklyVersesCatalog();
-      }
-      try {
-        const data = await apiGetJson(WEEKLY_JSON_URL, 12000);
-        if (Array.isArray(data) && data.length) {
-          _weeklyVersesList = data;
-          indexWeeklyVersesCatalog();
-          try { sessionStorage.setItem(WEEKLY_JSON_CACHE_KEY, JSON.stringify(data)); } catch { /* quota */ }
-        }
-      } catch { /* keep cache / offline list */ }
-      return _weeklyVersesList;
-    })();
-
-    return _weeklyCatalogLoadPromise;
-  }
-
-  function getISOWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  }
-
-  function getWeeklyVerseSlotNumber() {
-    const now = new Date();
-    const isoWeek = getISOWeekNumber(now);
-    return ((now.getFullYear() * 53 + isoWeek) % 104) + 1;
-  }
-
-  function weeklyRefAllowed(version, ref) {
-    if (!ref) return false;
-    const book = ref.replace(/\s+\d+:\d+(?:-\d+)?$/, '').trim();
-    const allowed = new Set(getAvailableBooks(version));
-    if (!allowed.size) return true;
-    return allowed.has(book);
-  }
-
-  function getCurrentWeeklyVerseEntry(version) {
-    ensureWeeklyCatalogIndexed();
-    if (!Object.keys(_weeklyVersesByWeek).length) return WEEKLY_VERSES_OFFLINE[0];
-    let slot = getWeeklyVerseSlotNumber();
-    for (let i = 0; i < 104; i++) {
-      const entry = _weeklyVersesByWeek[slot];
-      if (entry && (!version || weeklyRefAllowed(version, entry.reference))) return entry;
-      slot = (slot % 104) + 1;
-    }
-    return _weeklyVersesByWeek[1] || _weeklyVersesList[0] || WEEKLY_VERSES_OFFLINE[0];
-  }
-
-  function buildRefFromParsed(parsed) {
-    if (!parsed?.book || parsed.chapter == null) return null;
-    if (parsed.verseStart != null) {
-      if (parsed.verseEnd != null && parsed.verseEnd !== parsed.verseStart) {
-        return `${parsed.book} ${parsed.chapter}:${parsed.verseStart}-${parsed.verseEnd}`;
-      }
-      return `${parsed.book} ${parsed.chapter}:${parsed.verseStart}`;
-    }
-    return `${parsed.book} ${parsed.chapter}`;
-  }
-
-  function getCanonicalReference(entry) {
-    if (!entry) return '';
-    if (entry.canonicalRef) return entry.canonicalRef;
-    const fromParsed = getPassageParsedFromEntry(entry);
-    if (fromParsed) {
-      const built = buildRefFromParsed(fromParsed);
-      if (built) return built;
-    }
-    if (entry.readBook && entry.readChapter != null && entry.readVerses?.length) {
-      return buildRefFromParsed({
-        book: entry.readBook,
-        chapter: entry.readChapter,
-        verseStart: entry.readVerses[0].num,
-        verseEnd: entry.readVerses[entry.readVerses.length - 1].num
-      }) || entry.ref;
-    }
-    return entry.ref || '';
-  }
-
-  async function fetchReferenceForVersion(version, ref) {
-    if (!ref) return null;
-    const timeout = apiFetchTimeoutMs() + 2000;
-    if (isHaoMode(version)) {
-      return withTimeout(fetchHaoReferenceFromString(version, ref), timeout, null);
-    }
-    if (isBollsMode(version)) {
-      return withTimeout(fetchBollsReferenceFromString(version, ref), timeout, null);
-    }
-    if (isApiBibleMode(version)) {
-      return withTimeout(fetchApiBibleReferenceFromString(version, ref), timeout, null);
-    }
-    if (isWldhMode(version)) {
-      return withTimeout(fetchWldhReferenceFromString(version, ref), timeout, null);
-    }
-    return withTimeout(fetchBssReference(version, ref), timeout, null);
-  }
+  const WEEKLY_NOTES = [
+    "A reminder of God's boundless love for every soul on earth.",
+    "Whatever challenge you face this week, you do not face it alone.",
+    "Trust in His provision and rest in His guidance this week.",
+    "Even in hardship, His purpose is being woven through your story.",
+    "You are not forgotten. His plans for you are full of hope.",
+    "Rest in Him this week and let your spirit be renewed.",
+    "Be an instrument of peace in every conversation this week.",
+    "Surrender your worries and walk in faith, not in fear.",
+    "Let love guide every decision and interaction this week.",
+    "You are safe in His arms no matter what storms surround you.",
+    "Ask the Spirit to grow these fruits in your heart this week.",
+    "Step boldly into this week — He goes before you."
+  ];
+  const WEEKLY_NOTES_FR = [
+    "Un rappel de l'amour infini de Dieu pour chaque âme sur terre.",
+    "Quel que soit le défi de cette semaine, vous ne l'affrontez pas seul.",
+    "Cette semaine, confiez-vous à sa provision et reposez-vous en sa guidance.",
+    "Même dans l'épreuve, son dessein se tisse à travers votre histoire.",
+    "Vous n'êtes pas oublié. Ses projets pour vous sont pleins d'espérance.",
+    "Cette semaine, reposez-vous en lui et laissez votre esprit être renouvelé.",
+    "Soyez un instrument de paix dans chaque conversation cette semaine.",
+    "Abandonnez vos soucis et marchez dans la foi, non dans la peur.",
+    "Que l'amour guide chaque décision et chaque interaction cette semaine.",
+    "Vous êtes en sécurité dans ses bras, quelles que soient les tempêtes autour de vous.",
+    "Demandez à l'Esprit de faire croître ces fruits dans votre cœur cette semaine.",
+    "Avancez avec audace cette semaine — il marche devant vous."
+  ];
 
   // KJV fallback text (used when fetch fails)
   const DAILY_FALLBACK = [
@@ -3845,6 +2185,21 @@
     { ref:"Psalm 27:1",      text:"The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?" },
     { ref:"Romans 6:23",     text:"For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord." },
   ];
+  const WEEKLY_FALLBACK = [
+    { ref:"John 3:16",       text:"For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
+    { ref:"Philippians 4:13",text:"I can do all things through Christ which strengtheneth me." },
+    { ref:"Psalm 23:1",      text:"The LORD is my shepherd; I shall not want." },
+    { ref:"Romans 8:28",     text:"And we know that all things work together for good to them that love God." },
+    { ref:"Jeremiah 29:11",  text:"For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
+    { ref:"Isaiah 40:31",    text:"But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles." },
+    { ref:"Matthew 5:9",     text:"Blessed are the peacemakers: for they shall be called the children of God." },
+    { ref:"Proverbs 3:5",    text:"Trust in the LORD with all thine heart; and lean not unto thine own understanding." },
+    { ref:"1 Corinthians 13:4", text:"Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up." },
+    { ref:"Psalm 46:1",      text:"God is our refuge and strength, a very present help in trouble." },
+    { ref:"Galatians 5:22",  text:"But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith." },
+    { ref:"Joshua 1:9",      text:"Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
+  ];
+
   // Louis Segond offline fallbacks (module: segond_1910)
   const DAILY_FALLBACK_LSG = [
     { ref:"Jean 14:6",         text:"Jésus lui dit: Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi." },
@@ -3863,306 +2218,66 @@
     { ref:"Psaumes 27:1",      text:"L'Éternel est ma lumière et mon salut: De qui aurais-je crainte? L'Éternel est le soutien de ma vie: De qui aurais-je peur?" },
     { ref:"Romains 6:23",      text:"Car le salaire du péché, c'est la mort; mais le don gratuit de Dieu, c'est la vie éternelle en Jésus-Christ notre Seigneur." },
   ];
-  function paintDailyWeeklyBanners(dailyEntry, weeklyEntry, label, note) {
-    if (!dailyEntry || !weeklyEntry) return;
-    ['d', 'm'].forEach(p => {
-      const dailyText = document.getElementById(p + '-daily-text');
-      const dailyRef = document.getElementById(p + '-daily-ref');
-      const weeklyText = document.getElementById(p + '-weekly-text');
-      const weeklyRef = document.getElementById(p + '-weekly-ref');
-      const noteEl = document.getElementById(p + '-weekly-note');
-      if (dailyText) dailyText.textContent = '"' + dailyEntry.text + '"';
-      if (dailyRef) dailyRef.textContent = '— ' + dailyEntry.ref + ' (' + label + ')';
-      if (weeklyText) weeklyText.textContent = '"' + weeklyEntry.text + '"';
-      if (weeklyRef) weeklyRef.textContent = '— ' + weeklyEntry.ref + ' (' + label + ')';
-      if (noteEl) noteEl.textContent = '💭 ' + note;
-    });
-  }
-
-  function getDailyWeeklyFallbackEntries(version) {
-    version = version || 'kjv';
-    const isLSG = isSegondMode(version);
-    const now = new Date();
-    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-    const dailyPool = getVersionRefPool(version, DAILY_REFS, isLSG ? DAILY_FALLBACK_LSG : DAILY_FALLBACK);
-    const dailyIdx = dayOfYear % dailyPool.refs.length;
-    const dailyRef = _bannerCanonicalRefs.daily || dailyPool.refs[dailyIdx];
-
-    const weeklyJson = getCurrentWeeklyVerseEntry(version);
-    const weeklyRef = _bannerCanonicalRefs.weekly || weeklyJson.reference;
-    const weeklyNote = weeklyJson.note || '';
-    const weeklyEntry = {
-      ref: weeklyRef,
-      text: weeklyJson.verse || '',
-      canonicalRef: weeklyRef
-    };
-
-    return {
-      label: getTranslationLabel(version),
-      note: weeklyNote,
-      dailyEntry: dailyPool.fallbackEntries[dailyIdx],
-      weeklyEntry,
-      dailyRef,
-      weeklyRef
-    };
-  }
+  const WEEKLY_FALLBACK_LSG = [
+    { ref:"Jean 3:16",           text:"Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle." },
+    { ref:"Philippiens 4:13",    text:"Je puis tout par celui qui me fortifie." },
+    { ref:"Psaumes 23:1",        text:"L'Éternel est mon berger: je ne manquerai de rien." },
+    { ref:"Romains 8:28",        text:"Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu, de ceux qui sont appelés selon son dessein." },
+    { ref:"Jérémie 29:11",      text:"Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance." },
+    { ref:"Ésaïe 40:31",         text:"Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles; ils courent, et ne se lassent point; ils marchent, et ne se fatiguent point." },
+    { ref:"Matthieu 5:9",        text:"Heureux ceux qui procurent la paix, car ils seront appelés fils de Dieu!" },
+    { ref:"Proverbes 3:5",       text:"Confie-toi en l'Éternel de tout ton cœur, Et ne t'appuie pas sur ta sagesse." },
+    { ref:"1 Corinthiens 13:4",  text:"L'amour est patient, il est plein de bonté; l'amour n'est point envieux; l'amour ne se vante point, il ne s'enfle point d'orgueil." },
+    { ref:"Psaumes 46:1",        text:"Dieu est notre refuge et notre force, Un secours toujours prêt dans la détresse." },
+    { ref:"Galates 5:22",        text:"Mais le fruit de l'Esprit, c'est l'amour, la joie, la paix, la patience, la bonté, la bénignité, la fidélité." },
+    { ref:"Josué 1:9",           text:"Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras." },
+  ];
 
   async function loadDailyAndWeekly(version) {
     version = version || 'kjv';
-    await loadWeeklyVersesCatalog();
+    const label = getTranslationLabel(version);
+    const isLSG = isSegondMode(version);
+    const now = new Date();
+    const dayOfYear  = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+    const weekOfYear = Math.floor(dayOfYear / 7);
+    const dailyPool = getVersionRefPool(version, DAILY_REFS, isLSG ? DAILY_FALLBACK_LSG : DAILY_FALLBACK);
+    const weeklyPool = getVersionRefPool(version, WEEKLY_REFS, isLSG ? WEEKLY_FALLBACK_LSG : WEEKLY_FALLBACK);
+    const dailyIdx  = dayOfYear  % dailyPool.refs.length;
+    const weeklyIdx = weekOfYear % weeklyPool.refs.length;
+    const note      = isLSG
+      ? WEEKLY_NOTES_FR[weeklyIdx]
+      : WEEKLY_NOTES[weeklyIdx];
 
-    const slots = getDailyWeeklyFallbackEntries(version);
-    _bannerCanonicalRefs.daily = slots.dailyRef;
-    _bannerCanonicalRefs.weekly = slots.weeklyRef;
-
-    paintDailyWeeklyBanners(slots.dailyEntry, slots.weeklyEntry, slots.label, slots.note);
-
-    if (apiCircuitOpen()) return;
-
-    const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
-    const dailyRef = slots.dailyRef;
-    const weeklyRef = slots.weeklyRef;
+    let dailyEntry, weeklyEntry;
 
     try {
-      let dEntry = null;
-      let wEntry = null;
-      if (isRestrictedMobileBrowser()) {
-        dEntry = await withTimeout(fetchReferenceForVersion(version, dailyRef), bannerTimeout, null);
-        wEntry = await withTimeout(fetchReferenceForVersion(version, weeklyRef), bannerTimeout, null);
+      let fetchRef;
+      if (isHaoMode(version)) {
+        fetchRef = async (ref) => fetchHaoReferenceFromString(version, ref);
+      } else if (isBollsMode(version)) {
+        fetchRef = async (ref) => fetchBollsReferenceFromString(version, ref);
       } else {
-        [dEntry, wEntry] = await withTimeout(
-          Promise.all([
-            fetchReferenceForVersion(version, dailyRef),
-            fetchReferenceForVersion(version, weeklyRef)
-          ]),
-          bannerTimeout,
-          [null, null]
-        );
+        fetchRef = async (ref) => fetchBssReference(version, ref);
       }
-      const dailyEntry = dEntry
-        ? { ref: dEntry.ref || dailyRef, text: dEntry.text, canonicalRef: dailyRef }
-        : slots.dailyEntry;
-      const weeklyEntry = wEntry
-        ? { ref: wEntry.ref || weeklyRef, text: wEntry.text, canonicalRef: weeklyRef }
-        : slots.weeklyEntry;
-      if (dEntry || wEntry) {
-        paintDailyWeeklyBanners(dailyEntry, weeklyEntry, slots.label, slots.note);
-      }
+      const [dEntry, wEntry] = await Promise.all([
+        fetchRef(dailyPool.refs[dailyIdx]),
+        fetchRef(weeklyPool.refs[weeklyIdx])
+      ]);
+      dailyEntry  = dEntry || dailyPool.fallbackEntries[dailyIdx];
+      weeklyEntry = wEntry || weeklyPool.fallbackEntries[weeklyIdx];
     } catch {
-      /* offline banners already shown */
+      dailyEntry  = dailyPool.fallbackEntries[dailyIdx];
+      weeklyEntry = weeklyPool.fallbackEntries[weeklyIdx];
     }
-  }
 
-  /* ══════════════════════════════════════
-     DAILY DEVOTIONAL (GitHub JSON, MM-DD)
-  ══════════════════════════════════════ */
-  const DEVOTIONAL_JSON_URL =
-    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20devotionals.json';
-  const DEVOTIONAL_CACHE_KEY = 'vg-devotionals-json-v1';
-  let _devotionalsMap = null;
-  let _devotionalLoadPromise = null;
-  let _devotionalOpen = false;
-  let _devotionalRenderedKey = null;
-
-  function getDevotionalDateKey(date) {
-    const d = date || new Date();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return m + '-' + day;
-  }
-
-  function getTodaysDevotionalEntry() {
-    if (!_devotionalsMap) return null;
-    return _devotionalsMap[getDevotionalDateKey()] || null;
-  }
-
-  async function loadDevotionalsCatalog() {
-    if (_devotionalsMap) return _devotionalsMap;
-    if (_devotionalLoadPromise) return _devotionalLoadPromise;
-
-    _devotionalLoadPromise = (async () => {
-      try {
-        const raw = sessionStorage.getItem(DEVOTIONAL_CACHE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const map = parsed.devotionals || parsed;
-          if (map && typeof map === 'object') _devotionalsMap = map;
-        }
-      } catch { /* ignore */ }
-
-      try {
-        const data = await apiGetJson(DEVOTIONAL_JSON_URL, 22000);
-        if (data) {
-          const map = data.devotionals || data;
-          if (map && typeof map === 'object') {
-            _devotionalsMap = map;
-            try {
-              sessionStorage.setItem(DEVOTIONAL_CACHE_KEY, JSON.stringify({ devotionals: _devotionalsMap }));
-            } catch { /* quota */ }
-          }
-        }
-      } catch { /* network */ }
-
-      return _devotionalsMap;
-    })();
-
-    return _devotionalLoadPromise;
-  }
-
-  function normalizeDevotionalParagraph(text) {
-    return text.replace(/\s+/g, ' ').trim();
-  }
-
-  /** Merge PDF/soft line wraps; keep breaks only after sentence ends or blank lines. */
-  function splitDevotionalParagraphs(raw) {
-    let text = String(raw).replace(/\r\n/g, '\n').trim();
-    text = text.replace(/^,\s*\d+-\d+\s*\n+/, '');
-    text = text.replace(/\n{3,}/g, '\n\n');
-    text = text.replace(/-\n(\s*)([a-z])/g, '$1$2');
-
-    const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
-    const paragraphs = [];
-
-    blocks.forEach(block => {
-      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-      if (!lines.length) return;
-
-      let current = '';
-      lines.forEach(line => {
-        if (!current) {
-          current = line;
-          return;
-        }
-        if (/-\s*$/.test(current)) {
-          current = current.replace(/-\s*$/, '') + line;
-          return;
-        }
-        const prevEndsSentence = /[.!?…"')\]]\s*$/.test(current) || /[.!?…"']\d*$/.test(current);
-        const startsNewBlock = /^[A-Z"“‘(1-9]/.test(line) && prevEndsSentence && line.length > 2;
-        if (startsNewBlock) {
-          paragraphs.push(normalizeDevotionalParagraph(current));
-          current = line;
-        } else {
-          current += ' ' + line;
-        }
-      });
-      if (current) paragraphs.push(normalizeDevotionalParagraph(current));
+    ['d','m'].forEach(p => {
+      document.getElementById(p+'-daily-text').textContent  = '"' + dailyEntry.text  + '"';
+      document.getElementById(p+'-daily-ref').textContent   = '— ' + dailyEntry.ref  + ' (' + label + ')';
+      document.getElementById(p+'-weekly-text').textContent = '"' + weeklyEntry.text + '"';
+      document.getElementById(p+'-weekly-ref').textContent  = '— ' + weeklyEntry.ref + ' (' + label + ')';
+      const noteEl = document.getElementById(p+'-weekly-note');
+      if (noteEl) noteEl.textContent = '💭 ' + note;
     });
-
-    return paragraphs.filter(Boolean);
-  }
-
-  function formatDevotionalBodyHtml(body) {
-    if (!body || !String(body).trim()) {
-      return '<p class="devotional-loading">No devotional text for this date.</p>';
-    }
-    const paragraphs = splitDevotionalParagraphs(body);
-    if (!paragraphs.length) {
-      return '<p class="devotional-loading">No devotional text for this date.</p>';
-    }
-    if (paragraphs.length === 1) {
-      return '<p class="devotional-prose">' + escapeHtml(paragraphs[0]) + '</p>';
-    }
-    return paragraphs.map(p => '<p class="devotional-prose">' + escapeHtml(p) + '</p>').join('');
-  }
-
-  function paintDevotionalPanels(entry) {
-    if (!entry) {
-      ['d', 'm'].forEach(p => {
-        const dateEl = document.getElementById(p + '-devotional-date');
-        const titleEl = document.getElementById(p + '-devotional-title');
-        const scriptEl = document.getElementById(p + '-devotional-scripture');
-        const contentEl = document.getElementById(p + '-devotional-content');
-        if (dateEl) dateEl.textContent = 'Devotional unavailable';
-        if (titleEl) titleEl.textContent = '';
-        if (scriptEl) scriptEl.textContent = '';
-        if (contentEl) {
-          contentEl.innerHTML = '<p class="devotional-loading">Could not load today\'s devotional. Check your connection and try again.</p>';
-        }
-      });
-      return;
-    }
-
-    const dateLine = entry.month_name
-      ? entry.month_name + ' ' + entry.day
-      : getDevotionalDateKey();
-    const title = (entry.title || '').trim();
-    const scripture = (entry.scripture || '').trim();
-    const bodyHtml = formatDevotionalBodyHtml(entry.body);
-
-    ['d', 'm'].forEach(p => {
-      const dateEl = document.getElementById(p + '-devotional-date');
-      const titleEl = document.getElementById(p + '-devotional-title');
-      const scriptEl = document.getElementById(p + '-devotional-scripture');
-      const contentEl = document.getElementById(p + '-devotional-content');
-      if (dateEl) dateEl.textContent = dateLine;
-      if (titleEl) {
-        titleEl.textContent = title || 'Daily Devotional';
-        titleEl.style.display = '';
-      }
-      if (scriptEl) {
-        scriptEl.textContent = scripture;
-        scriptEl.style.display = scripture ? '' : 'none';
-      }
-      if (contentEl) contentEl.innerHTML = bodyHtml;
-    });
-    _devotionalRenderedKey = getDevotionalDateKey();
-  }
-
-  async function ensureTodaysDevotionalPainted() {
-    const todayKey = getDevotionalDateKey();
-    if (_devotionalRenderedKey === todayKey && _devotionalsMap) return;
-    await loadDevotionalsCatalog();
-    paintDevotionalPanels(getTodaysDevotionalEntry());
-  }
-
-  function setDevotionalPanelOpen(open) {
-    _devotionalOpen = open;
-    ['d', 'm'].forEach(p => {
-      const banner = document.getElementById(p + '-devotional-banner');
-      const btn = document.getElementById(p + '-devotional-toggle');
-      if (banner) banner.classList.toggle('is-open', open);
-      if (btn) {
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        btn.setAttribute('aria-label', open ? 'Collapse daily devotional' : 'Expand daily devotional');
-      }
-    });
-  }
-
-  async function toggleDevotionalPanel() {
-    const willOpen = !_devotionalOpen;
-    setDevotionalPanelOpen(willOpen);
-    if (willOpen) await ensureTodaysDevotionalPainted();
-  }
-
-  const DEVOTIONAL_TEXT_SIZE_KEY = 'vg-devotional-text-px';
-  const DEVOTIONAL_TEXT_SIZE_DEFAULT = 15;
-  const DEVOTIONAL_TEXT_SIZE_MIN = 12;
-  const DEVOTIONAL_TEXT_SIZE_MAX = 22;
-
-  function setDevotionalTextSize(val) {
-    const px = Math.min(
-      DEVOTIONAL_TEXT_SIZE_MAX,
-      Math.max(DEVOTIONAL_TEXT_SIZE_MIN, Number(val) || DEVOTIONAL_TEXT_SIZE_DEFAULT)
-    );
-    document.documentElement.style.setProperty('--devotional-text-size', px + 'px');
-    const dSlider = document.getElementById('d-devotional-size-slider');
-    const mSlider = document.getElementById('m-devotional-size-slider');
-    if (dSlider) dSlider.value = px;
-    if (mSlider) mSlider.value = px;
-    try { localStorage.setItem(DEVOTIONAL_TEXT_SIZE_KEY, String(px)); } catch { /* private mode */ }
-  }
-
-  function initDevotionalTextSize() {
-    let px = DEVOTIONAL_TEXT_SIZE_DEFAULT;
-    try {
-      const saved = localStorage.getItem(DEVOTIONAL_TEXT_SIZE_KEY);
-      if (saved != null && saved !== '') {
-        const n = Number(saved);
-        if (!Number.isNaN(n)) px = n;
-      }
-    } catch { /* ignore */ }
-    setDevotionalTextSize(px);
   }
 
   /* ══════════════════════════════════════
@@ -4182,33 +2297,11 @@
     if (!sel || sel.options.length > 1) return;
     const prev = sel.value;
     sel.innerHTML =
-      '<option value="custom" selected>Verse Generator</option>' +
+      '<option value="custom" selected>Choose Book</option>' +
+      '<option value="old">Old Testament</option>' +
+      '<option value="new">New Testament</option>' +
       '<option value="read">Read Bible</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
-    else if (prev === 'old' || prev === 'new') sel.value = 'custom';
-  }
-
-  function isVerseGeneratorMode(p) {
-    return document.getElementById(p + '-testament')?.value === 'custom';
-  }
-
-  function onBookSelectChange(p) {
-    const sel = document.getElementById(p + '-book');
-    const other = p === 'd' ? 'm' : 'd';
-    const otherSel = document.getElementById(other + '-book');
-    if (sel && otherSel && optionValueExists(otherSel, sel.value)) {
-      otherSel.value = sel.value;
-    }
-  }
-
-  function migrateLegacyTestamentMode(testamentSel) {
-    const v = testamentSel?.value;
-    if (v === 'old' || v === 'new') {
-      testamentSel.dataset.legacyBook = v;
-      testamentSel.value = 'custom';
-      return 'custom';
-    }
-    return v;
   }
 
   function isReadBibleMode(p) {
@@ -4218,19 +2311,14 @@
   let _readSyncLock = false;
   let readChapterCache = {};
   const READ_CACHE_MAX = 48;
-  /** Read Bible verse dropdown: show entire chapter in the display panel */
-  const READ_VERSE_WHOLE = 'whole-chapter';
   let _readLoadId = { d: 0, m: 0 };
-  let _layoutMode = null;
   let _layoutIsMobile = null;
-  /** Verse Generator: 'verses' = search passage; 'random' = reveal random verse */
-  let _customGenIntent = { d: 'random', m: 'random' };
   let _versionChangeTimer = null;
   let _refSearchCandidates = null;
   const LANG_BOOK_NAME_MAP = {};
 
   function activePanel() {
-    return getLayoutMode() === 'mobile' ? 'm' : 'd';
+    return isMobile() ? 'm' : 'd';
   }
 
   function syncVersionSelects(version) {
@@ -4275,12 +2363,8 @@
     chSel.value = String(ch);
     if (verse != null) {
       const vSel = document.getElementById(p + '-read-verse');
-      if (verse === READ_VERSE_WHOLE) {
-        if (optionValueExists(vSel, READ_VERSE_WHOLE)) vSel.value = READ_VERSE_WHOLE;
-      } else {
-        const v = Math.max(1, parseInt(verse, 10) || 1);
-        if (optionValueExists(vSel, String(v))) vSel.value = String(v);
-      }
+      const v = Math.max(1, verse);
+      if (optionValueExists(vSel, String(v))) vSel.value = String(v);
     }
   }
 
@@ -4372,162 +2456,9 @@
     return !!display?.querySelector('.read-passage-text');
   }
 
-  const READ_PASSAGE_ERROR_DEFAULT =
-    'Could not load this passage. Check the reference and try again.';
-
-  let _readPassageRetrying = { d: false, m: false };
-
-  function clearReadChapterCacheForVersion(version) {
-    const prefix = version + '|';
-    Object.keys(readChapterCache).forEach(key => {
-      if (key.startsWith(prefix)) delete readChapterCache[key];
-    });
-  }
-
-  function showReadPassageError(p, message) {
-    if (!isReadBibleMode(p)) return;
-    const display = document.getElementById(p + '-verseDisplay');
-    if (!display) return;
-    clearReadDisplayLoading(p);
-    const isDesk = p === 'd';
-    const msg = message || READ_PASSAGE_ERROR_DEFAULT;
-    const msgClass = isDesk ? 'verse-placeholder' : 'mob-placeholder';
-    display.innerHTML =
-      '<div class="read-passage-error">' +
-        '<div class="read-passage-error-row">' +
-          `<p class="${msgClass} read-passage-error-msg">${escapeHtml(msg)}</p>` +
-          `<button type="button" class="read-passage-refresh-btn" data-read-passage-refresh data-panel="${p}" aria-label="Refresh and load an available passage">` +
-            '<span class="read-passage-refresh-icon" aria-hidden="true">↻</span>' +
-            '<span class="read-passage-refresh-label">Refresh</span>' +
-          '</button>' +
-        '</div>' +
-      '</div>';
-    setReadModeActions(p, true);
-    updateReadChapterNav(p);
-  }
-
-  function setReadPassageRetryLoading(p, loading) {
-    const display = document.getElementById(p + '-verseDisplay');
-    if (!display) return;
-    const btn = display.querySelector('[data-read-passage-refresh]');
-    if (loading) {
-      display.classList.add('read-retry-loading');
-      if (btn) {
-        btn.disabled = true;
-        btn.classList.add('is-loading');
-        btn.setAttribute('aria-busy', 'true');
-      } else if (!hasReadPassageContent(display)) {
-        setReadDisplayLoading(p, true);
-      }
-    } else {
-      display.classList.remove('read-retry-loading');
-      if (btn) {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
-        btn.removeAttribute('aria-busy');
-      }
-    }
-  }
-
-  async function tryFetchReadChapter(version, bookEn, chapter, timeoutMs) {
-    if (isHaoMode(version)) {
-      return withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
-    }
-    if (isBollsMode(version)) {
-      return withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
-    }
-    if (isApiBibleMode(version)) {
-      return withTimeout(fetchApiBiblePassage(version, bookEn, chapter, null, null), timeoutMs, null);
-    }
-    if (isWldhMode(version)) {
-      return withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, null, null), timeoutMs, null);
-    }
-    const bookApi = getApiBookName(bookEn, version);
-    return withTimeout(fetchBssPassageVerses(version, `${bookApi} ${chapter}`), timeoutMs, null);
-  }
-
-  async function retryReadPassageFromAvailable(p) {
-    if (_readPassageRetrying[p] || !isReadBibleMode(p)) return;
-    _readPassageRetrying[p] = true;
-    const version = getSelectedVersion(p);
-    const hadError = !!document.getElementById(p + '-verseDisplay')?.querySelector('.read-passage-error');
-    try {
-      if (hadError) setReadPassageRetryLoading(p, true);
-      else setReadDisplayLoading(p, true);
-
-      clearReadChapterCacheForVersion(version);
-      invalidateBookDiscovery(version);
-      await ensureBooksDiscovered(version, { force: true });
-
-      const langCode = getTranslationLang(version);
-      const ui = getUiStrings(langCode);
-      const langBooks = await loadBooksForLang(langCode);
-      populateReadBookSelect(p, langBooks, ui, version);
-
-      const bookIds = getAvailableBookIds(version);
-      const timeoutMs = isWldhMode(version)
-        ? apiFetchTimeoutMs() + 14000
-        : apiFetchTimeoutMs() + 4000;
-
-      for (let i = 0; i < bookIds.length; i++) {
-        const bookId = bookIds[i];
-        const bookEn = ALL[bookId - 1];
-        if (!bookEn) continue;
-        const data = await tryFetchReadChapter(version, bookEn, 1, timeoutMs);
-        if (data?.verses?.length) {
-          const key = readChapterCacheKey(version, bookEn, 1);
-          storeReadChapterCache(key, data);
-          applyReadChapterData(p, bookEn, 1, data);
-          return;
-        }
-      }
-
-      showReadPassageError(p);
-    } catch {
-      showReadPassageError(p);
-    } finally {
-      _readPassageRetrying[p] = false;
-      setReadPassageRetryLoading(p, false);
-      clearReadDisplayLoading(p);
-    }
-  }
-
-  function bindReadPassageRefreshOnce() {
-    if (window._readPassageRefreshBound) return;
-    window._readPassageRefreshBound = true;
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-read-passage-refresh]');
-      if (!btn || btn.disabled) return;
-      const panel = btn.getAttribute('data-panel');
-      if (panel === 'd' || panel === 'm') {
-        e.preventDefault();
-        void retryReadPassageFromAvailable(panel);
-      }
-    });
-  }
-
   function clearReadDisplayLoading(p) {
     const display = document.getElementById(p + '-verseDisplay');
     if (display) display.classList.remove('loading', 'read-updating');
-  }
-
-  function blurSearchInputs(p) {
-    [p + '-custom-search', p + '-read-search'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.blur();
-    });
-    const active = document.activeElement;
-    if (active && active !== document.body && typeof active.blur === 'function') {
-      active.blur();
-    }
-  }
-
-  function onSearchKeydown(event, p, kind) {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-    blurSearchInputs(p);
-    if (kind === 'custom') onCustomSearch(p);
-    else onReadSearch(p);
   }
 
   function scrollReadAreaToTop(p) {
@@ -4536,21 +2467,15 @@
     requestAnimationFrame(() => {
       const offset = p === 'm' ? 80 : 28;
       const top = window.scrollY + el.getBoundingClientRect().top - offset;
-      const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+      const behavior = (p === 'm' || prefersReducedMotion()) ? 'auto' : 'smooth';
       window.scrollTo({ top: Math.max(0, top), behavior });
     });
   }
 
-  function scrollVerseDisplayAfterSearch(p) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => scrollReadAreaToTop(p));
-    });
-  }
-
   function applyReadChapterData(p, bookEn, chapter, data) {
-    populateReadVerseSelect(p, data.verses[data.verses.length - 1].num, { defaultWhole: true });
+    populateReadVerseSelect(p, data.verses[data.verses.length - 1].num);
     _readSyncLock = true;
-    syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
+    syncReadSelectors(p, bookEn, chapter, 1);
     _readSyncLock = false;
     renderReadPassage(p, data, false);
   }
@@ -4558,7 +2483,7 @@
   async function loadReadChapterAt(p, bookEn, chapter, options) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
-    const version = getSelectedVersion(p);
+    const version = document.getElementById(p + '-version').value;
     const avail = getAvailableBookIds(version);
     const bi = ALL.indexOf(bookEn);
     if (bi < 0 || !avail.includes(bi + 1)) {
@@ -4569,7 +2494,7 @@
     const loadId = ++_readLoadId[p];
 
     _readSyncLock = true;
-    syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
+    syncReadSelectors(p, bookEn, chapter, 1);
     _readSyncLock = false;
 
     const display = document.getElementById(p + '-verseDisplay');
@@ -4584,23 +2509,25 @@
     setReadDisplayLoading(p, !hasReadPassageContent(display));
 
     let data;
-    try {
-      const chapterTimeout = isWldhMode(version)
-        ? apiFetchTimeoutMs() + 14000
-        : apiFetchTimeoutMs() + 2000;
-      data = await tryFetchReadChapter(version, bookEn, chapter, chapterTimeout);
-    } finally {
-      if (loadId === _readLoadId[p]) clearReadDisplayLoading(p);
+    if (isHaoMode(version)) {
+      data = await fetchHaoPassageVerses(version, bookEn, chapter, null, null);
+    } else if (isBollsMode(version)) {
+      data = await fetchBollsPassageVerses(version, bookEn, chapter, null, null);
+    } else {
+      const bookApi = getApiBookName(bookEn, version);
+      data = await fetchBssPassageVerses(version, `${bookApi} ${chapter}`);
     }
     if (loadId !== _readLoadId[p]) return;
+
+    clearReadDisplayLoading(p);
 
     if (data?.verses?.length) {
       storeReadChapterCache(key, data);
       applyReadChapterData(p, bookEn, chapter, data);
     } else {
-      populateReadVerseSelect(p, 1, { defaultWhole: true });
+      populateReadVerseSelect(p, 1);
       _readSyncLock = true;
-      syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
+      syncReadSelectors(p, bookEn, chapter, 1);
       _readSyncLock = false;
       await loadReadPassage(p, buildReadReference(bookEn, chapter, 1, 1, version));
     }
@@ -4634,8 +2561,9 @@
   }
 
   function getApiBookName(bookEn, version) {
-    // Several BSS modules require English USFM-style names for passage lookup.
-    if (BSS_PASSAGE_ENGLISH_BOOK_MODULES.has(version)) return bookEn;
+    // Cadman (Vietnamese): passage API accepts English USFM-style names; localized
+    // Vietnamese names from /books often return 400 for references.
+    if (version === 'cadman') return bookEn;
     const lang = getTranslationLang(version);
     const langBooks = BSS_BOOKS_CACHE[lang];
     if (langBooks) return getTranslatedBookName(bookEn, langBooks);
@@ -4647,14 +2575,7 @@
   }
 
   function formatVersesHtml(verses) {
-    return verses.map(v => {
-      const text = cleanVerseDisplayText(v.text);
-      return `<sup class="verse-num">${v.num}</sup>${escapeHtml(text)}`;
-    }).join(' ');
-  }
-
-  function cleanVerseDisplayText(text) {
-    return stripParagraphMarkers(text || '').trim().replace(/\s+/g, ' ');
+    return verses.map(v => `<sup class="verse-num">${v.num}</sup>${escapeHtml(v.text)}`).join(' ');
   }
 
   function populateSelectOptions(sel, count, startAt = 1) {
@@ -4706,35 +2627,10 @@
     populateSelectOptions(sel, CHAPTER_COUNTS[idx]);
   }
 
-  function populateReadVerseSelect(p, maxVerse, options) {
-    options = options || {};
+  function populateReadVerseSelect(p, maxVerse) {
     const sel = document.getElementById(p + '-read-verse');
     if (!sel) return;
-    const version = document.getElementById(p + '-version')?.value || 'kjv';
-    const ui = getUiStrings(getTranslationLang(version));
-    const saved = sel.value;
-    const frag = document.createDocumentFragment();
-    const wholeOpt = document.createElement('option');
-    wholeOpt.value = READ_VERSE_WHOLE;
-    wholeOpt.textContent = ui.wholeVerse || 'Whole Verse';
-    frag.appendChild(wholeOpt);
-    const max = Math.max(1, maxVerse || 1);
-    for (let i = 1; i <= max; i++) {
-      const o = document.createElement('option');
-      o.value = String(i);
-      o.textContent = String(i);
-      frag.appendChild(o);
-    }
-    sel.replaceChildren(frag);
-    if (options.selectVerse != null && optionValueExists(sel, String(options.selectVerse))) {
-      sel.value = String(options.selectVerse);
-    } else if (optionValueExists(sel, saved)) {
-      sel.value = saved;
-    } else if (options.defaultWhole !== false) {
-      sel.value = READ_VERSE_WHOLE;
-    } else {
-      sel.value = '1';
-    }
+    populateSelectOptions(sel, Math.max(1, maxVerse || 1));
   }
 
   function getRefSearchCandidates() {
@@ -4762,26 +2658,14 @@
     for (const { en, alts } of candidates) {
       for (const name of alts) {
         const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const reVerse = new RegExp('^' + escaped + '\\s+(\\d+):(\\d+)(?:\\s*[-–]\\s*(\\d+))?', 'i');
-        const mVerse = trimmed.match(reVerse);
-        if (mVerse) {
+        const re = new RegExp('^' + escaped + '\\s+(\\d+):(\\d+)(?:\\s*[-–]\\s*(\\d+))?', 'i');
+        const m = trimmed.match(re);
+        if (m) {
           return {
             book: en,
-            chapter: parseInt(mVerse[1], 10),
-            verseStart: parseInt(mVerse[2], 10),
-            verseEnd: mVerse[3] ? parseInt(mVerse[3], 10) : parseInt(mVerse[2], 10),
-            wholeChapter: false
-          };
-        }
-        const reChapter = new RegExp('^' + escaped + '\\s+(\\d+)\\s*$', 'i');
-        const mChapter = trimmed.match(reChapter);
-        if (mChapter) {
-          return {
-            book: en,
-            chapter: parseInt(mChapter[1], 10),
-            verseStart: null,
-            verseEnd: null,
-            wholeChapter: true
+            chapter: parseInt(m[1], 10),
+            verseStart: parseInt(m[2], 10),
+            verseEnd: m[3] ? parseInt(m[3], 10) : parseInt(m[2], 10)
           };
         }
       }
@@ -4796,110 +2680,32 @@
   }
 
   async function fetchPassageForParsed(version, parsed) {
-    if (parsed.wholeChapter) {
-      if (isHaoMode(version)) {
-        return fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null);
-      }
-      if (isBollsMode(version)) {
-        return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null);
-      }
-      if (isApiBibleMode(version)) {
-        return fetchApiBiblePassage(version, parsed.book, parsed.chapter, null, null);
-      }
-      if (isWldhMode(version)) {
-        return fetchWldhPassageVerses(version, parsed.book, parsed.chapter, null, null);
-      }
-      const bookApi = getApiBookName(parsed.book, version);
-      return fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`);
-    }
     if (isHaoMode(version)) {
       return fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
     }
     if (isBollsMode(version)) {
       return fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
     }
-    if (isApiBibleMode(version)) {
-      return fetchApiBiblePassage(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
-    }
-    if (isWldhMode(version)) {
-      return fetchWldhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
-    }
     const bookApi = getApiBookName(parsed.book, version);
     const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
     return fetchBssPassageVerses(version, ref, parsed.verseStart, parsed.verseEnd);
   }
 
-  function parsedFromPassageData(data) {
-    const fromRef = parseReferenceSearch(data.ref);
-    if (fromRef) return fromRef;
-    const bookEn = resolveBookEnFromRaw(data.bookName || '') ||
-      (data.bookName && ALL.includes(data.bookName) ? data.bookName : null);
-    if (!bookEn || !data.verses?.length) return null;
-    const chapter = data.chapter ?? data.verses[0].chapter;
-    return {
-      book: bookEn,
-      chapter: parseInt(chapter, 10),
-      verseStart: data.verses[0].num,
-      verseEnd: data.verses[data.verses.length - 1].num
-    };
-  }
-
-  function getPassageParsedFromEntry(entry) {
-    if (entry.passageParsed) return entry.passageParsed;
-    const fromRef = parseReferenceSearch(entry.ref);
-    if (fromRef) return fromRef;
-    if (entry.readVerses?.length) {
-      const bookEn = entry.readBook || entry.passageBook ||
-        (entry.bookName ? resolveBookEnFromRaw(entry.bookName) : null);
-      let chapter = entry.readChapter ?? entry.passageChapter ?? entry.readVerses[0].chapter;
-      if (bookEn && chapter != null) {
-        return {
-          book: bookEn,
-          chapter: parseInt(chapter, 10),
-          verseStart: entry.readVerses[0].num,
-          verseEnd: entry.readVerses[entry.readVerses.length - 1].num
-        };
-      }
-      const chapterOnly = entry.ref.match(/^(.+?)\s+(\d+)$/);
-      if (chapterOnly) {
-        const bookFromRef = resolveBookEnFromRaw(chapterOnly[1].trim());
-        if (bookFromRef) {
-          return {
-            book: bookFromRef,
-            chapter: parseInt(chapterOnly[2], 10),
-            verseStart: entry.readVerses[0].num,
-            verseEnd: entry.readVerses[entry.readVerses.length - 1].num
-          };
-        }
-      }
-    }
-    return null;
-  }
-
-  function renderSearchedPassage(p, data, passageParsed) {
+  function renderSearchedPassage(p, data) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const label = getTranslationLabel(data.version);
-    const uiRef = data.ref;
+    const displayRef = getReadDisplayRef(data);
     const reveal = verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
-      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(uiRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
-      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(uiRef)} · ${escapeHtml(label)}</p></div>`;
+      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
+      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
-    const parsed = passageParsed || parsedFromPassageData(data);
-    const canonicalRef = buildRefFromParsed(parsed) || getCanonicalReference({ ref: uiRef, passageParsed: parsed });
     current[p] = {
-      ref: uiRef,
-      text: fullText,
-      version: data.version,
-      readVerses: data.verses,
-      passageParsed: parsed,
-      passageBook: parsed?.book,
-      passageChapter: parsed?.chapter,
-      canonicalRef: canonicalRef || uiRef
+      ref: displayRef, text: fullText, version: data.version, readVerses: data.verses
     };
 
     document.getElementById(p + '-actions').style.display = 'flex';
@@ -4919,18 +2725,10 @@
 
   function resetCustomSearchForRandom() {
     ['d', 'm'].forEach(pl => {
-      _customGenIntent[pl] = 'random';
       const input = document.getElementById(pl + '-custom-search');
       if (input) input.value = '';
       updateCustomSearchUI(pl);
     });
-  }
-
-  /** True when user intends to load a searched passage (not random). */
-  function isCustomRevealVersesMode(p) {
-    if (document.getElementById(p + '-testament')?.value !== 'custom') return false;
-    if ((_customGenIntent[p] || 'random') !== 'verses') return false;
-    return !!document.getElementById(p + '-custom-search')?.value?.trim();
   }
 
   async function loadSearchedPassage(p, parsed, options) {
@@ -4943,54 +2741,25 @@
     future[p] = [];
 
     setReadDisplayLoading(p, true);
-    let data = null;
-    try {
-      data = await withTimeout(fetchPassageForParsed(version, parsed), apiFetchTimeoutMs() + 3000, null);
-      if (data) {
-        renderSearchedPassage(p, data, parsed);
-        scrollVerseDisplayAfterSearch(p);
-        setCustomGenerateButtonAfterReveal();
-        return true;
-      }
-      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
-      return false;
-    } finally {
-      clearReadDisplayLoading(p);
+    const data = await fetchPassageForParsed(version, parsed);
+    clearReadDisplayLoading(p);
+    if (data) {
+      renderSearchedPassage(p, data);
+      if (options.resetSearchUi) resetCustomSearchForRandom();
+      return true;
     }
+    display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+    return false;
   }
 
   async function onCustomSearch(p) {
-    blurSearchInputs(p);
-    _customGenIntent.d = _customGenIntent.m = 'verses';
     const query = document.getElementById(p + '-custom-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
       showToast('Enter a reference like John 1:1 or John 1:1-7');
       return;
     }
-    await loadSearchedPassage(p, parsed);
-  }
-
-  function onCustomSearchFocus(p) {
-    const version = document.getElementById(p + '-version')?.value;
-    const ui = getUiStrings(getTranslationLang(version || 'kjv'));
-    ['d', 'm'].forEach(pl => {
-      if (document.getElementById(pl + '-testament')?.value === 'read') return;
-      _customGenIntent[pl] = 'verses';
-      const genBtn = document.getElementById(pl === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-      if (genBtn) genBtn.textContent = ui.generateVerses || '✦ Reveal the Verses ✦';
-    });
-  }
-
-  function setCustomGenerateButtonAfterReveal() {
-    ['d', 'm'].forEach(pl => {
-      if (document.getElementById(pl + '-testament')?.value !== 'custom') return;
-      _customGenIntent[pl] = 'random';
-      const genBtn = document.getElementById(pl === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-      if (!genBtn) return;
-      const ui = getUiStrings(getTranslationLang(document.getElementById(pl + '-version')?.value || 'kjv'));
-      genBtn.textContent = ui.generate;
-    });
+    await loadSearchedPassage(p, parsed, { resetSearchUi: true });
   }
 
   function onCustomSearchInput(p) {
@@ -4998,14 +2767,11 @@
     const other = p === 'd' ? 'm' : 'd';
     const otherInput = document.getElementById(other + '-custom-search');
     if (otherInput && input) otherInput.value = input.value;
-    const hasQuery = !!(input && input.value.trim());
-    _customGenIntent.d = _customGenIntent.m = hasQuery ? 'verses' : 'random';
     updateCustomSearchUI(p);
     updateCustomSearchUI(other);
   }
 
-  function updateCustomSearchUI(p, options) {
-    options = options || {};
+  function updateCustomSearchUI(p) {
     const wrap = document.getElementById(p + '-customSearchWrapper');
     const testament = document.getElementById(p + '-testament')?.value;
     if (wrap) wrap.style.display = testament === 'custom' ? '' : 'none';
@@ -5022,16 +2788,10 @@
       searchInput.placeholder = ui.customSearchPlaceholder || ui.searchPlaceholder || 'e.g. John 1:1 or John 1:1-7';
     }
 
-    if (options.skipButton) return;
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
     if (!genBtn || testament === 'read') return;
     const hasQuery = searchInput && searchInput.value.trim().length > 0;
-    const intent = _customGenIntent[p] || 'random';
-    if (intent === 'verses' && hasQuery) {
-      genBtn.textContent = ui.generateVerses || '✦ Reveal the Verses ✦';
-    } else {
-      genBtn.textContent = ui.generate;
-    }
+    genBtn.textContent = hasQuery ? (ui.generateVerses || '✦ Reveal the Verses ✦') : ui.generate;
   }
 
   function renderReadPassage(p, data, animate) {
@@ -5046,32 +2806,17 @@
       ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
       : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
 
-    const fullText = data.verses.map(v => `${v.num} ${cleanVerseDisplayText(v.text)}`).join(' ');
+    const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
     const bookEn = document.getElementById(p + '-read-book')?.value;
     const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
-    const verseStart = data.verses[0]?.num;
-    const verseEnd = data.verses[data.verses.length - 1]?.num;
-    const passageParsed = bookEn && chapterNum != null
-      ? { book: bookEn, chapter: chapterNum, verseStart, verseEnd }
-      : parsedFromPassageData(data);
-    const canonicalRef = buildRefFromParsed(passageParsed) || displayRef;
     current[p] = {
       ref: displayRef, text: fullText, version: data.version, readVerses: data.verses,
-      readBook: bookEn, readChapter: chapterNum,
-      passageParsed,
-      passageBook: bookEn,
-      passageChapter: chapterNum,
-      canonicalRef
+      readBook: bookEn, readChapter: chapterNum
     };
 
     if (bookEn && chapterNum) {
-      const verseSelVal = document.getElementById(p + '-read-verse')?.value;
-      let syncVerse;
-      if (verseSelVal === READ_VERSE_WHOLE) syncVerse = READ_VERSE_WHOLE;
-      else if (data.verses.length > 1) syncVerse = READ_VERSE_WHOLE;
-      else syncVerse = data.verses[0]?.num || 1;
       _readSyncLock = true;
-      syncReadSelectors(p, bookEn, chapterNum, syncVerse);
+      syncReadSelectors(p, bookEn, chapterNum, data.verses[0]?.num || 1);
       _readSyncLock = false;
     }
 
@@ -5103,64 +2848,40 @@
   }
 
   async function loadReadPassage(p, reference, filterStart, filterEnd) {
-    const version = getSelectedVersion(p);
+    const version = document.getElementById(p + '-version').value;
     const display = document.getElementById(p + '-verseDisplay');
     setReadDisplayLoading(p, !hasReadPassageContent(display));
-    const passageTimeout = isWldhMode(version)
-      ? apiFetchTimeoutMs() + 14000
-      : apiFetchTimeoutMs() + 3000;
-    let data = null;
-    try {
-      if (isHaoMode(version)) {
-        const bookSelEl = document.getElementById(p + '-read-book');
-        const chSelEl   = document.getElementById(p + '-read-chapter');
-        const bookEn = bookSelEl?.value || null;
-        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-        if (bookEn && ALL.includes(bookEn)) {
-          data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-        } else {
-          data = await withTimeout(fetchHaoPassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
-        }
-      } else if (isBollsMode(version)) {
-        const bookSelEl = document.getElementById(p + '-read-book');
-        const chSelEl   = document.getElementById(p + '-read-chapter');
-        const bookEn = bookSelEl?.value || null;
-        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-        if (bookEn && ALL.includes(bookEn)) {
-          data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-        }
-      } else if (isApiBibleMode(version)) {
-        const bookSelEl = document.getElementById(p + '-read-book');
-        const chSelEl   = document.getElementById(p + '-read-chapter');
-        const bookEn = bookSelEl?.value || null;
-        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-        if (bookEn && ALL.includes(bookEn)) {
-          data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-        } else {
-          data = await withTimeout(fetchApiBiblePassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
-        }
-      } else if (isWldhMode(version)) {
-        const bookSelEl = document.getElementById(p + '-read-book');
-        const chSelEl   = document.getElementById(p + '-read-chapter');
-        const bookEn = bookSelEl?.value || null;
-        const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-        if (bookEn && ALL.includes(bookEn)) {
-          data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-        } else {
-          data = await withTimeout(fetchWldhPassageFromString(version, reference, filterStart, filterEnd), passageTimeout, null);
-        }
+    let data;
+    if (isHaoMode(version)) {
+      // For HAO, derive bookEn and chapter from the selectors (most reliable)
+      // then fall back to parsing the reference string
+      const bookSelEl = document.getElementById(p + '-read-book');
+      const chSelEl   = document.getElementById(p + '-read-chapter');
+      const bookEn = bookSelEl?.value || null;
+      const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+      if (bookEn && ALL.includes(bookEn)) {
+        data = await fetchHaoPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null);
       } else {
-        data = await withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
+        data = await fetchHaoPassageFromString(version, reference, filterStart, filterEnd);
       }
-      if (data) {
-        renderReadPassage(p, data);
-      } else if (isReadBibleMode(p)) {
-        showReadPassageError(p);
+    } else if (isBollsMode(version)) {
+      const bookSelEl = document.getElementById(p + '-read-book');
+      const chSelEl   = document.getElementById(p + '-read-chapter');
+      const bookEn = bookSelEl?.value || null;
+      const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
+      if (bookEn && ALL.includes(bookEn)) {
+        data = await fetchBollsPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null);
       } else {
-        display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">${READ_PASSAGE_ERROR_DEFAULT}</p>`;
+        data = null;
       }
-    } finally {
-      clearReadDisplayLoading(p);
+    } else {
+      data = await fetchBssPassageVerses(version, reference, filterStart, filterEnd);
+    }
+    clearReadDisplayLoading(p);
+    if (data) {
+      renderReadPassage(p, data);
+    } else {
+      display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
     }
   }
 
@@ -5179,183 +2900,87 @@
 
   async function onReadVerseChange(p) {
     if (_readSyncLock) return;
-    const verseVal = document.getElementById(p + '-read-verse').value;
-    const version = getSelectedVersion(p);
+    const version = document.getElementById(p + '-version').value;
     const bookEn = document.getElementById(p + '-read-book').value;
     const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10);
-
-    if (verseVal === READ_VERSE_WHOLE) {
-      _readSyncLock = true;
-      syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
-      _readSyncLock = false;
-      const key = readChapterCacheKey(version, bookEn, chapter);
-      const cached = readChapterCache[key];
-      if (cached) {
-        renderReadPassage(p, cached, false);
-        return;
-      }
-      await loadReadChapterAt(p, bookEn, chapter);
-      return;
-    }
-
-    const verse = parseInt(verseVal, 10);
+    const verse = parseInt(document.getElementById(p + '-read-verse').value, 10);
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
-    const passageTimeout = isWldhMode(version)
-      ? apiFetchTimeoutMs() + 14000
-      : apiFetchTimeoutMs() + 3000;
     if (isHaoMode(version)) {
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
+      const data = await fetchHaoPassageVerses(version, bookEn, chapter, verse, verse);
+      clearReadDisplayLoading(p);
+      if (data) renderReadPassage(p, data);
+      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
     } else if (isBollsMode(version)) {
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isApiBibleMode(version)) {
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchApiBiblePassage(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isWldhMode(version)) {
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchWldhPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
+      const data = await fetchBollsPassageVerses(version, bookEn, chapter, verse, verse);
+      clearReadDisplayLoading(p);
+      if (data) renderReadPassage(p, data);
+      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
     } else {
       await loadReadPassage(p, buildReadReference(bookEn, chapter, verse, verse, version));
     }
   }
 
   async function onReadSearch(p) {
-    blurSearchInputs(p);
     const query = document.getElementById(p + '-read-search').value;
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
-      showToast('Enter a reference like Matthew 6, Matthew 24:5, or Matthew 24:5-15');
+      showToast('Enter a reference like Matthew 24:5 or Matthew 24:5-15');
       return;
     }
-    const version = getSelectedVersion(p);
+    const version = document.getElementById(p + '-version').value;
     const bookSel = document.getElementById(p + '-read-book');
-    const readSearchTimeout = isWldhMode(version)
-      ? apiFetchTimeoutMs() + 14000
-      : apiFetchTimeoutMs() + 5000;
-
-    if (parsed.wholeChapter) {
-      _readSyncLock = true;
-      if (optionValueExists(bookSel, parsed.book)) bookSel.value = parsed.book;
-      syncReadSelectors(p, parsed.book, parsed.chapter, READ_VERSE_WHOLE);
-      _readSyncLock = false;
-      await loadReadChapterAt(p, parsed.book, parsed.chapter, { scrollToTop: true });
-      scrollVerseDisplayAfterSearch(p);
-      return;
-    }
-
     _readSyncLock = true;
     if (optionValueExists(bookSel, parsed.book)) bookSel.value = parsed.book;
     syncReadSelectors(p, parsed.book, parsed.chapter, parsed.verseStart);
     _readSyncLock = false;
 
     if (isHaoMode(version)) {
-      const chapterData = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
+      // For HAO: fetch the whole chapter first to get verse count, then load the specific verse range
+      const chapterData = await fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num);
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
       _readSyncLock = false;
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else showReadPassageError(p);
-      } finally {
-        clearReadDisplayLoading(p);
-      }
+      const data = await fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+      clearReadDisplayLoading(p);
+      if (data) renderReadPassage(p, data);
+      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
     } else if (isBollsMode(version)) {
-      const chapterData = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
+      const chapterData = await fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null);
+      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num);
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
       _readSyncLock = false;
       const display = document.getElementById(p + '-verseDisplay');
       setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else showReadPassageError(p);
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isApiBibleMode(version)) {
-      const chapterData = await withTimeout(fetchApiBiblePassage(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
-      _readSyncLock = true;
-      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
-      _readSyncLock = false;
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchApiBiblePassage(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else showReadPassageError(p);
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isWldhMode(version)) {
-      const chapterData = await withTimeout(fetchWldhPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
-      _readSyncLock = true;
-      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
-      _readSyncLock = false;
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchWldhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else showReadPassageError(p);
-      } finally {
-        clearReadDisplayLoading(p);
-      }
+      const data = await fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
+      clearReadDisplayLoading(p);
+      if (data) renderReadPassage(p, data);
+      else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
     } else {
       const bookApi = getApiBookName(parsed.book, version);
-      const probe = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`), readSearchTimeout, null);
-      if (probe?.verses?.length) populateReadVerseSelect(p, probe.verses[probe.verses.length - 1].num, { defaultWhole: false });
+      const probe = await fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`);
+      if (probe?.verses?.length) populateReadVerseSelect(p, probe.verses[probe.verses.length - 1].num);
       _readSyncLock = true;
       document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
       _readSyncLock = false;
       const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
       await loadReadPassage(p, ref, parsed.verseStart, parsed.verseEnd);
     }
-    const display = document.getElementById(p + '-verseDisplay');
-    if (hasReadPassageContent(display)) scrollVerseDisplayAfterSearch(p);
   }
 
   async function refreshReadBibleLabels(p) {
-    const version = getSelectedVersion(p);
-    await ensureBooksDiscovered(version);
+    const version = document.getElementById(p + '-version').value;
+    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else await ensureBssBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
     const langBooks = await loadBooksForLang(langCode);
@@ -5367,64 +2992,40 @@
     const readBookSel = document.getElementById(p + '-read-book');
     const bookEn = savedBook && optionValueExists(readBookSel, savedBook)
       ? savedBook : getFirstAvailableBook(version);
-    const chapterNum = parseInt(savedChapter, 10) || 1;
-    let verseSync = READ_VERSE_WHOLE;
-    if (savedVerse === READ_VERSE_WHOLE) verseSync = READ_VERSE_WHOLE;
-    else {
-      const v = parseInt(savedVerse, 10);
-      if (!isNaN(v) && v >= 1) verseSync = v;
-    }
-    syncReadSelectors(p, bookEn, chapterNum, verseSync);
+    syncReadSelectors(p, bookEn, parseInt(savedChapter, 10) || 1, parseInt(savedVerse, 10) || 1);
     _readSyncLock = false;
     const searchInput = document.getElementById(p + '-read-search');
-    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
+    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 24:5 or Matthew 24:5-15';
   }
 
-  async function loadReadBibleFromFirstBook(p, options) {
-    options = options || {};
-    const version = getSelectedVersion(p);
-    await ensureBooksDiscovered(version);
+  async function initReadBiblePanel(p, resetToGenesis = false) {
+    const version = document.getElementById(p + '-version').value;
+    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else await ensureBssBooksDiscovered(version);
     const langCode = getTranslationLang(version);
     const ui = getUiStrings(langCode);
     const langBooks = await loadBooksForLang(langCode);
     populateReadBookSelect(p, langBooks, ui, version);
     const searchInput = document.getElementById(p + '-read-search');
-    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
-    const firstBook = getFirstAvailableBook(version);
-    await loadReadChapterAt(p, firstBook, 1, { scrollToTop: !!options.scrollToTop });
-  }
-
-  async function initReadBiblePanel(p, resetToFirstBook = false) {
-    const version = getSelectedVersion(p);
-    await ensureBooksDiscovered(version);
-    const langCode = getTranslationLang(version);
-    const ui = getUiStrings(langCode);
-    const langBooks = await loadBooksForLang(langCode);
-    populateReadBookSelect(p, langBooks, ui, version);
-    const searchInput = document.getElementById(p + '-read-search');
-    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
-    if (resetToFirstBook) {
+    if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 24:5 or Matthew 24:5-15';
+    if (resetToGenesis) {
       await loadReadChapterAt(p, getFirstAvailableBook(version), 1);
-      return;
+    } else {
+      const bookEn = document.getElementById(p + '-read-book').value || getFirstAvailableBook(version);
+      const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10) || 1;
+      await loadReadChapterAt(p, bookEn, chapter);
     }
-    const readBookSel = document.getElementById(p + '-read-book');
-    const avail = getAvailableBooks(version);
-    let bookEn = readBookSel?.value;
-    if (!bookEn || !avail.includes(bookEn)) bookEn = getFirstAvailableBook(version);
-    const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10) || 1;
-    await loadReadChapterAt(p, bookEn, chapter);
   }
 
   async function updateBooks(p, options) {
     options = options || {};
-    const version = getSelectedVersion(p);
-    await ensureBooksDiscovered(version);
+    const version   = document.getElementById(p+'-version').value;
+    if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+    else await ensureBssBooksDiscovered(version);
     const langCode  = getTranslationLang(version);
     const ui        = getUiStrings(langCode);
     const testamentSel = document.getElementById(p + '-testament');
-    const legacyBook = testamentSel.dataset.legacyBook || null;
-    if (legacyBook) delete testamentSel.dataset.legacyBook;
-    const testament = migrateLegacyTestamentMode(testamentSel);
+    const testament = testamentSel.value;
     const prevTest = testamentSel.dataset.prevValue ?? '';
     testamentSel.dataset.prevValue = testament;
     const sel       = document.getElementById(p+'-book');
@@ -5432,11 +3033,7 @@
     const readWrap  = document.getElementById(p+'-readBibleWrapper');
     const showBooks = testament === 'custom';
     const readMode  = testament === 'read';
-    let savedBook = sel.value;
-    if (legacyBook) savedBook = legacyBook;
-    else if ((prevTest === 'old' || prevTest === 'new') && testament === 'custom') {
-      savedBook = prevTest;
-    }
+    const savedBook = sel.value;
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
 
@@ -5448,14 +3045,6 @@
       whole.value = 'whole';
       whole.textContent = ui.whole;
       frag.appendChild(whole);
-      const oldOpt = document.createElement('option');
-      oldOpt.value = 'old';
-      oldOpt.textContent = ui.old;
-      frag.appendChild(oldOpt);
-      const newOpt = document.createElement('option');
-      newOpt.value = 'new';
-      newOpt.textContent = ui.new;
-      frag.appendChild(newOpt);
       const otG = document.createElement('optgroup');
       otG.label = ui.ot;
       OT.forEach(b => {
@@ -5478,7 +3067,7 @@
       if (ntG.children.length) frag.appendChild(ntG);
       sel.replaceChildren(frag);
       if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
-        // When switching to Verse Generator, default to Whole Bible (Random)
+        // When switching to "Choose Book", default to "Whole Bible (Random)"
         sel.value = 'whole';
       } else if (optionValueExists(sel, savedBook)) {
         sel.value = savedBook;
@@ -5498,12 +3087,14 @@
 
     const opts = testamentSel.options;
     for (let i = 0; i < opts.length; i++) {
-      if (opts[i].value === 'custom') opts[i].text = ui.verseGenerator || ui.custom;
+      if (opts[i].value === 'old')    opts[i].text = ui.old;
+      if (opts[i].value === 'new')    opts[i].text = ui.new;
+      if (opts[i].value === 'custom') opts[i].text = ui.custom;
       if (opts[i].value === 'read')   opts[i].text = ui.readBible || 'Read Bible';
     }
 
     const testLabel = document.getElementById(p+'-testament-label');
-    if (testLabel) testLabel.textContent = ui.mode || ui.testament;
+    if (testLabel) testLabel.textContent = ui.testament;
 
     const bookLabel = document.getElementById(p+'-book-label');
     if (bookLabel) bookLabel.textContent = ui.book;
@@ -5524,7 +3115,8 @@
     if (readMode) {
       setReadModeActions(p, true);
       initReadSwipe();
-      await ensureBooksDiscovered(version);
+      if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
+      else await ensureBssBooksDiscovered(version);
       if (prevTest !== 'read' || options.forceReadInit) {
         await initReadBiblePanel(p, true);
       } else if (options.refreshReadLabels) {
@@ -5553,10 +3145,8 @@
       renderSearchedPassage(p, {
         verses: entry.readVerses,
         ref: entry.ref,
-        version: entry.version,
-        bookName: entry.passageBook,
-        chapter: entry.passageChapter
-      }, entry.passageParsed);
+        version: entry.version
+      });
     } else {
       renderVerse(p, entry);
     }
@@ -5565,7 +3155,7 @@
   function renderVerse(p, entry) {
     const display = document.getElementById(p+'-verseDisplay');
     const isDesk  = p === 'd';
-    const cleanText = cleanVerseDisplayText(entry.text).replace(/\s+"/g, '"').replace(/\s+'/g, "'");
+    const cleanText = entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
     const safeText = escapeHtml(cleanText);
     const label = escapeHtml(getTranslationLabel(entry.version));
     const safeRef = escapeHtml(entry.ref);
@@ -5677,7 +3267,7 @@
   ];
 
   function refMatchesBook(ref, bookEn, version) {
-    if (!bookEn || bookEn === 'whole' || bookEn === 'old' || bookEn === 'new') return true;
+    if (!bookEn || bookEn === 'whole') return true;
     const names = version ? getBookMatchNames(bookEn, version) : [bookEn];
     return names.some(name => {
       const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -5688,12 +3278,13 @@
   function resolveBookScope(p) {
     const testament = document.getElementById(p + '-testament').value;
     const bookSel   = document.getElementById(p + '-book');
-    if (testament !== 'custom' || !bookSel) return { book: null, randomScope: null };
-    const val = bookSel.value;
-    if (val === 'whole') return { book: null, randomScope: null };
-    if (val === 'old') return { book: null, randomScope: 'OT' };
-    if (val === 'new') return { book: null, randomScope: 'NT' };
-    return { book: val, randomScope: null };
+    if (testament === 'old') return { book: null, randomScope: 'OT' };
+    if (testament === 'new') return { book: null, randomScope: 'NT' };
+    if (testament === 'custom') {
+      if (bookSel.value === 'whole') return { book: null, randomScope: null };
+      return { book: bookSel.value, randomScope: null };
+    }
+    return { book: null, randomScope: null };
   }
 
   function getLocalVerse(book, version) {
@@ -5733,12 +3324,17 @@
   }
 
   async function onVersionChangeImpl(p) {
-    const version = getSelectedVersion(p);
+    const version = document.getElementById(p + '-version').value;
     readChapterCache = {};
-    Object.keys(API_BIBLE_PASSAGE_CACHE).forEach(k => delete API_BIBLE_PASSAGE_CACHE[k]);
-    Object.keys(WLDH_CHAPTER_CACHE).forEach(k => delete WLDH_CHAPTER_CACHE[k]);
-    invalidateBookDiscovery(version);
-    await ensureBooksDiscovered(version);
+    if (isBollsMode(version)) {
+      delete BOLLS_BOOK_IDS_BY_MODULE[version];
+      delete VERSION_BOOK_IDS_CACHE[version];
+      await discoverBollsBooks(version);
+    } else if (bssNeedsBookDiscovery(version)) {
+      delete BSS_BOOK_IDS_BY_MODULE[version];
+      delete VERSION_BOOK_IDS_CACHE[version];
+      await discoverBssBooks(version);
+    }
     syncVersionSelects(version);
 
     const active = activePanel();
@@ -5747,7 +3343,7 @@
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead });
+    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: false });
     await loadDailyAndWeekly(version);
 
     const other = active === 'd' ? 'm' : 'd';
@@ -5755,7 +3351,11 @@
     const tOther = document.getElementById(other + '-testament');
     if (tActive && tOther) tOther.value = tActive.value;
 
-    if (!inRead && current[active]) {
+    if (inRead) {
+      const bookEn = document.getElementById(active + '-read-book').value || getFirstAvailableBook(version);
+      const chapter = parseInt(document.getElementById(active + '-read-chapter').value, 10) || 1;
+      await loadReadChapterAt(active, bookEn, chapter, { scrollToTop: false });
+    } else if (current[active]) {
       await retranslateCurrentVerse(active, version);
     }
   }
@@ -5790,45 +3390,46 @@
     const entry = current[p];
     if (!entry) return;
 
+    const ref = entry.ref;
     const display = document.getElementById(p + '-verseDisplay');
-    const canonicalRef = getCanonicalReference(entry);
     display.classList.add('loading');
 
     try {
-      const retransTimeout = apiFetchTimeoutMs() + 5000;
       if (entry.readVerses?.length) {
-        const parsed = getPassageParsedFromEntry(entry);
+        const parsed = parseReferenceSearch(ref);
         if (parsed) {
-          const data = await withTimeout(fetchPassageForParsed(version, parsed), retransTimeout, null);
+          const data = await fetchPassageForParsed(version, parsed);
+          clearReadDisplayLoading(p);
+          display.classList.remove('loading');
           if (data) {
-            renderSearchedPassage(p, data, parsed);
-            if (current[p]) current[p].canonicalRef = canonicalRef;
+            renderSearchedPassage(p, data);
             return;
           }
-          showToast('Could not load this passage in the selected translation.');
-          renderCurrentEntry(p, entry);
-          return;
         }
       }
 
-      const newEntry = await withTimeout(fetchReferenceForVersion(version, canonicalRef), retransTimeout, null);
+      let newEntry;
+      if (isHaoMode(version)) {
+        newEntry = await fetchHaoReferenceFromString(version, ref);
+      } else if (isBollsMode(version)) {
+        newEntry = await fetchBollsReferenceFromString(version, ref);
+      } else {
+        newEntry = await fetchBssReference(version, ref);
+      }
       if (newEntry) {
-        newEntry.canonicalRef = canonicalRef;
-        newEntry.version = version;
         current[p] = newEntry;
         renderVerse(p, newEntry);
-        return;
+      } else {
+        const fallback = getLocalVerse(null, version);
+        current[p] = fallback;
+        renderVerse(p, fallback);
       }
-      showToast('Could not load this reference in the selected translation.');
-      entry.version = version;
-      renderCurrentEntry(p, entry);
     } catch {
-      renderCurrentEntry(p, entry);
-      showToast('Translation update failed. Showing previous text.');
-    } finally {
-      clearReadDisplayLoading(p);
-      display.classList.remove('loading');
+      const fallback = getLocalVerse(null, version);
+      current[p] = fallback;
+      renderVerse(p, fallback);
     }
+    display.classList.remove('loading');
   }
 
   
@@ -5836,14 +3437,14 @@
     if (isReadBibleMode(p)) return;
 
     const testament = document.getElementById(p + '-testament').value;
-    if (isCustomRevealVersesMode(p) && retryCount === 0) {
-      const searchQuery = document.getElementById(p + '-custom-search')?.value?.trim();
+    const searchQuery = document.getElementById(p + '-custom-search')?.value?.trim();
+    if (testament === 'custom' && searchQuery && retryCount === 0) {
       const parsed = parseReferenceSearch(searchQuery);
       if (!parsed) {
         showToast('Enter a reference like John 1:1 or John 1:1-7');
         return;
       }
-      await loadSearchedPassage(p, parsed);
+      await loadSearchedPassage(p, parsed, { resetSearchUi: true });
       return;
     }
 
@@ -5851,10 +3452,6 @@
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk    = p === 'd';
     const scope     = pinnedScope || resolveBookScope(p);
-
-    if (testament === 'custom' && retryCount === 0) {
-      resetCustomSearchForRandom();
-    }
 
     if (retryCount === 0) {
       if (current[p]) history[p].push(current[p]);
@@ -5864,22 +3461,22 @@
     }
 
     try {
-      const verseTimeout = apiFetchTimeoutMs() + (isRestrictedMobileBrowser() ? 2000 : 6000);
-      let entry = await withTimeout(fetchRandomBssVerse(version, scope), verseTimeout, null);
-      if (!entry) entry = getLocalVerse(scope.book, version);
-      if (entry && !entry.canonicalRef) entry.canonicalRef = entry.ref;
+      let entry = await fetchRandomBssVerse(version, scope);
+      if (!entry) {
+        entry = getLocalVerse(scope.book, version);
+      }
+      display.classList.remove('loading');
       current[p] = entry;
       renderVerse(p, entry);
     } catch {
-      if (retryCount < 1 && !apiCircuitOpen()) {
+      if (retryCount < 2) {
         generate(p, retryCount + 1, scope);
-        return;
+      } else {
+        display.classList.remove('loading');
+        const entry = getLocalVerse(scope.book, version);
+        current[p] = entry;
+        renderVerse(p, entry);
       }
-      const entry = getLocalVerse(scope.book, version);
-      current[p] = entry;
-      renderVerse(p, entry);
-    } finally {
-      display.classList.remove('loading');
     }
   }
 
@@ -6110,11 +3707,11 @@
   }
 
   function passageNumFontSize(bodySize) {
-    return Math.max(11, Math.round(bodySize * 0.58));
+    return Math.max(12, Math.round(bodySize * 0.62));
   }
 
   function passageNumRise(bodySize) {
-    return Math.round(bodySize * 0.38);
+    return Math.round(bodySize * 0.35);
   }
 
   function setPassageBodyFont(ctx, size) {
@@ -6164,7 +3761,8 @@
 
     function appendRun(run) {
       const runW = measurePassageRun(ctx, run, bodyFontSize);
-      if (currentLine.length && currentWidth + lineGapWidth() + runW > maxWidth) pushLine();
+      const gap = currentLine.length ? lineGapWidth() : 0;
+      if (currentLine.length && currentWidth + gap + runW > maxWidth) pushLine();
       if (currentLine.length) currentWidth += lineGapWidth();
       currentLine.push(run);
       currentWidth += runW;
@@ -6197,73 +3795,46 @@
     return lines;
   }
 
-  const IMAGE_HEADER_SPACE = 200;
-  const IMAGE_FOOTER_SPACE = 200;
-  const IMAGE_REF_BLOCK = 56;
-
   function computeVerseImageLayout(ctx, entry) {
     const W = 1080;
     const rawText = getImageSourceText(entry);
     const verses = entry.readVerses || [];
     const verseCount = verses.length;
-    const usePortrait = verseCount > 5;
+    const isPassage = verseCount > 1 || rawText.length > 220;
     const maxW = W - 130;
-    const chromeH = IMAGE_HEADER_SPACE + IMAGE_FOOTER_SPACE + IMAGE_REF_BLOCK;
 
     if (verseCount) {
-      let fontSize = usePortrait ? 34 : 38;
+      let fontSize = verseCount > 1 || rawText.length > 220 ? 36 : 38;
       let passageLines = [];
       let lineHeight = Math.round(fontSize * 1.35);
-      const maxBlockH = (usePortrait ? W * 2.15 : W) - chromeH - 40;
+      const maxBlock = verseCount > 1 || rawText.length > 220 ? W * 2.15 - 380 : W - 200;
+      const minHeight = verseCount > 1 || rawText.length > 220 ? Math.round(W * 1.3) : W;
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 8; i++) {
         passageLines = wrapPassageImageLines(ctx, verses, maxW, fontSize);
-        lineHeight = Math.round(fontSize * (usePortrait ? 1.32 : 1.35));
+        lineHeight = Math.round(fontSize * 1.35);
         const blockH = passageLines.length * lineHeight;
-        if (blockH <= maxBlockH || fontSize <= 20) break;
+        if (blockH <= maxBlock || fontSize <= 22) break;
         fontSize -= 2;
       }
 
       const blockH = passageLines.length * lineHeight;
-      const height = usePortrait
-        ? Math.min(2400, Math.max(W, IMAGE_HEADER_SPACE + blockH + IMAGE_REF_BLOCK + IMAGE_FOOTER_SPACE + 36))
-        : W;
-
+      const height = Math.min(2400, Math.max(minHeight, 300 + blockH + 200));
       return {
         width: W,
         height,
         fontSize,
         lineHeight,
         passageLines,
-        portrait: usePortrait,
-        headerSpace: IMAGE_HEADER_SPACE,
-        footerSpace: IMAGE_FOOTER_SPACE
+        portrait: isPassage,
+        isPassage: true
       };
     }
 
     ctx.font = 'italic 38px Georgia, serif';
     let lines = wrapCanvasLines(ctx, rawText, maxW);
     if (lines.length > 10) lines = lines.slice(0, 10);
-    const lineHeight = 52;
-    const blockH = lines.length * lineHeight;
-    const maxBlockH = W - chromeH;
-    let fontSize = 38;
-    if (blockH > maxBlockH) {
-      fontSize = Math.max(26, Math.floor(38 * (maxBlockH / blockH)));
-      ctx.font = `italic ${fontSize}px Georgia, serif`;
-      lines = wrapCanvasLines(ctx, rawText, maxW);
-      if (lines.length > 10) lines = lines.slice(0, 10);
-    }
-    return {
-      width: W,
-      height: W,
-      fontSize,
-      lineHeight: Math.round(fontSize * 1.35),
-      lines,
-      portrait: false,
-      headerSpace: IMAGE_HEADER_SPACE,
-      footerSpace: IMAGE_FOOTER_SPACE
-    };
+    return { width: W, height: W, fontSize: 38, lineHeight: 52, lines, portrait: false, isPassage: false };
   }
 
   function drawPassageImageLines(ctx, layout, S, H) {
@@ -6271,12 +3842,9 @@
     const lineH = layout.lineHeight;
     const bodySize = layout.fontSize;
     const blockH = lines.length * lineH;
-    const headerSpace = layout.headerSpace ?? IMAGE_HEADER_SPACE;
-    const footerSpace = layout.footerSpace ?? IMAGE_FOOTER_SPACE;
-    const verseY = Math.max(
-      headerSpace,
-      (H - blockH - footerSpace - IMAGE_REF_BLOCK) / 2
-    );
+    const headerSpace = 200;
+    const footerSpace = 160;
+    const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
     const numRise = passageNumRise(bodySize);
 
     lines.forEach((lineRuns, li) => {
@@ -6353,31 +3921,31 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     let refY;
-    const headerSpace = layout.headerSpace ?? IMAGE_HEADER_SPACE;
-    const footerSpace = layout.footerSpace ?? IMAGE_FOOTER_SPACE;
     if (layout.passageLines?.length) {
       refY = drawPassageImageLines(ctx, layout, S, H) + 40;
     } else {
       ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
       const lineH = layout.lineHeight;
       const blockH = layout.lines.length * lineH;
-      const verseY = Math.max(
-        headerSpace,
-        (H - blockH - footerSpace - IMAGE_REF_BLOCK) / 2
-      );
+      const headerSpace = 200;
+      const footerSpace = 160;
+      const verseY = Math.max(headerSpace, (H - blockH - footerSpace) / 2);
       layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
       refY = verseY + blockH + 40;
     }
+    ctx.beginPath();
+    ctx.moveTo(S / 2 - 120, refY - 18);
+    ctx.lineTo(S / 2 + 120, refY - 18);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
     ctx.fillStyle = '#c9a84c';
     ctx.font = '600 28px Georgia, serif';
     const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version)})`;
     ctx.fillText(refLine, S / 2, refY + 8);
-
-    const refOrnament = '──── ❤︎ ────';
-    ctx.font = '22px serif';
-    ctx.globalAlpha = 0.55;
-    ctx.fillText(refOrnament, S / 2, refY + 42);
-    ctx.globalAlpha = 1;
 
     const bottomLine = '━━━━༺❀༻━━ ·:*༺ ♱ versegenerator.edgeone.app ♱ ༻*:· ━━༺❀༻━━━━';
     const bottomY = H - 44;
@@ -6496,55 +4064,24 @@
   /* ══════════════════════════════════════
      INIT
   ══════════════════════════════════════ */
-  async function bootstrapApp() {
-    markCompatMobileBrowser();
+  window.addEventListener('load', async () => {
     if (isFacebookIAB()) {
       document.getElementById('fb-iab-banner').classList.add('show');
       document.body.classList.add('has-iab-banner');
     }
-
-    hydrateWeeklyCatalogFromCache();
-    if (!_weeklyVersesList.length) {
-      _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
-      indexWeeklyVersesCatalog();
-    }
-    void loadWeeklyVersesCatalog();
-
-    const initialSlots = getDailyWeeklyFallbackEntries('kjv');
-    _bannerCanonicalRefs.daily = initialSlots.dailyRef;
-    _bannerCanonicalRefs.weekly = initialSlots.weeklyRef;
-    paintDailyWeeklyBanners(initialSlots.dailyEntry, initialSlots.weeklyEntry, initialSlots.label, initialSlots.note);
-
-    try {
-      await withTimeout(loadBibleList(), 12000);
-    } catch {
-      BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-      populateTranslationSelects();
-    }
-
+    await loadBibleList();
     await initLayout();
     initReadSwipe();
-    bindReadPassageRefreshOnce();
-    clearAllVersePanelLoading();
-
-    const version = getSelectedVersion('d');
-    try {
-      await withTimeout(ensureBooksDiscovered(version), apiFetchTimeoutMs() + 15000);
-    } catch { /* preset / fallback book lists */ }
-
-    void loadDailyAndWeekly(version);
-    void loadDevotionalsCatalog();
-    initDevotionalTextSize();
-  }
-
-  window.addEventListener('load', () => { void bootstrapApp(); });
+    const version = document.getElementById('d-version').value || 'kjv';
+    if (isBollsMode(version)) await discoverBollsBooks(version);
+    else if (bssNeedsBookDiscovery(version)) await discoverBssBooks(version);
+    await loadDailyAndWeekly(version);
+  });
   let _resizeTimer;
-  function scheduleLayoutRefresh() {
+  window.addEventListener('resize', () => {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(initLayout, 200);
-  }
-  window.addEventListener('resize', scheduleLayoutRefresh);
-  window.addEventListener('orientationchange', scheduleLayoutRefresh);
+  });
   document.getElementById('shareModal').addEventListener('click', function(e) {
     if (e.target === this) closeShare();
   });
