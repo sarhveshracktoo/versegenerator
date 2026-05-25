@@ -7,6 +7,14 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: 'DrescherGroteskBT-SemiBold';
+      src: url('https://db.onlinewebfonts.com/t/2040f704434843394f8505367793a81c.woff2') format('woff2'),
+           url('https://db.onlinewebfonts.com/t/2040f704434843394f8505367793a81c.woff') format('woff');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
     :root {
       --gold: #c9a84c;
       --gold-light: #e8c97a;
@@ -64,13 +72,22 @@
       75%  { text-shadow: 0 0 22px rgba(201,168,76,1), 0 0 8px #fff4; }
     }
     @keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes votdPulse {
+      0%, 100% { opacity: 0.35; transform: scaleX(0.92); }
+      50% { opacity: 1; transform: scaleX(1); }
+    }
+    @keyframes votdShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
     .verse-reveal { animation: scrollUnfurl 0.6s cubic-bezier(0.22,1,0.36,1) both; transform-origin: top center; }
     .verse-reveal-instant { animation: fadeUp 0.22s ease both; }
     @media (prefers-reduced-motion: reduce) {
       .verse-reveal, .verse-reveal-instant,
-      .header, .daily-banner, .weekly-banner, .scroll-card, .mob-topbar, .mob-card {
+      .header, .votd-panel, .weekly-banner, .scroll-card, .mob-topbar, .mob-card {
         animation: none !important;
       }
+      .votd-panel .votd-verse-wrap { transition: none !important; }
       .cross-icon, .mob-cross { animation: none !important; }
     }
 
@@ -101,22 +118,118 @@
     .divider-line { flex:1; height:1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
     .divider-ornament { color:var(--gold); font-family:'Cinzel',serif; font-size:0.72rem; font-weight:600; letter-spacing:0.14em; white-space:nowrap; }
 
-    /* Daily + Weekly banners */
-    .daily-banner, .weekly-banner {
+    /* Verse of the Day + Weekly banners */
+    .votd-panel, .weekly-banner {
       width:100%; max-width:760px;
-      border-radius:6px;
-      padding:14px 20px;
+      border-radius:10px;
       margin-bottom:14px;
       animation: fadeUp 0.8s ease 0.1s both;
       position: relative;
+      padding: 0;
+      overflow: hidden;
+      text-align: left;
     }
-    .daily-banner {
-      background: linear-gradient(135deg, #1e1000, #2e1a06);
-      border: 1px solid rgba(201,168,76,0.3);
+    .votd-panel {
+      background: rgba(22, 12, 4, 0.52);
+      border: 1px solid rgba(201, 168, 76, 0.28);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .votd-panel button.devotional-header,
+    .weekly-banner button.devotional-header {
+      border-radius: 10px;
+    }
+    .votd-panel.is-open button.devotional-header,
+    .weekly-banner.is-open button.devotional-header {
+      border-radius: 10px 10px 0 0;
+    }
+    .votd-panel .devotional-collapse,
+    .weekly-banner .devotional-collapse {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .votd-panel.is-open .devotional-collapse,
+    .weekly-banner.is-open .devotional-collapse {
+      grid-template-rows: 1fr;
+    }
+    .votd-panel .devotional-panel-body,
+    .weekly-banner .devotional-panel-body {
+      padding: 4px 18px 16px;
+      border-top: 1px solid rgba(201, 168, 76, 0.12);
+    }
+    .votd-panel.is-open.is-loading .votd-verse-wrap { opacity: 0; pointer-events: none; }
+    .votd-loader {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 52px;
+      margin: 6px 0 2px;
+    }
+    .votd-panel.is-open.is-loading .votd-loader { display: flex; }
+    .votd-loader span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold);
+      animation: votdPulse 1.1s ease-in-out infinite;
+    }
+    .votd-loader span:nth-child(2) { animation-delay: 0.15s; }
+    .votd-loader span:nth-child(3) { animation-delay: 0.3s; }
+    .votd-verse-wrap {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      width: 100%;
+      max-width: 100%;
+      text-align: left;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .votd-verse-wrap.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .votd-panel .banner-verse.votd-verse,
+    .votd-verse {
+      font-size: 1.08rem;
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+      margin: 0;
+      padding: 0;
+      max-width: 100%;
+      text-align: left;
+      text-wrap: pretty;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      hyphens: auto;
+    }
+    .votd-panel .banner-ref {
+      text-align: left;
+      display: block;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .votd-ref-fallback {
+      font-size: 0.58rem;
+      opacity: 0.85;
+      margin-left: 0.35em;
     }
     .weekly-banner {
-      background: linear-gradient(135deg, #120a00, #1e1000);
-      border: 1px solid rgba(201,168,76,0.2);
+      background: rgba(18, 10, 0, 0.5);
+      border: 1px solid rgba(201, 168, 76, 0.24);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .weekly-banner .banner-verse,
+    .weekly-banner .banner-ref,
+    .weekly-banner .weekly-note {
+      text-align: left;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
     .banner-label {
       font-family: 'Cinzel', serif;
@@ -221,7 +334,9 @@
       transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
       transform: rotate(0deg);
     }
-    .devotional-banner.is-open .devotional-chevron svg {
+    .devotional-banner.is-open .devotional-chevron svg,
+    .votd-panel.is-open .devotional-chevron svg,
+    .weekly-banner.is-open .devotional-chevron svg {
       transform: rotate(180deg);
     }
     .devotional-collapse {
@@ -343,6 +458,8 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .devotional-collapse,
+      .votd-panel .devotional-collapse,
+      .weekly-banner .devotional-collapse,
       .devotional-chevron svg {
         transition: none !important;
       }
@@ -452,13 +569,13 @@
     #d-verseDisplay.read-updating,
     .mob-verse-box.read-updating { opacity: 0.82; transition: opacity 0.2s ease; }
     #d-verseDisplay, .mob-verse-box { contain: layout style; }
-    .daily-banner, .weekly-banner, .mob-daily-banner, .mob-weekly-banner {
+    .votd-panel, .weekly-banner, .mob-votd-panel, .mob-weekly-banner {
       content-visibility: auto;
       contain-intrinsic-size: auto 88px;
     }
-    body.compat-mobile .daily-banner,
+    body.compat-mobile .votd-panel,
     body.compat-mobile .weekly-banner,
-    body.compat-mobile .mob-daily-banner,
+    body.compat-mobile .mob-votd-panel,
     body.compat-mobile .mob-weekly-banner,
     body.compat-mobile .devotional-banner,
     body.compat-mobile .mob-devotional-banner {
@@ -468,9 +585,13 @@
     .mob-verse-box.read-swipeable { touch-action: pan-y; }
     .verse-placeholder { color:var(--ink-light); font-style:italic; font-size:1rem; opacity:0.6; }
     .verse-text {
-      color:var(--crimson); font-family:'EB Garamond', serif;
+      color:var(--crimson);
+      font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
       font-size: var(--verse-size);
-      font-style:italic; line-height:1.65; margin-bottom:12px;
+      font-weight: 600;
+      font-style: normal;
+      line-height:1.65;
+      margin-bottom:12px;
     }
     .verse-text::before { content:'\201C'; font-size:3em; color:var(--gold); opacity:.35; line-height:0; vertical-align:-0.45em; margin-right:4px; }
     .verse-text::after  { content:'\201D'; font-size:3em; color:var(--gold); opacity:.35; line-height:0; vertical-align:-0.45em; margin-left:4px; }
@@ -544,8 +665,10 @@
       pointer-events: none;
     }
     .read-passage-text {
+      font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
       text-align: left;
       font-style: normal;
+      font-weight: 600;
       color: var(--ink);
       line-height: 1.75;
       user-select: text;
@@ -560,7 +683,7 @@
       color: var(--gold-dark);
       font-weight: 600;
       margin-right: 0.25em;
-      font-family: 'Cinzel', serif;
+      font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
       letter-spacing: 0;
     }
     .read-mode-actions-hidden { display: none !important; }
@@ -657,6 +780,91 @@
       transform: translateY(-2px) scale(1.05);
     }
 
+    /* Hidden background music player */
+    .bg-music-wrap {
+      position: fixed;
+      left: -9999px;
+      top: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      z-index: -1;
+      visibility: hidden;
+    }
+    .bg-music-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,0.42);
+      background: linear-gradient(145deg, rgba(42,26,10,0.96), rgba(20,12,4,0.98));
+      color: var(--gold-light);
+      cursor: pointer;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.4), 0 0 0 1px rgba(201,168,76,0.12);
+      transition: opacity 0.4s ease, transform 0.4s ease, background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+      opacity: 0.92;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .bg-music-btn:hover {
+      opacity: 1;
+      transform: translateY(-3px) scale(1.06);
+      border-color: var(--gold);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45), 0 0 18px rgba(201,168,76,0.25);
+    }
+    .bg-music-btn:active { transform: scale(0.96); }
+    .bg-music-btn svg {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    .bg-music-btn .icon-sound { opacity: 0; transform: scale(0.85); }
+    .bg-music-btn .icon-mute { opacity: 1; transform: scale(1); }
+    .bg-music-btn:not(.is-muted) .icon-sound { opacity: 1; transform: scale(1); }
+    .bg-music-btn:not(.is-muted) .icon-mute { opacity: 0; transform: scale(0.85); }
+    .bg-music-btn.is-muted {
+      opacity: 0.78;
+      border-color: rgba(201,168,76,0.28);
+      color: var(--gold-dark);
+    }
+    .bg-music-btn:not(.is-muted) {
+      opacity: 1;
+      border-color: rgba(201,168,76,0.55);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.42), 0 0 14px rgba(201,168,76,0.2);
+    }
+    .bg-music-btn--desk {
+      position: fixed;
+      bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+      right: calc(22px + env(safe-area-inset-right, 0px));
+      z-index: 9000;
+    }
+    .bg-music-btn--mob {
+      width: 36px;
+      height: 36px;
+      display: none;
+    }
+    .bg-music-btn--mob svg { width: 17px; height: 17px; }
+    body.layout-mobile .bg-music-btn--desk { display: none; }
+    body.layout-mobile .bg-music-btn--mob { display: inline-flex; }
+    body.layout-desktop .bg-music-btn--desk,
+    body.layout-tablet .bg-music-btn--desk { display: inline-flex; }
+    body.layout-desktop .bg-music-btn--mob,
+    body.layout-tablet .bg-music-btn--mob { display: none; }
+    body.compat-mobile .bg-music-btn--desk { display: none; }
+    body.compat-mobile .bg-music-btn--mob { display: inline-flex; }
+
     /* ══ MOBILE LAYOUT ══ */
     #mobile-view { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
 
@@ -681,12 +889,53 @@
       overflow-y: auto;
     }
 
-    /* Mobile daily/weekly banners */
-    .mob-daily-banner, .mob-weekly-banner {
-      border-radius:10px; padding:12px 14px; font-size:0.95rem;
+    /* Mobile Verse of the Day / weekly banners */
+    .mob-votd-panel, .mob-weekly-banner {
+      border-radius:10px;
+      padding: 0;
+      font-size:0.95rem;
+      overflow: hidden;
     }
-    .mob-daily-banner { background:linear-gradient(135deg,#1e1000,#2e1a06); border:1px solid rgba(201,168,76,0.28); }
-    .mob-weekly-banner { background:linear-gradient(135deg,#120a00,#1e1000); border:1px solid rgba(201,168,76,0.18); }
+    .mob-votd-panel {
+      background: rgba(22, 12, 4, 0.55);
+      border: 1px solid rgba(201, 168, 76, 0.26);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .mob-votd-panel button.devotional-header,
+    .mob-weekly-banner button.devotional-header {
+      padding: 10px 12px;
+    }
+    .mob-votd-panel .devotional-panel-body,
+    .mob-weekly-banner .devotional-panel-body {
+      padding: 2px 12px 14px;
+    }
+    .mob-votd-panel {
+      text-align: left;
+    }
+    .mob-votd-panel .votd-verse-wrap {
+      width: 100%;
+      text-align: left;
+    }
+    .mob-votd-panel .votd-verse {
+      font-size: 1rem;
+      line-height: 1.62;
+      margin: 0;
+      max-width: 100%;
+      text-align: left;
+    }
+    .mob-votd-panel .banner-ref {
+      text-align: left;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+    .mob-weekly-banner {
+      background: rgba(18, 10, 0, 0.52);
+      border: 1px solid rgba(201, 168, 76, 0.22);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
 
     .mob-card {
       width:100%; max-width:100%; min-width:0; overflow:hidden; box-sizing:border-box;
@@ -754,15 +1003,26 @@
     }
     .mob-verse-box.loading { opacity:0.5; }
     .mob-verse-text {
-      color:var(--crimson); font-family:'EB Garamond',serif;
+      color:var(--crimson);
+      font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
       font-size: var(--verse-size);
-      font-style:italic; line-height:1.65; margin-bottom:10px;
+      font-weight: 600;
+      font-style: normal;
+      line-height:1.65;
+      margin-bottom:10px;
     }
     .mob-verse-text::before { content:'\201C'; font-size:2.4em; color:var(--gold); opacity:.35; line-height:0; vertical-align:-0.4em; margin-right:2px; }
     .mob-verse-text::after  { content:'\201D'; font-size:2.4em; color:var(--gold); opacity:.35; line-height:0; vertical-align:-0.4em; margin-left:2px; }
     .mob-verse-ref { font-family:'Cinzel',serif; font-size:0.65rem; font-weight:600; color:var(--gold-dark); letter-spacing:0.12em; }
     .mob-verse-text.read-mode::before,
     .mob-verse-text.read-mode::after { content: none; }
+    .verse-text.read-passage-text,
+    .mob-verse-text.read-passage-text {
+      font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
+      font-style: normal;
+      font-weight: 600;
+      color: var(--ink);
+    }
     .mob-read-search { padding: 10px 9px; border-radius: 7px; font-size: 0.95rem; }
     .mob-placeholder { color:var(--ink-light); font-style:italic; font-size:0.95rem; opacity:0.6; }
 
@@ -933,12 +1193,14 @@
       #desktop-view { padding: 28px 18px 52px; }
       .header { margin-bottom: 22px; }
       h1 { font-size: clamp(1.2rem, 3.2vw, 1.85rem); }
-      .daily-banner, .weekly-banner, .devotional-banner,
+      .votd-panel, .weekly-banner, .devotional-banner,
       .scroll-card {
         max-width: min(720px, 94vw);
       }
       .scroll-card { padding: 26px 24px; }
       .banner-verse { font-size: 1rem; }
+      .votd-panel .votd-verse { font-size: 1.02rem; line-height: 1.64; }
+      .votd-panel .devotional-panel-body { padding: 4px 16px 14px; }
       .controls { gap: 12px; margin-bottom: 16px; }
       .control-group select,
       .read-search-input { font-size: 0.95rem; padding: 10px 28px 10px 10px; }
@@ -952,7 +1214,7 @@
     }
     @media (min-width: 769px) and (max-width: 1100px) and (orientation: landscape) {
       #desktop-view { padding: 20px 22px 44px; }
-      .daily-banner, .weekly-banner, .devotional-banner,
+      .votd-panel, .weekly-banner, .devotional-banner,
       .scroll-card { max-width: min(880px, 92vw); }
       .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .control-group.full-width,
@@ -1000,19 +1262,48 @@
     </div>
   </header>
 
-  <!-- Daily Verse Banner -->
-  <div class="daily-banner" id="d-daily-banner">
-    <span class="banner-label">✦ Today's Verse</span>
-    <p class="banner-verse" id="d-daily-text">Loading today's verse…</p>
-    <span class="banner-ref" id="d-daily-ref"></span>
+  <!-- Verse of the Day -->
+  <div class="votd-panel" id="d-votd-panel">
+    <button type="button" class="devotional-header" id="d-votd-toggle" aria-expanded="false" aria-controls="d-votd-collapse" aria-label="Expand verse of the day" onclick="toggleVotdPanel()">
+      <span class="banner-label">✦ Verse of the Day</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-votd-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body" aria-live="polite">
+          <div class="votd-loader" id="d-votd-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="votd-verse-wrap" id="d-votd-wrap">
+            <p class="banner-verse votd-verse" id="d-votd-text"></p>
+            <span class="banner-ref" id="d-votd-ref"></span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Weekly Verse Banner -->
   <div class="weekly-banner" id="d-weekly-banner">
-    <span class="banner-label">📖 Verse of the Week</span>
-    <p class="banner-verse" id="d-weekly-text"></p>
-    <span class="banner-ref" id="d-weekly-ref"></span>
-    <p class="weekly-note" id="d-weekly-note"></p>
+    <button type="button" class="devotional-header" id="d-weekly-toggle" aria-expanded="false" aria-controls="d-weekly-collapse" aria-label="Expand verse of the week" onclick="toggleWeeklyPanel()">
+      <span class="banner-label">📖 Verse of the Week</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-weekly-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body" aria-live="polite">
+          <p class="banner-verse" id="d-weekly-text"></p>
+          <span class="banner-ref" id="d-weekly-ref"></span>
+          <p class="weekly-note" id="d-weekly-note"></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Daily Devotional -->
@@ -1176,19 +1467,48 @@
 
   <div class="mob-content">
 
-    <!-- Mobile Daily Banner -->
-    <div class="mob-daily-banner">
-      <span class="banner-label">✦ Today's Verse</span>
-      <p class="banner-verse" id="m-daily-text">Loading…</p>
-      <span class="banner-ref" id="m-daily-ref"></span>
+    <!-- Mobile Verse of the Day -->
+    <div class="mob-votd-panel votd-panel" id="m-votd-panel">
+      <button type="button" class="devotional-header" id="m-votd-toggle" aria-expanded="false" aria-controls="m-votd-collapse" aria-label="Expand verse of the day" onclick="toggleVotdPanel()">
+        <span class="banner-label">✦ Verse of the Day</span>
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </button>
+      <div class="devotional-collapse" id="m-votd-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body" aria-live="polite">
+            <div class="votd-loader" id="m-votd-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="votd-verse-wrap" id="m-votd-wrap">
+              <p class="banner-verse votd-verse" id="m-votd-text"></p>
+              <span class="banner-ref" id="m-votd-ref"></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Mobile Weekly Banner -->
-    <div class="mob-weekly-banner">
-      <span class="banner-label">📖 Verse of the Week</span>
-      <p class="banner-verse" id="m-weekly-text"></p>
-      <span class="banner-ref" id="m-weekly-ref"></span>
-      <p class="weekly-note" id="m-weekly-note"></p>
+    <div class="mob-weekly-banner weekly-banner" id="m-weekly-banner">
+      <button type="button" class="devotional-header" id="m-weekly-toggle" aria-expanded="false" aria-controls="m-weekly-collapse" aria-label="Expand verse of the week" onclick="toggleWeeklyPanel()">
+        <span class="banner-label">📖 Verse of the Week</span>
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </button>
+      <div class="devotional-collapse" id="m-weekly-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body" aria-live="polite">
+            <p class="banner-verse" id="m-weekly-text"></p>
+            <span class="banner-ref" id="m-weekly-ref"></span>
+            <p class="weekly-note" id="m-weekly-note"></p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Mobile Daily Devotional -->
@@ -1318,7 +1638,11 @@
 
   <div class="mob-bottom">
     <button class="mob-btn-generate" id="m-generate-btn" onclick="generate('m')">✦ Reveal a Verse ✦</button>
-    <div class="mob-social-icons" style="display:flex;gap:12px;justify-content:center;">
+    <div class="mob-social-icons" style="display:flex;gap:12px;justify-content:center;align-items:center;">
+      <button type="button" id="bg-music-toggle-mob" class="bg-music-btn bg-music-btn--mob is-muted" aria-label="Unmute background music" title="Unmute music">
+        <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        <svg class="icon-mute" viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      </button>
       <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" class="social-icon-btn mob-social-icon-btn" title="YouTube" style="background:#FF0000;">
         <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
       </a>
@@ -1335,6 +1659,15 @@
     <span onclick="openCreatedByModal()" style="color:rgba(201,168,76,0.4);font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.14em;text-decoration:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='rgba(201,168,76,0.75)'" onmouseout="this.style.color='rgba(201,168,76,0.4)'">Created using Claude &amp; Cursor</span>
   </div>
 </div>
+
+<!-- Hidden background music (YouTube IFrame API) -->
+<div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
+  <div id="bg-music-player"></div>
+</div>
+<button type="button" id="bg-music-toggle-desk" class="bg-music-btn bg-music-btn--desk is-muted" aria-label="Unmute background music" title="Unmute music">
+  <svg class="icon-sound" viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+  <svg class="icon-mute" viewBox="0 0 24 24" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+</button>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
 <style>
@@ -2635,21 +2968,27 @@
   }
 
   /* ══════════════════════════════════════
-     DAILY & WEEKLY VERSES  (translation-aware)
+     VERSE OF THE DAY (Our Manna) + WEEKLY VERSES
   ══════════════════════════════════════ */
-  // KJV base references for daily/weekly (used to fetch any translation)
-  const DAILY_REFS = [
-    "John 14:6","Psalm 119:105","Matthew 6:33","Romans 10:9","Psalm 34:8",
-    "1 John 4:8","Hebrews 11:1","2 Timothy 3:16","Acts 2:38","Ephesians 2:8",
-    "Proverbs 22:6","Matthew 11:28","Revelation 21:4","Psalm 27:1","Romans 6:23"
-  ];
+  const OURMANNA_VOTD_URL = 'https://beta.ourmanna.com/api/v1/get?format=json&order=daily';
+  const VOTD_CACHE_KEY = 'vg-ourmanna-votd-v1';
+  const VOTD_KJV_VERSION = 'kjv';
+  let _votdMeta = { dateKey: null, reference: null, fallbackText: null };
+  let _votdLoadId = 0;
+  let _votdInFlight = null;
+  let _votdLastVersion = '';
+  let _votdOpen = false;
+  let _weeklyOpen = false;
+  let _votdDisplayCache = {};
+  let _weeklyDisplayCache = {};
+
   const WEEKLY_JSON_URL =
     'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
   const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v2';
   let _weeklyVersesList = [];
   let _weeklyVersesByWeek = {};
   let _weeklyCatalogLoadPromise = null;
-  let _bannerCanonicalRefs = { daily: null, weekly: null };
+  let _bannerCanonicalRefs = { votd: null, weekly: null };
 
   const WEEKLY_VERSES_OFFLINE = [
     { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life." },
@@ -2785,130 +3124,341 @@
     return withTimeout(fetchBssReference(version, ref), timeout, null);
   }
 
-  // KJV fallback text (used when fetch fails)
-  const DAILY_FALLBACK = [
-    { ref:"John 14:6",       text:"Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
-    { ref:"Psalm 119:105",   text:"Thy word is a lamp unto my feet, and a light unto my path." },
-    { ref:"Matthew 6:33",    text:"But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
-    { ref:"Romans 10:9",     text:"That if thou shalt confess with thy mouth the Lord Jesus, and shalt believe in thine heart that God hath raised him from the dead, thou shalt be saved." },
-    { ref:"Psalm 34:8",      text:"O taste and see that the LORD is good: blessed is the man that trusteth in him." },
-    { ref:"1 John 4:8",      text:"He that loveth not knoweth not God; for God is love." },
-    { ref:"Hebrews 11:1",    text:"Now faith is the substance of things hoped for, the evidence of things not seen." },
-    { ref:"2 Timothy 3:16",  text:"All scripture is given by inspiration of God, and is profitable for doctrine, for reproof, for correction, for instruction in righteousness." },
-    { ref:"Acts 2:38",       text:"Repent, and be baptized every one of you in the name of Jesus Christ for the remission of sins, and ye shall receive the gift of the Holy Ghost." },
-    { ref:"Ephesians 2:8",   text:"For by grace are ye saved through faith; and that not of yourselves: it is the gift of God." },
-    { ref:"Proverbs 22:6",   text:"Train up a child in the way he should go: and when he is old, he will not depart from it." },
-    { ref:"Matthew 11:28",   text:"Come unto me, all ye that labour and are heavy laden, and I will give you rest." },
-    { ref:"Revelation 21:4", text:"And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying." },
-    { ref:"Psalm 27:1",      text:"The LORD is my light and my salvation; whom shall I fear? the LORD is the strength of my life; of whom shall I be afraid?" },
-    { ref:"Romans 6:23",     text:"For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord." },
-  ];
-  // Louis Segond offline fallbacks (module: segond_1910)
-  const DAILY_FALLBACK_LSG = [
-    { ref:"Jean 14:6",         text:"Jésus lui dit: Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi." },
-    { ref:"Psaumes 119:105",   text:"Ta parole est une lampe à mes pieds, Et une lumière sur mon sentier." },
-    { ref:"Matthieu 6:33",     text:"Cherchez premièrement le royaume et la justice de Dieu; et toutes ces choses vous seront données par-dessus." },
-    { ref:"Romains 10:9",      text:"Si tu confesses de ta bouche le Seigneur Jésus, et si tu crois dans ton cœur que Dieu l'a ressuscité des morts, tu seras sauvé." },
-    { ref:"Psaumes 34:9",      text:"Sentez et voyez combien l'Éternel est bon! Heureux l'homme qui cherche en lui son refuge!" },
-    { ref:"1 Jean 4:8",        text:"Celui qui n'aime pas n'a pas connu Dieu, car Dieu est amour." },
-    { ref:"Hébreux 11:1",      text:"Or la foi est une ferme assurance des choses qu'on espère, une démonstration de celles qu'on ne voit pas." },
-    { ref:"2 Timothée 3:16",   text:"Toute Écriture est inspirée de Dieu, et utile pour enseigner, pour convaincre, pour corriger, pour instruire dans la justice." },
-    { ref:"Actes 2:38",        text:"Pierre leur dit: Repentez-vous, et que chacun de vous soit baptisé au nom de Jésus-Christ, pour le pardon de vos péchés; et vous recevrez le don du Saint-Esprit." },
-    { ref:"Éphésiens 2:8",     text:"Car c'est par la grâce que vous êtes sauvés, par le moyen de la foi. Et cela ne vient pas de vous, c'est le don de Dieu." },
-    { ref:"Proverbes 22:6",    text:"Instruis l'enfant selon la voie qu'il doit suivre; Et, quand il sera vieux, il ne s'en détournera pas." },
-    { ref:"Matthieu 11:28",    text:"Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos." },
-    { ref:"Apocalypse 21:4",   text:"Il essuiera toute larme de leurs yeux, et la mort ne sera plus, et il n'y aura plus ni deuil, ni cri, ni douleur, car les premières choses ont disparu." },
-    { ref:"Psaumes 27:1",      text:"L'Éternel est ma lumière et mon salut: De qui aurais-je crainte? L'Éternel est le soutien de ma vie: De qui aurais-je peur?" },
-    { ref:"Romains 6:23",      text:"Car le salaire du péché, c'est la mort; mais le don gratuit de Dieu, c'est la vie éternelle en Jésus-Christ notre Seigneur." },
-  ];
-  function paintDailyWeeklyBanners(dailyEntry, weeklyEntry, label, note) {
-    if (!dailyEntry || !weeklyEntry) return;
+  function getVotdDateKey(date) {
+    const d = date || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function isKjvLikeVersion(version) {
+    const v = String(version || '').toLowerCase();
+    return v === 'kjv' || v.includes('kjv') || v === 'wldh-en-kjv';
+  }
+
+  function setVotdPanelLoading(loading) {
+    ['d-votd-panel', 'm-votd-panel'].forEach(id => {
+      const panel = document.getElementById(id);
+      if (panel) panel.classList.toggle('is-loading', !!loading);
+    });
+    if (loading && _votdOpen) {
+      ['d', 'm'].forEach(p => {
+        const wrap = document.getElementById(p + '-votd-wrap');
+        if (wrap) wrap.classList.remove('is-visible');
+      });
+    }
+  }
+
+  function setVotdPanelOpen(open) {
+    _votdOpen = open;
     ['d', 'm'].forEach(p => {
-      const dailyText = document.getElementById(p + '-daily-text');
-      const dailyRef = document.getElementById(p + '-daily-ref');
-      const weeklyText = document.getElementById(p + '-weekly-text');
-      const weeklyRef = document.getElementById(p + '-weekly-ref');
-      const noteEl = document.getElementById(p + '-weekly-note');
-      if (dailyText) dailyText.textContent = '"' + dailyEntry.text + '"';
-      if (dailyRef) dailyRef.textContent = '— ' + dailyEntry.ref + ' (' + label + ')';
-      if (weeklyText) weeklyText.textContent = '"' + weeklyEntry.text + '"';
-      if (weeklyRef) weeklyRef.textContent = '— ' + weeklyEntry.ref + ' (' + label + ')';
-      if (noteEl) noteEl.textContent = '💭 ' + note;
+      const panel = document.getElementById(p + '-votd-panel');
+      const btn = document.getElementById(p + '-votd-toggle');
+      if (panel) panel.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse verse of the day' : 'Expand verse of the day');
+      }
     });
   }
 
-  function getDailyWeeklyFallbackEntries(version) {
-    version = version || 'kjv';
-    const isLSG = isSegondMode(version);
-    const now = new Date();
-    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-    const dailyPool = getVersionRefPool(version, DAILY_REFS, isLSG ? DAILY_FALLBACK_LSG : DAILY_FALLBACK);
-    const dailyIdx = dayOfYear % dailyPool.refs.length;
-    const dailyRef = _bannerCanonicalRefs.daily || dailyPool.refs[dailyIdx];
+  function setWeeklyPanelOpen(open) {
+    _weeklyOpen = open;
+    ['d', 'm'].forEach(p => {
+      const panel = document.getElementById(p + '-weekly-banner');
+      const btn = document.getElementById(p + '-weekly-toggle');
+      if (panel) panel.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse verse of the week' : 'Expand verse of the week');
+      }
+    });
+  }
+
+  async function toggleVotdPanel() {
+    const willOpen = !_votdOpen;
+    setVotdPanelOpen(willOpen);
+    if (!willOpen) return;
+
+    const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    const cached = _votdDisplayCache[version];
+    if (cached) {
+      paintVotdPanel(cached);
+      return;
+    }
+
+    if (_votdInFlight) {
+      setVotdPanelLoading(true);
+      try { await _votdInFlight; } catch { /* paintVotdError handles */ }
+      return;
+    }
+
+    setVotdPanelLoading(true);
+    await loadVerseOfTheDay(version, { silent: false });
+  }
+
+  async function toggleWeeklyPanel() {
+    const willOpen = !_weeklyOpen;
+    setWeeklyPanelOpen(willOpen);
+    if (!willOpen) return;
+
+    const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    const cached = _weeklyDisplayCache[version];
+    if (cached) {
+      paintWeeklyBanner(cached.weeklyEntry, cached.label, cached.note);
+      return;
+    }
+
+    await loadWeeklyBanner(version, { silent: false });
+  }
+
+  function paintVotdPanel(entry, version) {
+    if (!entry) return;
+    const v = version || _votdLastVersion || document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    _votdDisplayCache[v] = entry;
+    const refLine = '— ' + entry.ref + ' (' + entry.label + ')';
+    ['d', 'm'].forEach(p => {
+      const wrap = document.getElementById(p + '-votd-wrap');
+      const textEl = document.getElementById(p + '-votd-text');
+      const refEl = document.getElementById(p + '-votd-ref');
+      if (textEl) textEl.textContent = '"' + entry.text + '"';
+      if (refEl) {
+        refEl.textContent = refLine;
+        let fb = refEl.querySelector('.votd-ref-fallback');
+        if (entry.kjvFallback) {
+          if (!fb) {
+            fb = document.createElement('span');
+            fb.className = 'votd-ref-fallback';
+            refEl.appendChild(fb);
+          }
+          fb.textContent = ' · KJV';
+        } else if (fb) {
+          fb.remove();
+        }
+      }
+      if (wrap) {
+        wrap.classList.remove('is-hidden');
+        requestAnimationFrame(() => wrap.classList.add('is-visible'));
+      }
+    });
+    setVotdPanelLoading(false);
+  }
+
+  function paintVotdError(message) {
+    paintVotdPanel({
+      ref: _votdMeta.reference || 'Verse of the Day',
+      text: message || 'Could not load today\'s verse. Check your connection.',
+      label: '—',
+      kjvFallback: false
+    });
+  }
+
+  function paintWeeklyBanner(weeklyEntry, label, note, version) {
+    if (!weeklyEntry) return;
+    const v = version || document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    _weeklyDisplayCache[v] = { weeklyEntry, label, note: note || '' };
+    ['d', 'm'].forEach(p => {
+      const weeklyText = document.getElementById(p + '-weekly-text');
+      const weeklyRef = document.getElementById(p + '-weekly-ref');
+      const noteEl = document.getElementById(p + '-weekly-note');
+      if (weeklyText) weeklyText.textContent = '"' + (weeklyEntry.text || '') + '"';
+      if (weeklyRef) weeklyRef.textContent = '— ' + weeklyEntry.ref + ' (' + label + ')';
+      if (noteEl) noteEl.textContent = note ? '💭 ' + note : '';
+    });
+  }
+
+  function readVotdCache(dateKey) {
+    try {
+      const raw = sessionStorage.getItem(VOTD_CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data && data.dateKey === dateKey && data.reference) return data;
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  function writeVotdCache(payload) {
+    try { sessionStorage.setItem(VOTD_CACHE_KEY, JSON.stringify(payload)); } catch { /* quota */ }
+  }
+
+  async function fetchOurMannaVotdMeta() {
+    const timeout = isRestrictedMobileBrowser() ? 9000 : 12000;
+    const data = await apiGetJson(OURMANNA_VOTD_URL, timeout);
+    const details = data?.verse?.details;
+    const reference = String(details?.reference || '').trim();
+    const text = String(details?.text || '').trim();
+    if (!reference || !text) throw new Error('invalid-votd');
+    return { reference, text, apiVersion: details?.version || 'NIV' };
+  }
+
+  function verseFetchHasText(entry) {
+    const t = (entry?.text || '').trim();
+    return t.length >= 12;
+  }
+
+  async function resolveVotdForTranslation(version, reference, fallbackText) {
+    const canonicalRef = reference;
+    const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
+
+    let entry = await withTimeout(fetchReferenceForVersion(version, canonicalRef), bannerTimeout, null);
+    if (verseFetchHasText(entry)) {
+      return {
+        ref: canonicalRef,
+        text: entry.text.trim(),
+        label: getTranslationLabel(version),
+        kjvFallback: false
+      };
+    }
+
+    if (!isKjvLikeVersion(version)) {
+      entry = await withTimeout(fetchReferenceForVersion(VOTD_KJV_VERSION, canonicalRef), bannerTimeout, null);
+      if (verseFetchHasText(entry)) {
+        return {
+          ref: canonicalRef,
+          text: entry.text.trim(),
+          label: getTranslationLabel(VOTD_KJV_VERSION),
+          kjvFallback: true
+        };
+      }
+    }
+
+    if ((fallbackText || '').trim()) {
+      return {
+        ref: canonicalRef,
+        text: fallbackText.trim(),
+        label: 'NIV (Our Manna)',
+        kjvFallback: true
+      };
+    }
+
+    return {
+      ref: canonicalRef,
+      text: 'Verse text unavailable in this translation.',
+      label: getTranslationLabel(version),
+      kjvFallback: true
+    };
+  }
+
+  async function ensureVotdReference(forceRefresh) {
+    const dateKey = getVotdDateKey();
+    if (!forceRefresh && _votdMeta.dateKey === dateKey && _votdMeta.reference) {
+      return _votdMeta;
+    }
+
+    let cached = !forceRefresh ? readVotdCache(dateKey) : null;
+    if (!cached) {
+      const om = await fetchOurMannaVotdMeta();
+      cached = { dateKey, reference: om.reference, text: om.text, apiVersion: om.apiVersion };
+      writeVotdCache(cached);
+    }
+
+    _votdMeta.dateKey = dateKey;
+    _votdMeta.reference = cached.reference;
+    _votdMeta.fallbackText = cached.text;
+    _bannerCanonicalRefs.votd = cached.reference;
+    return _votdMeta;
+  }
+
+  async function loadVerseOfTheDay(version, opts) {
+    version = version || VOTD_KJV_VERSION;
+    opts = opts || {};
+    const silent = opts.silent !== false;
+    const loadId = ++_votdLoadId;
+
+    if (_votdDisplayCache[version] && _votdLastVersion === version && _votdMeta.reference) {
+      paintVotdPanel(_votdDisplayCache[version], version);
+      return;
+    }
+
+    if (_votdInFlight && _votdLastVersion === version && _votdMeta.reference) {
+      return _votdInFlight;
+    }
+
+    if (!silent && _votdOpen) setVotdPanelLoading(true);
+
+    _votdInFlight = (async () => {
+      try {
+        const dateKey = getVotdDateKey();
+        const forceOm = _votdMeta.dateKey !== dateKey;
+        if (forceOm) delete _votdDisplayCache[version];
+        await ensureVotdReference(forceOm);
+        if (loadId !== _votdLoadId) return;
+
+        const resolved = await resolveVotdForTranslation(
+          version,
+          _votdMeta.reference,
+          _votdMeta.fallbackText
+        );
+        if (loadId !== _votdLoadId) return;
+
+        _votdLastVersion = version;
+        paintVotdPanel(resolved, version);
+      } catch {
+        if (loadId === _votdLoadId) {
+          paintVotdError('Could not load Verse of the Day. Check your connection and try again.');
+        }
+      } finally {
+        if (loadId === _votdLoadId) {
+          _votdInFlight = null;
+        }
+      }
+    })();
+
+    return _votdInFlight;
+  }
+
+  async function loadWeeklyBanner(version, opts) {
+    version = version || VOTD_KJV_VERSION;
+    opts = opts || {};
+
+    if (_weeklyDisplayCache[version]) {
+      const c = _weeklyDisplayCache[version];
+      paintWeeklyBanner(c.weeklyEntry, c.label, c.note, version);
+      return;
+    }
+
+    await loadWeeklyVersesCatalog();
 
     const weeklyJson = getCurrentWeeklyVerseEntry(version);
     const weeklyRef = _bannerCanonicalRefs.weekly || weeklyJson.reference;
-    const weeklyNote = weeklyJson.note || '';
+    const label = getTranslationLabel(version);
     const weeklyEntry = {
       ref: weeklyRef,
       text: weeklyJson.verse || '',
       canonicalRef: weeklyRef
     };
-
-    return {
-      label: getTranslationLabel(version),
-      note: weeklyNote,
-      dailyEntry: dailyPool.fallbackEntries[dailyIdx],
-      weeklyEntry,
-      dailyRef,
-      weeklyRef
-    };
-  }
-
-  async function loadDailyAndWeekly(version) {
-    version = version || 'kjv';
-    await loadWeeklyVersesCatalog();
-
-    const slots = getDailyWeeklyFallbackEntries(version);
-    _bannerCanonicalRefs.daily = slots.dailyRef;
-    _bannerCanonicalRefs.weekly = slots.weeklyRef;
-
-    paintDailyWeeklyBanners(slots.dailyEntry, slots.weeklyEntry, slots.label, slots.note);
+    _bannerCanonicalRefs.weekly = weeklyRef;
+    paintWeeklyBanner(weeklyEntry, label, weeklyJson.note || '', version);
 
     if (apiCircuitOpen()) return;
 
     const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
-    const dailyRef = slots.dailyRef;
-    const weeklyRef = slots.weeklyRef;
-
     try {
-      let dEntry = null;
-      let wEntry = null;
-      if (isRestrictedMobileBrowser()) {
-        dEntry = await withTimeout(fetchReferenceForVersion(version, dailyRef), bannerTimeout, null);
-        wEntry = await withTimeout(fetchReferenceForVersion(version, weeklyRef), bannerTimeout, null);
-      } else {
-        [dEntry, wEntry] = await withTimeout(
-          Promise.all([
-            fetchReferenceForVersion(version, dailyRef),
-            fetchReferenceForVersion(version, weeklyRef)
-          ]),
-          bannerTimeout,
-          [null, null]
+      const wEntry = await withTimeout(fetchReferenceForVersion(version, weeklyRef), bannerTimeout, null);
+      if (wEntry && verseFetchHasText(wEntry)) {
+        paintWeeklyBanner(
+          { ref: weeklyRef, text: wEntry.text, canonicalRef: weeklyRef },
+          label,
+          weeklyJson.note || '',
+          version
         );
       }
-      const dailyEntry = dEntry
-        ? { ref: dEntry.ref || dailyRef, text: dEntry.text, canonicalRef: dailyRef }
-        : slots.dailyEntry;
-      const weeklyEntry = wEntry
-        ? { ref: wEntry.ref || weeklyRef, text: wEntry.text, canonicalRef: weeklyRef }
-        : slots.weeklyEntry;
-      if (dEntry || wEntry) {
-        paintDailyWeeklyBanners(dailyEntry, weeklyEntry, slots.label, slots.note);
-      }
-    } catch {
-      /* offline banners already shown */
-    }
+    } catch { /* cached weekly text remains */ }
+  }
+
+  async function preloadBannerVerses(version, opts) {
+    version = version || VOTD_KJV_VERSION;
+    opts = opts || {};
+    const silent = opts.silent !== false;
+    await Promise.all([
+      loadVerseOfTheDay(version, { silent }),
+      loadWeeklyBanner(version, { silent })
+    ]);
+  }
+
+  async function loadVotdAndWeekly(version) {
+    return preloadBannerVerses(version, { silent: true });
   }
 
   /* ══════════════════════════════════════
@@ -4440,7 +4990,7 @@
     }
     const inRead = isReadBibleMode(active);
     await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: false });
-    await loadDailyAndWeekly(version);
+    await loadVotdAndWeekly(version);
 
     const other = active === 'd' ? 'm' : 'd';
     const tActive = document.getElementById(active + '-testament');
@@ -5206,11 +5756,6 @@
     }
     void loadWeeklyVersesCatalog();
 
-    const initialSlots = getDailyWeeklyFallbackEntries('kjv');
-    _bannerCanonicalRefs.daily = initialSlots.dailyRef;
-    _bannerCanonicalRefs.weekly = initialSlots.weeklyRef;
-    paintDailyWeeklyBanners(initialSlots.dailyEntry, initialSlots.weeklyEntry, initialSlots.label, initialSlots.note);
-
     try {
       await withTimeout(loadBibleList(), 12000);
     } catch {
@@ -5231,10 +5776,19 @@
       }
     } catch { /* preset / fallback book lists */ }
 
-    void loadDailyAndWeekly(version);
+    void preloadBannerVerses(version, { silent: true });
     void loadDevotionalsCatalog();
     initDevotionalTextSize();
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    if (_votdMeta.dateKey && _votdMeta.dateKey !== getVotdDateKey()) {
+      _votdDisplayCache = {};
+      void preloadBannerVerses(version, { silent: true });
+    }
+  });
 
   window.addEventListener('load', () => { void bootstrapApp(); });
   let _resizeTimer;
@@ -5250,6 +5804,226 @@
   document.getElementById('imageShareModal').addEventListener('click', function(e) {
     if (e.target === this) closeImageShare();
   });
+
+  /* ══ Background music (YouTube playlist, hidden player — muted until user unmutes) ══ */
+  (function initBackgroundMusic() {
+    const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
+    const PLAYBACK_VOLUME = 5;
+    const QUALITY_144 = 'tiny';
+
+    let ytPlayer = null;
+    let playerReady = false;
+    let playlistPicked = false;
+    let userMuted = true;
+    let isToggling = false;
+    let preloadDone = false;
+
+    const deskBtn = document.getElementById('bg-music-toggle-desk');
+    const mobBtn = document.getElementById('bg-music-toggle-mob');
+    const muteBtns = [deskBtn, mobBtn].filter(Boolean);
+
+    function updateMuteUI() {
+      muteBtns.forEach(btn => {
+        btn.classList.toggle('is-muted', userMuted);
+        btn.setAttribute('aria-label', userMuted ? 'Unmute background music' : 'Mute background music');
+        btn.title = userMuted ? 'Unmute music' : 'Mute music';
+      });
+    }
+
+    function forceQuality144() {
+      if (!ytPlayer || typeof ytPlayer.setPlaybackQuality !== 'function') return;
+      try {
+        const q = ytPlayer.getPlaybackQuality && ytPlayer.getPlaybackQuality();
+        if (q !== QUALITY_144) ytPlayer.setPlaybackQuality(QUALITY_144);
+      } catch (e) { /* ignore */ }
+    }
+
+    function ensureMutedSilent() {
+      if (!ytPlayer) return;
+      try {
+        ytPlayer.mute();
+        ytPlayer.setVolume(PLAYBACK_VOLUME);
+      } catch (e) { /* ignore */ }
+    }
+
+    function pickRandomPlaylistVideo(andPlay) {
+      if (!ytPlayer) return false;
+      const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+      if (!list || !list.length) return false;
+      playlistPicked = true;
+      const idx = Math.floor(Math.random() * list.length);
+      try {
+        ytPlayer.playVideoAt(idx);
+      } catch (e) {
+        try { ytPlayer.playVideo(); } catch (e2) { /* ignore */ }
+      }
+      ensureMutedSilent();
+      forceQuality144();
+      if (!andPlay || userMuted) {
+        setTimeout(() => {
+          if (!ytPlayer) return;
+          if (!andPlay || userMuted) {
+            try { ytPlayer.pauseVideo(); } catch (e) { /* ignore */ }
+          }
+        }, 80);
+      }
+      return true;
+    }
+
+    function tryPickRandomPreload(attempt) {
+      if (playlistPicked || !ytPlayer) return;
+      if (pickRandomPlaylistVideo(false)) return;
+      if (attempt < 10) setTimeout(() => tryPickRandomPreload(attempt + 1), 350);
+    }
+
+    function preloadPlaylistMuted() {
+      if (!ytPlayer || !playerReady || preloadDone) return;
+      preloadDone = true;
+      playlistPicked = false;
+      ensureMutedSilent();
+      try {
+        ytPlayer.loadPlaylist({
+          listType: 'playlist',
+          list: PLAYLIST_ID,
+          index: 0,
+          startSeconds: 0,
+          suggestedQuality: QUALITY_144
+        });
+      } catch (e) { /* ignore */ }
+      setTimeout(() => tryPickRandomPreload(0), 400);
+    }
+
+    function muteAndStop() {
+      userMuted = true;
+      updateMuteUI();
+      if (!ytPlayer) return;
+      try {
+        ytPlayer.mute();
+        ytPlayer.pauseVideo();
+      } catch (e) { /* ignore */ }
+    }
+
+    function unmuteAndPlay() {
+      userMuted = false;
+      updateMuteUI();
+      if (!ytPlayer) return;
+
+      const startPlayback = () => {
+        if (!ytPlayer || userMuted) return;
+        try {
+          ytPlayer.setVolume(PLAYBACK_VOLUME);
+          ytPlayer.unMute();
+          forceQuality144();
+          const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+          if (!playlistPicked || state === YT.PlayerState.ENDED || state === YT.PlayerState.UNSTARTED) {
+            playlistPicked = false;
+            if (!pickRandomPlaylistVideo(true)) ytPlayer.playVideo();
+          } else if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+            ytPlayer.playVideo();
+          }
+        } catch (e) { /* ignore */ }
+      };
+
+      if (playerReady) {
+        if (!preloadDone) preloadPlaylistMuted();
+        startPlayback();
+      }
+    }
+
+    function toggleMute() {
+      if (isToggling) return;
+      isToggling = true;
+      setTimeout(() => { isToggling = false; }, 420);
+      if (userMuted) unmuteAndPlay();
+      else muteAndStop();
+    }
+
+    function onPlayerReady(event) {
+      playerReady = true;
+      const player = event.target;
+      ytPlayer = player;
+      ensureMutedSilent();
+      preloadPlaylistMuted();
+    }
+
+    function onPlayerStateChange(event) {
+      if (!window.YT || !YT.PlayerState) return;
+
+      if (!playlistPicked && (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.PAUSED)) {
+        pickRandomPlaylistVideo(false);
+      }
+
+      if (event.data === YT.PlayerState.PLAYING) {
+        forceQuality144();
+        if (userMuted) {
+          try {
+            ytPlayer.mute();
+            ytPlayer.pauseVideo();
+          } catch (e) { /* ignore */ }
+        } else {
+          try {
+            ytPlayer.unMute();
+            ytPlayer.setVolume(PLAYBACK_VOLUME);
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      if (event.data === YT.PlayerState.ENDED && !userMuted) {
+        playlistPicked = false;
+        pickRandomPlaylistVideo(true);
+      }
+    }
+
+    muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
+    updateMuteUI();
+
+    function createPlayer() {
+      if (ytPlayer) return;
+      const origin = window.location.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : undefined;
+      ytPlayer = new YT.Player('bg-music-player', {
+        height: '1',
+        width: '1',
+        playerVars: {
+          autoplay: 0,
+          mute: 1,
+          controls: 0,
+          disablekb: 1,
+          enablejsapi: 1,
+          fs: 0,
+          iv_load_policy: 3,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          list: PLAYLIST_ID,
+          listType: 'playlist',
+          origin: origin
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+          onPlaybackQualityChange: forceQuality144
+        }
+      });
+    }
+
+    const prevYtReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function() {
+      if (typeof prevYtReady === 'function') prevYtReady();
+      createPlayer();
+    };
+
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+    } else {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.async = true;
+      const first = document.getElementsByTagName('script')[0];
+      first.parentNode.insertBefore(tag, first);
+    }
+  })();
 </script>
 
 </body>
