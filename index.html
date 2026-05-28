@@ -514,7 +514,27 @@
     label {
       font-family:'Cinzel', serif; font-size:0.68rem; font-weight:600;
       color:var(--ink-light); letter-spacing:0.12em; text-transform:uppercase;
+      transition: opacity 0.35s ease, color 0.35s ease;
     }
+    label.is-loading {
+      opacity: 0.7;
+      animation: bookLabelPulse 1.4s ease-in-out infinite;
+    }
+    label.is-error { color: var(--crimson); opacity: 1; cursor: pointer; }
+    label.is-error:hover { text-decoration: underline; }
+    @keyframes bookLabelPulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.85; }
+    }
+    .mob-label {
+      transition: opacity 0.35s ease, color 0.35s ease;
+    }
+    .mob-label.is-loading {
+      opacity: 0.7;
+      animation: bookLabelPulse 1.4s ease-in-out infinite;
+    }
+    .mob-label.is-error { color: var(--crimson); opacity: 1; cursor: pointer; }
+    .mob-label.is-error:hover { text-decoration: underline; }
     select {
       width:100%; max-width:100%; min-width:0; box-sizing:border-box;
       background-color:rgba(255,255,255,0.45); color:var(--ink);
@@ -1338,22 +1358,20 @@
 
     <div class="controls">
       <div class="control-group">
-        <label for="d-testament" id="d-testament-label">Testament</label>
+        <label for="d-testament" id="d-testament-label">Mode</label>
         <select id="d-testament" onchange="updateBooks('d')">
-          <option value="custom" selected>Choose Book</option>
-          <option value="old">Old Testament</option>
-          <option value="new">New Testament</option>
+          <option value="custom" selected>Verse Generator</option>
           <option value="read">Read Bible</option>
         </select>
       </div>
       <div class="control-group">
         <label for="d-version">Translation</label>
         <select id="d-version" onchange="onVersionChange('d')">
-          <option value="kjv" selected>Loading translations…</option>
+          <option value="kjv" selected>KJV</option>
         </select>
       </div>
       <div class="control-group full-width" id="d-bookWrapper">
-        <label for="d-book" id="d-book-label">Book</label>
+        <label for="d-book" id="d-book-label" class="is-loading">Loading Books…</label>
         <select id="d-book"></select>
       </div>
 
@@ -1543,25 +1561,23 @@
 
       <div class="mob-select-row">
         <div class="mob-field">
-          <span class="mob-label" id="m-testament-label">Testament</span>
+          <span class="mob-label" id="m-testament-label">Mode</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="custom" selected>Choose Book</option>
-            <option value="old">Old Testament</option>
-            <option value="new">New Testament</option>
+            <option value="custom" selected>Verse Generator</option>
             <option value="read">Read Bible</option>
           </select>
         </div>
         <div class="mob-field">
           <span class="mob-label">Translation</span>
           <select class="mob-select" id="m-version" onchange="onVersionChange('m')">
-            <option value="kjv" selected>Loading…</option>
+            <option value="kjv" selected>KJV</option>
           </select>
         </div>
       </div>
 
       <div class="mob-select-row" id="m-bookWrapper">
         <div class="mob-field full">
-          <span class="mob-label" id="m-book-label">Book</span>
+          <span class="mob-label is-loading" id="m-book-label">Loading Books…</span>
           <select class="mob-select" id="m-book"></select>
         </div>
       </div>
@@ -1910,12 +1926,102 @@
   const BSS_API = 'https://api.biblesupersearch.com/api';
   let BSS_BIBLES = {};
 
+  // Complete built-in fallback of all known BSS translations.
+  // Populated from a live API snapshot so the dropdown renders instantly
+  // on the very first visit — even before any network request completes.
   const BSS_FALLBACK_BIBLES = {
-    kjv: { name:'Authorized King James Version', shortname:'KJV', module:'kjv', lang:'English', lang_short:'en', rank:'10' },
-    web: { name:'World English Bible', shortname:'WEB', module:'web', lang:'English', lang_short:'en', rank:'20' },
-    asv: { name:'American Standard Version', shortname:'ASV', module:'asv', lang:'English', lang_short:'en', rank:'30' },
-    segond_1910: { name:'Louis Segond 1910', shortname:'LSG', module:'segond_1910', lang:'French', lang_short:'fr', rank:'10' }
+    kjv:{name:'Authorized King James Version',shortname:'KJV',module:'kjv',lang:'English',lang_short:'en',rank:'10'},
+    kjv_strongs:{name:"Authorized King James Version w Strong's",shortname:'KJV Strongs',module:'kjv_strongs',lang:'English',lang_short:'en',rank:'20'},
+    kjvpce:{name:'Authorized King James Version - PCE',shortname:'KJV PCE',module:'kjvpce',lang:'English',lang_short:'en',rank:'30'},
+    tyndale:{name:'Tyndale Bible',shortname:'Tyndale',module:'tyndale',lang:'English',lang_short:'en',rank:'30'},
+    coverdale:{name:'Coverdale Bible',shortname:'Coverdale',module:'coverdale',lang:'English',lang_short:'en',rank:'40'},
+    bishops:{name:'Bishops Bible',shortname:'Bishops',module:'bishops',lang:'English',lang_short:'en',rank:'50'},
+    geneva:{name:'Geneva Bible',shortname:'Geneva',module:'geneva',lang:'English',lang_short:'en',rank:'60'},
+    tr:{name:'Textus Receptus NT',shortname:'TR',module:'tr',lang:'Greek',lang_short:'grc',rank:'70'},
+    trparsed:{name:'Textus Receptus Parsed NT',shortname:'TR Parsed',module:'trparsed',lang:'Greek',lang_short:'grc',rank:'90'},
+    rv_1858:{name:'Reina Valera 1858 NT',shortname:'RV 1858',module:'rv_1858',lang:'Spanish',lang_short:'es',rank:'100'},
+    rv_1909:{name:'Reina Valera 1909',shortname:'RV 1909',module:'rv_1909',lang:'Spanish',lang_short:'es',rank:'110'},
+    sagradas:{name:'Sagradas Escrituras',shortname:'Sagradas',module:'sagradas',lang:'Spanish',lang_short:'es',rank:'120'},
+    rvg:{name:'Reina Valera Gómez',shortname:'RVG',module:'rvg',lang:'Spanish',lang_short:'es',rank:'130'},
+    martin:{name:'Martin',shortname:'Martin',module:'martin',lang:'French',lang_short:'fr',rank:'140'},
+    epee:{name:"La Bible de l'Épée",shortname:'Epee',module:'epee',lang:'French',lang_short:'fr',rank:'150'},
+    oster:{name:'Ostervald',shortname:'Ostervald',module:'oster',lang:'French',lang_short:'fr',rank:'160'},
+    segond_1910:{name:'Louis Segond 1910',shortname:'Segond 1910',module:'segond_1910',lang:'French',lang_short:'fr',rank:'170'},
+    afri:{name:'Afrikaans 1953',shortname:'Afrikaans',module:'afri',lang:'Afrikaans',lang_short:'af',rank:'170'},
+    svd:{name:'Smith Van Dyke',shortname:'SVD',module:'svd',lang:'Arabic',lang_short:'ar',rank:'180'},
+    bkr:{name:'Bible Kralicka',shortname:'BKR',module:'bkr',lang:'Czech',lang_short:'cs',rank:'190'},
+    stve:{name:'Staten Vertaling',shortname:'Stve',module:'stve',lang:'Dutch',lang_short:'nl',rank:'200'},
+    finn:{name:'Finnish 1776',shortname:'Finnish',module:'finn',lang:'Finnish',lang_short:'fi',rank:'210'},
+    luther:{name:'Luther Bible (1545)',shortname:'Luther',module:'luther',lang:'German',lang_short:'de',rank:'220'},
+    diodati:{name:'Diodati',shortname:'Diodati',module:'diodati',lang:'Italian',lang_short:'it',rank:'230'},
+    synodal:{name:'Synodal',shortname:'Synodal',module:'synodal',lang:'Russian',lang_short:'ru',rank:'240'},
+    karoli:{name:'Karoli',shortname:'Karoli',module:'karoli',lang:'Hungarian',lang_short:'hu',rank:'250'},
+    lith:{name:'Lithuanian Bible',shortname:'Lith',module:'lith',lang:'Lithuanian',lang_short:'lt',rank:'260'},
+    maori:{name:'Maori Bible',shortname:'Maori',module:'maori',lang:'Maori',lang_short:'mi',rank:'270'},
+    cornilescu:{name:'Cornilescu',shortname:'Cornilescu',module:'cornilescu',lang:'Romanian',lang_short:'ro',rank:'280'},
+    thaikjv:{name:'Thai KJV',shortname:'Thai KJV',module:'thaikjv',lang:'Thai',lang_short:'th',rank:'290'},
+    wlc:{name:'Westminster Leningrad Codex',shortname:'WLC',module:'wlc',lang:'Hebrew',lang_short:'he',rank:'300'},
+    asv:{name:'American Standard Version',shortname:'ASV',module:'asv',lang:'English',lang_short:'en',rank:'1000'},
+    asvs:{name:"American Standard Version w Strong's",shortname:'ASVs',module:'asvs',lang:'English',lang_short:'en',rank:'1000'},
+    web:{name:'World English Bible',shortname:'WEB',module:'web',lang:'English',lang_short:'en',rank:'1000'},
+    net:{name:'NET Bible®',shortname:'NET',module:'net',lang:'English',lang_short:'en',rank:'1000'},
+    albanian:{name:'Albanian',shortname:'Albanian',module:'albanian',lang:'Albanian',lang_short:'sq',rank:'1000'},
+    almeida_ra:{name:'Almeida Revista e Atualizada',shortname:'JFA-RA',module:'almeida_ra',lang:'Portuguese',lang_short:'pt',rank:'1000'},
+    almeida_rc:{name:'Almeida Revista e Corrigida',shortname:'JFA-RC',module:'almeida_rc',lang:'Portuguese',lang_short:'pt',rank:'1000'},
+    am_amh:{name:'መጽሐፍ ቅዱስ',shortname:'መጽሐፍ ቅዱስ',module:'am_amh',lang:'Amharic',lang_short:'am',rank:'1000'},
+    blivre:{name:'Biblia Livre',shortname:'Biblia Livre',module:'blivre',lang:'Portuguese',lang_short:'pt',rank:'9999'},
+    bn_irv:{name:'Bengali IRV',shortname:'Bengali IRV',module:'bn_irv',lang:'Bengali',lang_short:'bn',rank:'1000'},
+    bo_ntb:{name:'Tibetan New Bible',shortname:'Tibetan',module:'bo_ntb',lang:'Tibetan',lang_short:'bo',rank:'1000'},
+    bungo:{name:'Bungo-yaku',shortname:'Bungo',module:'bungo',lang:'Japanese',lang_short:'ja',rank:'1000'},
+    cadman:{name:'Vietnamese Cadman',shortname:'Cadman',module:'cadman',lang:'Vietnamese',lang_short:'vi',rank:'9999'},
+    chinese_union_simp:{name:'Chinese Union (Simplified)',shortname:'CUV Simp',module:'chinese_union_simp',lang:'Chinese',lang_short:'zh',rank:'9999'},
+    chinese_union_trad:{name:'Chinese Union (Traditional)',shortname:'CUV Trad',module:'chinese_union_trad',lang:'Chinese',lang_short:'zh',rank:'9999'},
+    ckjv_sds:{name:'Chinese KJV Simplified',shortname:'CKJV Simp',module:'ckjv_sds',lang:'Chinese',lang_short:'zh',rank:'1000'},
+    ckjv_sdt:{name:'Chinese KJV Traditional',shortname:'CKJV Trad',module:'ckjv_sdt',lang:'Chinese',lang_short:'zh',rank:'1000'},
+    elberfelder_1871:{name:'Elberfelder (1871)',shortname:'Elb 1871',module:'elberfelder_1871',lang:'German',lang_short:'de',rank:'1000'},
+    elberfelder_1905:{name:'Elberfelder (1905)',shortname:'Elb 1905',module:'elberfelder_1905',lang:'German',lang_short:'de',rank:'1000'},
+    fidela:{name:'Fidela Romanian',shortname:'Fidela',module:'fidela',lang:'Romanian',lang_short:'ro',rank:'1000'},
+    gu_irv:{name:'Gujarati IRV',shortname:'Gujarati IRV',module:'gu_irv',lang:'Gujarati',lang_short:'gu',rank:'1000'},
+    ha_con:{name:'Hausa Contemporary',shortname:'Hausa Con',module:'ha_con',lang:'Hausa',lang_short:'ha',rank:'1000'},
+    ha_lit:{name:'Litafi Mai-tsarki',shortname:'Litafi',module:'ha_lit',lang:'Hausa',lang_short:'ha',rank:'1000'},
+    hcv:{name:'Haitian Creole Version',shortname:'HCV',module:'hcv',lang:'Haitian Creole',lang_short:'ht',rank:'1000'},
+    he_modern:{name:'Hebrew Modern',shortname:'Hebrew Mod',module:'he_modern',lang:'Hebrew',lang_short:'he',rank:'1000'},
+    indo_tb:{name:'Terjemahan Baru',shortname:'Indonesian TB',module:'indo_tb',lang:'Indonesian',lang_short:'id',rank:'9999'},
+    indo_tm:{name:'Terjemahan Lama',shortname:'Indonesian TM',module:'indo_tm',lang:'Indonesian',lang_short:'id',rank:'9999'},
+    irv:{name:'Indian Revised Version',shortname:'IRV',module:'irv',lang:'Hindi',lang_short:'hi',rank:'9999'},
+    jv_jvn:{name:'Javanese NT',shortname:'Javanese NT',module:'jv_jvn',lang:'Javanese',lang_short:'jv',rank:'1000'},
+    kn_irv:{name:'Kannada IRV',shortname:'Kannada IRV',module:'kn_irv',lang:'Kannada',lang_short:'kn',rank:'1000'},
+    kn_kjv:{name:'Kannada KJV',shortname:'Kannada KJV',module:'kn_kjv',lang:'Kannada',lang_short:'kn',rank:'1000'},
+    korean:{name:'Korean',shortname:'Korean',module:'korean',lang:'Korean',lang_short:'ko',rank:'1000'},
+    kougo:{name:'Kougo-yaku',shortname:'Kougo',module:'kougo',lang:'Japanese',lang_short:'ja',rank:'1000'},
+    lt_heritage:{name:'Lithuanian Heritage',shortname:'Heritage',module:'lt_heritage',lang:'Lithuanian',lang_short:'lt',rank:'1000'},
+    luther_1912:{name:'Luther Bible (1912)',shortname:'Luther 1912',module:'luther_1912',lang:'German',lang_short:'de',rank:'1000'},
+    lv_gluck_8:{name:'Glück 8th edition',shortname:'Glück 8',module:'lv_gluck_8',lang:'Latvian',lang_short:'lv',rank:'1000'},
+    mr_irv:{name:'Marathi IRV',shortname:'Marathi IRV',module:'mr_irv',lang:'Marathi',lang_short:'mr',rank:'1000'},
+    my_judson:{name:'Burmese Judson 1840',shortname:'Burmese',module:'my_judson',lang:'Burmese',lang_short:'my',rank:'1000'},
+    ne_ulb:{name:'Nepali ULB',shortname:'Nepali ULB',module:'ne_ulb',lang:'Nepali',lang_short:'ne',rank:'1000'},
+    opt:{name:'Old Persian Translation',shortname:'OPT',module:'opt',lang:'Persian',lang_short:'fa',rank:'1000'},
+    pa_irv:{name:'Punjabi IRV',shortname:'Punjabi IRV',module:'pa_irv',lang:'Punjabi',lang_short:'pa',rank:'1000'},
+    pol_nbg:{name:'Nowej Biblii Gdańskiej',shortname:'NBG',module:'pol_nbg',lang:'Polish',lang_short:'pl',rank:'1000'},
+    pol_ubg:{name:'Uwspółcześniona Biblia Gdańska',shortname:'UBG',module:'pol_ubg',lang:'Polish',lang_short:'pl',rank:'1000'},
+    polbg:{name:'Polska Biblia Gdanska',shortname:'PolBG',module:'polbg',lang:'Polish',lang_short:'pl',rank:'1000'},
+    rv_1909_strongs:{name:"Reina-Valera 1909 w/Strong's",shortname:'RV1909 S',module:'rv_1909_strongs',lang:'Spanish',lang_short:'es',rank:'1000'},
+    schlachter:{name:'Schlachter Bibel',shortname:'Schlachter',module:'schlachter',lang:'German',lang_short:'de',rank:'1000'},
+    so_jimale:{name:'Somali Jimale',shortname:'Somali',module:'so_jimale',lang:'Somali',lang_short:'so',rank:'1000'},
+    swahili:{name:'Swahili NT',shortname:'Swahili NT',module:'swahili',lang:'Swahili',lang_short:'sw',rank:'9999'},
+    ta_irv:{name:'Tamil IRV',shortname:'Tamil IRV',module:'ta_irv',lang:'Tamil',lang_short:'ta',rank:'1000'},
+    ta_oitce:{name:'Tamil OITCE',shortname:'Tamil OITCE',module:'ta_oitce',lang:'Tamil',lang_short:'ta',rank:'1000'},
+    tagab:{name:'Tagalog Ang Biblia',shortname:'TAB',module:'tagab',lang:'Tagalog',lang_short:'tl',rank:'1000'},
+    te_irv:{name:'Telugu IRV',shortname:'Telugu IRV',module:'te_irv',lang:'Telugu',lang_short:'te',rank:'1000'},
+    tg_tgk:{name:'Tajik Bible Portions',shortname:'Tajik',module:'tg_tgk',lang:'Tajik',lang_short:'tg',rank:'1000'},
+    turkish:{name:'Turkish',shortname:'Turkish',module:'turkish',lang:'Turkish',lang_short:'tr',rank:'1000'},
+    ug_ara:{name:'Uyghur Bible',shortname:'Uyghur',module:'ug_ara',lang:'Uyghur',lang_short:'ug',rank:'1000'},
+    ur_geo:{name:'Urdu Bible',shortname:'Urdu',module:'ur_geo',lang:'Urdu',lang_short:'ur',rank:'1000'},
+    wo_wol_nt_2010:{name:'Wolof NT',shortname:'Wolof NT',module:'wo_wol_nt_2010',lang:'Wolof',lang_short:'wo',rank:'1000'},
   };
+
+  // Cache key for persisting the API-fetched Bible list to localStorage
+  const BSS_BIBLES_CACHE_KEY = 'vg-bss-bibles-v2';
 
   /* ══════════════════════════════════════
      MOBILE / WEBVIEW API COMPAT (Mi Browser, etc.)
@@ -2580,13 +2686,13 @@
     am_amh: Array.from({ length: 27 }, (_, i) => i + 40),
     // Hausa — Litafi Mai-tsarki (ha_lit; NT only in API)
     ha_lit: Array.from({ length: 27 }, (_, i) => i + 40),
-    he_modern: Array.from({ length: 39 }, (_, i) => i + 1),
+    // he_modern has all 66 books (OT+NT) — no override needed
     // Westminster Leningrad Codex — Hebrew OT only (39 books; verified via BSS + Bolls WLC)
     wlc: Array.from({ length: 39 }, (_, i) => i + 1),
   };
 
   const UI_LANG = {
-    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', testament:'Testament', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'Old Testament', new:'New Testament', all:'Whole Bible', custom:'Choose Book', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
+    en: { whole:'— Whole Bible (random) —', wholeVerse:'Whole Verse', ot:'Old Testament', nt:'New Testament', testament:'Mode', book:'Book', chapter:'Chapter', verse:'Verse', search:'Search', searchPlaceholder:'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15', customSearchPlaceholder:'e.g. John 1:1 or John 1:1-7', old:'— Old Testament —', new:'— New Testament —', all:'Whole Bible', custom:'Verse Generator', readBible:'Read Bible', generate:'✦ Reveal a Verse ✦', generateVerses:'✦ Reveal the Verses ✦' },
     fr: { whole:'— Toute la Bible (aléatoire) —', wholeVerse:'Chapitre entier', ot:'Ancien Testament', nt:'Nouveau Testament', testament:'Bible', book:'Livre', chapter:'Chapitre', verse:'Verset', search:'Rechercher', searchPlaceholder:'ex. Matthieu 6, Matthieu 24:5 ou Matthieu 24:5-15', customSearchPlaceholder:'ex. Jean 1:1 ou Jean 1:1-7', old:'Ancien Testament', new:'Nouveau Testament', all:'Toute la Bible', custom:'Choisir un livre', readBible:'Lire la Bible', generate:'✦ Révéler un Verset ✦', generateVerses:'✦ Révéler les Versets ✦' },
     es: { whole:'— Biblia completa (aleatorio) —', ot:'Antiguo Testamento', nt:'Nuevo Testamento', testament:'Testamento', book:'Libro', search:'Buscar', searchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', customSearchPlaceholder:'ej. Juan 1:1 o Juan 1:1-7', old:'Antiguo Testamento', new:'Nuevo Testamento', all:'Biblia completa', custom:'Elegir libro', generate:'✦ Revelar un versículo ✦', generateVerses:'✦ Revelar los versículos ✦' },
     de: { whole:'— Ganze Bibel (zufällig) —', ot:'Altes Testament', nt:'Neues Testament', testament:'Testament', book:'Buch', search:'Suche', searchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', customSearchPlaceholder:'z. B. Johannes 1:1 oder Johannes 1:1-7', old:'Altes Testament', new:'Neues Testament', all:'Ganze Bibel', custom:'Buch wählen', generate:'✦ Vers enthüllen ✦', generateVerses:'✦ Verse enthüllen ✦' },
@@ -2951,20 +3057,44 @@
     });
   }
 
-  async function loadBibleList() {
-    BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-    populateTranslationSelects();
-    restoreTestamentOptions('d');
-    restoreTestamentOptions('m');
+  // Read cached Bible list from localStorage (synchronous)
+  function readBssBiblesCache() {
+    try {
+      const raw = localStorage.getItem(BSS_BIBLES_CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object' && Object.keys(data).length > 10) return data;
+    } catch { /* ignore */ }
+    return null;
+  }
 
+  // Persist Bible list to localStorage for instant next-load
+  function writeBssBiblesCache(bibles) {
+    try { localStorage.setItem(BSS_BIBLES_CACHE_KEY, JSON.stringify(bibles)); } catch { /* quota */ }
+  }
+
+  // Background refresh: fetches the full Bible list from the API silently.
+  // Does not block startup — the dropdown is already populated from cache/fallback.
+  async function backgroundRefreshBibleList() {
     const data = await apiGetJson(`${BSS_API}/bibles`);
     if (data?.results && Object.keys(data.results).length) {
       BSS_BIBLES = data.results;
+      writeBssBiblesCache(data.results);
       populateTranslationSelects();
     }
-
     await loadBooksForLang('en');
-    await updateBooks(activePanel());
+  }
+
+  async function loadBibleList() {
+    // The dropdown is already populated by instantInit() before this runs.
+    // This function handles the background API refresh and book loading.
+    void backgroundRefreshBibleList();
+    try {
+      await loadBooksForLang('en');
+      await updateBooks(activePanel());
+    } catch {
+      ['d', 'm'].forEach(p => setBookLabelState(p, 'error'));
+    }
   }
 
   /* ══════════════════════════════════════
@@ -3690,9 +3820,7 @@
     if (!sel || sel.options.length > 1) return;
     const prev = sel.value;
     sel.innerHTML =
-      '<option value="custom" selected>Choose Book</option>' +
-      '<option value="old">Old Testament</option>' +
-      '<option value="new">New Testament</option>' +
+      '<option value="custom" selected>Verse Generator</option>' +
       '<option value="read">Read Bible</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
   }
@@ -4661,6 +4789,32 @@
     }
   }
 
+  // Smooth book-label state transitions
+  function setBookLabelState(p, state) {
+    // state: 'loading' | 'loaded' | 'error'
+    const labels = [
+      document.getElementById(p + '-book-label'),
+    ].filter(Boolean);
+    labels.forEach(el => {
+      el.classList.remove('is-loading', 'is-error');
+      if (state === 'loading') {
+        el.textContent = 'Loading Books…';
+        el.classList.add('is-loading');
+        el.onclick = null;
+      } else if (state === 'error') {
+        el.textContent = 'Books Unavailable';
+        el.classList.add('is-error');
+        el.onclick = () => {
+          setBookLabelState(p, 'loading');
+          void updateBooks(p, { forceReadInit: isReadBibleMode(p) });
+        };
+      } else {
+        el.textContent = 'Books';
+        el.onclick = null;
+      }
+    });
+  }
+
   async function updateBooks(p, options) {
     options = options || {};
     const version   = document.getElementById(p+'-version').value;
@@ -4669,19 +4823,28 @@
     const langCode  = getTranslationLang(version);
     const ui        = getUiStrings(langCode);
     const testamentSel = document.getElementById(p + '-testament');
-    const testament = testamentSel.value;
-    const prevTest = testamentSel.dataset.prevValue ?? '';
-    testamentSel.dataset.prevValue = testament;
     const sel       = document.getElementById(p+'-book');
+    let testament = testamentSel.value;
+    const prevTest = testamentSel.dataset.prevValue ?? '';
+    let savedBook = sel?.value || 'whole';
+    if (testament === 'old' || testament === 'new') {
+      savedBook = testament;
+      testamentSel.value = 'custom';
+      testament = 'custom';
+    }
+    testamentSel.dataset.prevValue = testament;
     const wrapper   = document.getElementById(p+'-bookWrapper');
     const readWrap  = document.getElementById(p+'-readBibleWrapper');
     const showBooks = testament === 'custom';
     const readMode  = testament === 'read';
-    const savedBook = sel.value;
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
 
+    let _bookLoadOk = false;
+    try {
+      setBookLabelState(p, 'loading');
     const langBooks = await loadBooksForLang(langCode);
+    _bookLoadOk = true;
 
     if (showBooks) {
       const frag = document.createDocumentFragment();
@@ -4689,6 +4852,14 @@
       whole.value = 'whole';
       whole.textContent = ui.whole;
       frag.appendChild(whole);
+      const oldOpt = document.createElement('option');
+      oldOpt.value = 'old';
+      oldOpt.textContent = ui.old;
+      frag.appendChild(oldOpt);
+      const newOpt = document.createElement('option');
+      newOpt.value = 'new';
+      newOpt.textContent = ui.new;
+      frag.appendChild(newOpt);
       const otG = document.createElement('optgroup');
       otG.label = ui.ot;
       OT.forEach(b => {
@@ -4711,7 +4882,7 @@
       if (ntG.children.length) frag.appendChild(ntG);
       sel.replaceChildren(frag);
       if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
-        // When switching to "Choose Book", default to "Whole Bible (Random)"
+        // When switching to Verse Generator, default to "Whole Bible (Random)"
         sel.value = 'whole';
       } else if (optionValueExists(sel, savedBook)) {
         sel.value = savedBook;
@@ -4719,11 +4890,16 @@
         sel.value = 'whole';
       }
       wrapper.style.display = '';
+      setBookLabelState(p, 'loaded');
     } else {
       sel.replaceChildren();
       wrapper.style.display = 'none';
     }
 
+    if (!_bookLoadOk) setBookLabelState(p, 'error');
+    } catch {
+      setBookLabelState(p, 'error');
+    }
     if (readWrap) readWrap.style.display = readMode ? '' : 'none';
 
     const customSearchWrap = document.getElementById(p + '-customSearchWrapper');
@@ -4731,8 +4907,6 @@
 
     const opts = testamentSel.options;
     for (let i = 0; i < opts.length; i++) {
-      if (opts[i].value === 'old')    opts[i].text = ui.old;
-      if (opts[i].value === 'new')    opts[i].text = ui.new;
       if (opts[i].value === 'custom') opts[i].text = ui.custom;
       if (opts[i].value === 'read')   opts[i].text = ui.readBible || 'Read Bible';
     }
@@ -4741,7 +4915,7 @@
     if (testLabel) testLabel.textContent = ui.testament;
 
     const bookLabel = document.getElementById(p+'-book-label');
-    if (bookLabel) bookLabel.textContent = ui.book;
+    // Label text is managed by setBookLabelState() — not overwritten here
 
     const readBookLabel = document.getElementById(p + '-read-book-label');
     if (readBookLabel) readBookLabel.textContent = ui.book;
@@ -4924,9 +5098,9 @@
   function resolveBookScope(p) {
     const testament = document.getElementById(p + '-testament').value;
     const bookSel   = document.getElementById(p + '-book');
-    if (testament === 'old') return { book: null, randomScope: 'OT' };
-    if (testament === 'new') return { book: null, randomScope: 'NT' };
     if (testament === 'custom') {
+      if (bookSel.value === 'old') return { book: null, randomScope: 'OT' };
+      if (bookSel.value === 'new') return { book: null, randomScope: 'NT' };
       if (bookSel.value === 'whole') return { book: null, randomScope: null };
       return { book: bookSel.value, randomScope: null };
     }
@@ -4989,7 +5163,7 @@
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: false });
+    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead });
     await loadVotdAndWeekly(version);
 
     const other = active === 'd' ? 'm' : 'd';
@@ -4998,9 +5172,9 @@
     if (tActive && tOther) tOther.value = tActive.value;
 
     if (inRead) {
-      const bookEn = document.getElementById(active + '-read-book').value || getFirstAvailableBook(version);
-      const chapter = parseInt(document.getElementById(active + '-read-chapter').value, 10) || 1;
-      await loadReadChapterAt(active, bookEn, chapter, { scrollToTop: false });
+      // Always load the first available book when switching translation in Read Bible mode
+      const firstBook = getFirstAvailableBook(version);
+      await loadReadChapterAt(active, firstBook, 1, { scrollToTop: false });
     } else if (current[active]) {
       await retranslateCurrentVerse(active, version);
     }
@@ -5756,11 +5930,12 @@
     }
     void loadWeeklyVersesCatalog();
 
+    // loadBibleList no longer blocks — dropdown was populated by instantInit().
+    // It now loads books for the current panel and kicks off background API refresh.
     try {
-      await withTimeout(loadBibleList(), 12000);
+      await loadBibleList();
     } catch {
-      BSS_BIBLES = { ...BSS_FALLBACK_BIBLES };
-      populateTranslationSelects();
+      // Dropdown already populated by instantInit; nothing to do here.
     }
 
     await initLayout();
@@ -5789,6 +5964,22 @@
       void preloadBannerVerses(version, { silent: true });
     }
   });
+
+  // ══ INSTANT INITIALIZATION ══
+  // Populate translation dropdowns SYNCHRONOUSLY before any async work.
+  // This runs during script parsing — before the browser paints anything —
+  // so the user sees the full Translation list instantly on page load.
+  // Priority: localStorage cache → comprehensive built-in fallback.
+  (function instantInit() {
+    const cached = readBssBiblesCache();
+    BSS_BIBLES = cached || { ...BSS_FALLBACK_BIBLES };
+    populateTranslationSelects();
+    // Set both panels to KJV by default (avoids any "Loading…" flash)
+    ['d', 'm'].forEach(p => {
+      const sel = document.getElementById(p + '-version');
+      if (sel && !optionValueExists(sel, sel.value)) sel.value = 'kjv';
+    });
+  })();
 
   window.addEventListener('load', () => { void bootstrapApp(); });
   let _resizeTimer;
@@ -6026,5 +6217,5 @@
   })();
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a02e04667fc08e6d',t:'MTc3OTk3OTI1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
