@@ -526,6 +526,7 @@
       width:100%; max-width:760px; min-width:0; overflow:hidden; box-sizing:border-box;
       background: linear-gradient(160deg, var(--parchment) 0%, #eedcb0 50%, var(--parchment-dark) 100%);
       border-radius:4px;
+      margin-bottom:14px;
       padding:30px 36px;
       box-shadow:
         0 0 0 1px var(--gold-dark),
@@ -1027,9 +1028,31 @@
     .bg-music-controls.is-muted-panel .bg-music-volume {
       opacity: 0.45;
     }
+    #mobile-view .bg-music-controls {
+      flex-wrap: nowrap;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+    #mobile-view .bg-music-btn {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+    #mobile-view .bg-music-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    #mobile-view .bg-music-volume-wrap {
+      flex: 1;
+      min-width: 0;
+      gap: 8px;
+    }
     @media (max-width: 480px) {
-      .bg-music-controls { flex-wrap: wrap; gap: 10px; }
-      .bg-music-volume-wrap { flex: 1 1 100%; }
+      #mobile-view .bg-music-volume-label { display: none; }
+      #mobile-view .bg-music-volume-value {
+        font-size: 0.55rem;
+        min-width: 2.2em;
+      }
     }
 
     /* ══ MOBILE LAYOUT ══ */
@@ -2120,7 +2143,7 @@
       <div id="d-fav-list"></div>
     </div>
 
-    <div class="card-ornament-bottom">°. ⋆༺♱༻⋆. °</div>
+    <div class="card-ornament-bottom">°. ⋆༺♱༻⋆ .°</div>
   </div>
 
   <!-- Control Panel -->
