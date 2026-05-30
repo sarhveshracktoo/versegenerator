@@ -6839,7 +6839,6 @@
     const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
     const DEFAULT_VOLUME = 20;
     const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
-    const MUTED_STORAGE_KEY = 'vg-bg-music-muted';
     const QUALITY_144 = 'tiny';
 
     let ytPlayer = null;
@@ -6857,23 +6856,17 @@
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
 
     function loadMusicSettings() {
+      userMuted = true;
       try {
         const storedVol = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY), 10);
         if (!Number.isNaN(storedVol) && storedVol >= 0 && storedVol <= 100) {
           savedVolume = storedVol;
         }
-        const storedMuted = localStorage.getItem(MUTED_STORAGE_KEY);
-        if (storedMuted === '0') userMuted = false;
-        else if (storedMuted === '1') userMuted = true;
       } catch { /* private mode */ }
     }
 
     function persistVolume(vol) {
       try { localStorage.setItem(VOLUME_STORAGE_KEY, String(vol)); } catch { /* ignore */ }
-    }
-
-    function persistMuted() {
-      try { localStorage.setItem(MUTED_STORAGE_KEY, userMuted ? '1' : '0'); } catch { /* ignore */ }
     }
 
     function syncVolumeUI(vol) {
@@ -6985,7 +6978,6 @@
 
     function muteAndStop() {
       userMuted = true;
-      persistMuted();
       updateMuteUI();
       if (!ytPlayer) return;
       try {
@@ -6996,7 +6988,6 @@
 
     function unmuteAndPlay() {
       userMuted = false;
-      persistMuted();
       updateMuteUI();
       if (!ytPlayer) return;
 
@@ -7036,11 +7027,6 @@
       ytPlayer = event.target;
       ensureMutedSilent();
       preloadPlaylistMuted();
-      if (!userMuted) {
-        setTimeout(() => {
-          if (!userMuted && ytPlayer) unmuteAndPlay();
-        }, 900);
-      }
     }
 
     function onPlayerStateChange(event) {
