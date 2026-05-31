@@ -16,6 +16,7 @@
   <title>Verse Generator</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://db.onlinewebfonts.com/t/2040f704434843394f8505367793a81c.woff2" as="font" type="font/woff2" crossorigin>
   <style>
     @font-face {
       font-family: 'DrescherGroteskBT-SemiBold';
@@ -36,7 +37,7 @@
       --ink-light: #5c3d1e;
       --crimson: #8b1a1a;
       --shadow: rgba(42,26,10,0.4);
-      --verse-size: 1.4rem;
+      --verse-size: 22px;
       --devotional-text-size: 15px;
       --bg-base: #1a0f05;
       --bg-gradient-a: #2e1a06;
@@ -108,9 +109,8 @@
     @keyframes fadeDown { from { opacity:0; transform:translateY(-18px); } to { opacity:1; transform:translateY(0); } }
     @keyframes fadeUp   { from { opacity:0; transform:translateY(18px);  } to { opacity:1; transform:translateY(0); } }
     @keyframes scrollUnfurl {
-      0%   { opacity:0; transform: scaleY(0.3) scaleX(0.92); filter: blur(4px); }
-      60%  { opacity:1; transform: scaleY(1.03) scaleX(1); filter: blur(0); }
-      100% { opacity:1; transform: scaleY(1) scaleX(1); filter: blur(0); }
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
     @keyframes candleFlicker {
       0%,100% { text-shadow: 0 0 8px rgba(201,168,76,0.5); }
@@ -4529,6 +4529,12 @@
   const DEVOTIONAL_TEXT_SIZE_MIN = 12;
   const DEVOTIONAL_TEXT_SIZE_MAX = 22;
 
+  const VERSE_TEXT_SIZE_KEY = 'vg-verse-text-px';
+  const VERSE_TEXT_SIZE_MIN = 14;
+  const VERSE_TEXT_SIZE_MAX = 28;
+  const VERSE_TEXT_SIZE_DEFAULT_DESK = 22;
+  const VERSE_TEXT_SIZE_DEFAULT_MOB = 19;
+
   function setDevotionalTextSize(val) {
     const px = Math.min(
       DEVOTIONAL_TEXT_SIZE_MAX,
@@ -5785,17 +5791,41 @@
   /* ══════════════════════════════════════
      TEXT SIZE SLIDER
   ══════════════════════════════════════ */
-  function setVerseSize(val) {
-    document.documentElement.style.setProperty('--verse-size', val + 'px');
-    // sync both sliders
-    document.getElementById('d-size-slider').value = val;
-    document.getElementById('m-size-slider').value = val;
+  function setVerseSize(val, options) {
+    options = options || {};
+    const isMobile = document.body.classList.contains('layout-mobile');
+    const fallback = isMobile ? VERSE_TEXT_SIZE_DEFAULT_MOB : VERSE_TEXT_SIZE_DEFAULT_DESK;
+    const px = Math.min(
+      VERSE_TEXT_SIZE_MAX,
+      Math.max(VERSE_TEXT_SIZE_MIN, Number(val) || fallback)
+    );
+    document.documentElement.style.setProperty('--verse-size', px + 'px');
+    const dSlider = document.getElementById('d-size-slider');
+    const mSlider = document.getElementById('m-size-slider');
+    if (dSlider) dSlider.value = px;
+    if (mSlider) mSlider.value = px;
+    if (options.save !== false) {
+      try { localStorage.setItem(VERSE_TEXT_SIZE_KEY, String(px)); } catch { /* private mode */ }
+    }
+  }
+
+  function initVerseSize() {
+    const isMobile = document.body.classList.contains('layout-mobile');
+    let px = isMobile ? VERSE_TEXT_SIZE_DEFAULT_MOB : VERSE_TEXT_SIZE_DEFAULT_DESK;
+    try {
+      const saved = localStorage.getItem(VERSE_TEXT_SIZE_KEY);
+      if (saved != null && saved !== '') {
+        const n = Number(saved);
+        if (!Number.isNaN(n)) px = n;
+      }
+    } catch { /* ignore */ }
+    setVerseSize(px, { save: false });
   }
 
   /* ══════════════════════════════════════
      RENDER VERSE
   ══════════════════════════════════════ */
-  function renderCurrentEntry(p, entry) {
+  async function renderCurrentEntry(p, entry) {
     if (entry?.readVerses?.length) {
       renderSearchedPassage(p, {
         verses: entry.readVerses,
@@ -5805,13 +5835,18 @@
         chapter: entry.passageChapter
       }, entry.passageParsed);
     } else {
-      renderVerse(p, entry);
+      await renderVerse(p, entry);
     }
   }
 
-  function renderVerse(p, entry) {
+  async function renderVerse(p, entry) {
     const display = document.getElementById(p+'-verseDisplay');
     const isDesk  = p === 'd';
+    if (document.fonts && document.fonts.load) {
+      try {
+        await document.fonts.load('600 ' + (getComputedStyle(document.documentElement).getPropertyValue('--verse-size').trim() || '22px') + ' DrescherGroteskBT-SemiBold');
+      } catch { /* use fallback */ }
+    }
     const cleanText = entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
     const safeText = escapeHtml(cleanText);
     const label = escapeHtml(getTranslationLabel(entry.version));
@@ -6063,7 +6098,7 @@
             return;
           }
           showToast('Could not load this passage in the selected translation.');
-          renderCurrentEntry(p, entry);
+          await renderCurrentEntry(p, entry);
           return;
         }
       }
@@ -6073,14 +6108,14 @@
         newEntry.canonicalRef = canonicalRef;
         newEntry.version = version;
         current[p] = newEntry;
-        renderVerse(p, newEntry);
+        await renderVerse(p, newEntry);
         return;
       }
       showToast('Could not load this reference in the selected translation.');
       entry.version = version;
-      renderCurrentEntry(p, entry);
+      await renderCurrentEntry(p, entry);
     } catch {
-      renderCurrentEntry(p, entry);
+      await renderCurrentEntry(p, entry);
       showToast('Translation update failed. Showing previous text.');
     } finally {
       clearReadDisplayLoading(p);
@@ -6126,7 +6161,7 @@
       if (!entry) entry = getLocalVerse(scope.book, version);
       if (entry && !entry.canonicalRef) entry.canonicalRef = entry.ref;
       current[p] = entry;
-      renderVerse(p, entry);
+      await renderVerse(p, entry);
     } catch {
       if (retryCount < 1 && !apiCircuitOpen()) {
         generate(p, retryCount + 1, scope);
@@ -6134,7 +6169,7 @@
       }
       const entry = getLocalVerse(scope.book, version);
       current[p] = entry;
-      renderVerse(p, entry);
+      await renderVerse(p, entry);
     } finally {
       display.classList.remove('loading');
     }
@@ -6776,6 +6811,7 @@
     }
 
     await initLayout();
+    initVerseSize();
     initReadSwipe();
     clearAllVersePanelLoading();
 
@@ -6817,6 +6853,7 @@
       const sel = document.getElementById(p + '-version');
       if (sel && !optionValueExists(sel, sel.value)) sel.value = 'kjv';
     });
+    initVerseSize();
   })();
 
   window.addEventListener('load', () => { void bootstrapApp(); });
