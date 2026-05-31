@@ -3865,27 +3865,66 @@
 
   const WEEKLY_JSON_URL =
     'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
-  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v2';
+  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v3';
   let _weeklyVersesList = [];
   let _weeklyVersesByWeek = {};
+  let _weeklySortedByDate = [];
   let _weeklyCatalogLoadPromise = null;
   let _bannerCanonicalRefs = { votd: null, weekly: null };
 
-  const WEEKLY_VERSES_OFFLINE = [
-    { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life." },
-    { week: 2, reference: 'Genesis 1:1', verse: 'In the beginning God created the heaven and the earth.', note: 'God is the Creator of everything and the source of all life.' },
-    { week: 3, reference: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.', note: 'God can use every situation in life for the good of those who trust Him.' }
+  const WEEKLY_MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
+
+  const WEEKLY_VERSES_OFFLINE = [
+    { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life.", month: 'January', date: '01' },
+    { week: 2, reference: 'Genesis 1:1', verse: 'In the beginning God created the heaven and the earth.', note: 'God is the Creator of everything and the source of all life.', month: 'January', date: '08' },
+    { week: 3, reference: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.', note: 'God can use every situation in life for the good of those who trust Him.', month: 'January', date: '15' }
+  ];
+
+  function weeklyMonthDayKey(item) {
+    if (!item) return 0;
+    const name = String(item.month || '').trim().toLowerCase();
+    let monthIdx = WEEKLY_MONTH_NAMES.findIndex(m => m.toLowerCase() === name);
+    if (monthIdx < 0) monthIdx = (parseInt(item.month, 10) || 1) - 1;
+    const day = parseInt(String(item.date ?? item.day ?? '1'), 10) || 1;
+    return Math.max(0, monthIdx) * 100 + day;
+  }
+
+  function getLocalTodayMonthDayKey() {
+    const now = new Date();
+    return now.getMonth() * 100 + now.getDate();
+  }
+
+  function getWeeklyBannerCacheKey(version) {
+    return version + ':' + getLocalTodayMonthDayKey();
+  }
 
   function indexWeeklyVersesCatalog() {
     _weeklyVersesByWeek = {};
     _weeklyVersesList.forEach(item => {
       if (item && item.week != null) _weeklyVersesByWeek[Number(item.week)] = item;
     });
+    _weeklySortedByDate = getSortedWeeklyCatalog(_weeklyVersesList);
+  }
+
+  function getSortedWeeklyCatalog(list) {
+    return (list || []).slice().sort((a, b) => weeklyMonthDayKey(a) - weeklyMonthDayKey(b));
+  }
+
+  function getWeeklyIndexForToday(sorted) {
+    if (!sorted.length) return 0;
+    const today = getLocalTodayMonthDayKey();
+    let idx = sorted.length - 1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (today >= weeklyMonthDayKey(sorted[i])) idx = i;
+    }
+    return idx;
   }
 
   function ensureWeeklyCatalogIndexed() {
-    if (_weeklyVersesList.length && !Object.keys(_weeklyVersesByWeek).length) {
+    if (_weeklyVersesList.length && (!_weeklySortedByDate.length || !Object.keys(_weeklyVersesByWeek).length)) {
       indexWeeklyVersesCatalog();
     }
   }
@@ -3929,20 +3968,6 @@
     return _weeklyCatalogLoadPromise;
   }
 
-  function getISOWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  }
-
-  function getWeeklyVerseSlotNumber() {
-    const now = new Date();
-    const isoWeek = getISOWeekNumber(now);
-    return ((now.getFullYear() * 53 + isoWeek) % 104) + 1;
-  }
-
   function weeklyRefAllowed(version, ref) {
     if (!ref) return false;
     const book = ref.replace(/\s+\d+:\d+(?:-\d+)?$/, '').trim();
@@ -3953,14 +3978,16 @@
 
   function getCurrentWeeklyVerseEntry(version) {
     ensureWeeklyCatalogIndexed();
-    if (!Object.keys(_weeklyVersesByWeek).length) return WEEKLY_VERSES_OFFLINE[0];
-    let slot = getWeeklyVerseSlotNumber();
-    for (let i = 0; i < 104; i++) {
-      const entry = _weeklyVersesByWeek[slot];
+    const sorted = _weeklySortedByDate.length
+      ? _weeklySortedByDate
+      : getSortedWeeklyCatalog(_weeklyVersesList.length ? _weeklyVersesList : WEEKLY_VERSES_OFFLINE);
+    if (!sorted.length) return WEEKLY_VERSES_OFFLINE[0];
+    const startIdx = getWeeklyIndexForToday(sorted);
+    for (let i = 0; i < sorted.length; i++) {
+      const entry = sorted[(startIdx + i) % sorted.length];
       if (entry && (!version || weeklyRefAllowed(version, entry.reference))) return entry;
-      slot = (slot % 104) + 1;
     }
-    return _weeklyVersesByWeek[1] || _weeklyVersesList[0] || WEEKLY_VERSES_OFFLINE[0];
+    return sorted[0];
   }
 
   function buildRefFromParsed(parsed) {
@@ -4085,7 +4112,8 @@
     if (!willOpen) return;
 
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
-    const cached = _weeklyDisplayCache[version];
+    const cacheKey = getWeeklyBannerCacheKey(version);
+    const cached = _weeklyDisplayCache[cacheKey];
     if (cached) {
       paintWeeklyBanner(cached.weeklyEntry, cached.label, cached.note);
       return;
@@ -4138,7 +4166,7 @@
   function paintWeeklyBanner(weeklyEntry, label, note, version) {
     if (!weeklyEntry) return;
     const v = version || document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
-    _weeklyDisplayCache[v] = { weeklyEntry, label, note: note || '' };
+    _weeklyDisplayCache[getWeeklyBannerCacheKey(v)] = { weeklyEntry, label, note: note || '' };
     ['d', 'm'].forEach(p => {
       const weeklyText = document.getElementById(p + '-weekly-text');
       const weeklyRef = document.getElementById(p + '-weekly-ref');
@@ -4293,8 +4321,9 @@
     version = version || VOTD_KJV_VERSION;
     opts = opts || {};
 
-    if (_weeklyDisplayCache[version]) {
-      const c = _weeklyDisplayCache[version];
+    const cacheKey = getWeeklyBannerCacheKey(version);
+    if (_weeklyDisplayCache[cacheKey]) {
+      const c = _weeklyDisplayCache[cacheKey];
       paintWeeklyBanner(c.weeklyEntry, c.label, c.note, version);
       return;
     }
