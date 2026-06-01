@@ -40,10 +40,6 @@ Readers can choose from dozens of Bible translations, making the Bible accessibl
 
 Books and chapters can be selected quickly, making it easy to jump to any part of the Bible without endless scrolling or searching.
 
-### 🔗 Smart Verse Navigation
-
-When a verse appears in the Verse Generator, Verse of the Day, or Verse of the Week, users can tap the Bible reference and automatically jump directly to that chapter in Reading Mode. The page scrolls directly to the selected verse, creating a seamless reading experience.
-
 ### 🔠 Adjustable Font Size
 
 Users can increase or decrease text size for better readability, making the website more comfortable for both desktop and mobile users.
