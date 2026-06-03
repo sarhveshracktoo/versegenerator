@@ -3032,6 +3032,7 @@
 
   // Cache key for persisting the API-fetched Bible list to localStorage
   const BSS_BIBLES_CACHE_KEY = 'vg-bss-bibles-v2';
+  const BSS_BOOKS_LANG_CACHE_KEY = 'vg-bss-books-lang-v1';
 
   /* ══════════════════════════════════════
      MOBILE / WEBVIEW API COMPAT (Mi Browser, etc.)
@@ -3321,7 +3322,8 @@
     const data = await fetchBollsChapter(module, bookEn, chapter);
     if (!data || !data.length) return fetchBollsRandomVerse(module, scope, attempt + 1);
     const verse = data[Math.floor(Math.random() * data.length)];
-    return { text: cleanBollsText(verse.text), ref: `${bookEn} ${chapter}:${verse.verse}`, version: module };
+    const entry = { text: cleanBollsText(verse.text), ref: `${bookEn} ${chapter}:${verse.verse}`, version: module };
+    return attachGeneratorPassageMeta(entry, bookEn, chapter, verse.verse);
   }
 
   // Standard 3-letter USFM book codes used by the Hello AO API
@@ -3440,7 +3442,8 @@
     if (!verses.length) return fetchHaoRandomVerse(module, scope, attempt + 1);
     const verse = verses[Math.floor(Math.random() * verses.length)];
     const bookName = data.book?.name || bookEn;
-    return { text: verse.text, ref: `${bookName} ${chapter}:${verse.number}`, version: module };
+    const entry = { text: verse.text, ref: `${bookName} ${chapter}:${verse.number}`, version: module };
+    return attachGeneratorPassageMeta(entry, bookEn, chapter, verse.number);
   }
 
   // French book names (Louis Segond) — same order as OT/NT
@@ -3462,20 +3465,120 @@
     return fetchHaoPassageVerses(module, bookEn, chapter, vStart, vEnd);
   }
 
+  function normalizeBookNameForMatch(s) {
+    return String(s || '').toLowerCase().trim()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  function bookEnFromId(bookId) {
+    const id = parseInt(bookId, 10);
+    return (id >= 1 && id <= 66) ? ALL[id - 1] : null;
+  }
+
+  function matchBookNameInLangMap(lower, langCode) {
+    const map = LANG_BOOK_NAME_MAP[langCode];
+    if (!map) return null;
+    for (let id = 1; id <= 66; id++) {
+      const name = map[id];
+      if (name && normalizeBookNameForMatch(name) === lower) return ALL[id - 1];
+    }
+    return null;
+  }
+
   // Find the canonical English book name from a raw string (handles Psalm/Psalms etc.)
-  function resolveBookEnFromRaw(bookRaw) {
-    const lower = bookRaw.toLowerCase().trim();
+  function resolveBookEnFromRaw(bookRaw, langHint) {
+    const lower = normalizeBookNameForMatch(bookRaw);
+    if (!lower) return null;
+    if (langHint) {
+      const fromHint = matchBookNameInLangMap(lower, langHint);
+      if (fromHint) return fromHint;
+    }
     // Exact match first
-    let bookEn = ALL.find(b => b.toLowerCase() === lower);
+    let bookEn = ALL.find(b => normalizeBookNameForMatch(b) === lower);
     if (bookEn) return bookEn;
     // Handle common singular/plural variants: "Psalm" → "Psalms", "Revelation" → "Revelation" etc.
-    bookEn = ALL.find(b => b.toLowerCase().startsWith(lower) || lower.startsWith(b.toLowerCase()));
+    bookEn = ALL.find(b => {
+      const en = normalizeBookNameForMatch(b);
+      return en.startsWith(lower) || lower.startsWith(en);
+    });
     if (bookEn) return bookEn;
     // Try French book names
     const frAll = [...OT_FR, ...NT_FR];
-    const frIdx = frAll.findIndex(b => b.toLowerCase() === lower);
+    const frIdx = frAll.findIndex(b => normalizeBookNameForMatch(b) === lower);
     if (frIdx >= 0) return ALL[frIdx];
+    // LANG_BOOK_NAME_MAP (all cached BSS /books languages)
+    for (const code of Object.keys(LANG_BOOK_NAME_MAP)) {
+      if (code === langHint) continue;
+      const hit = matchBookNameInLangMap(lower, code);
+      if (hit) return hit;
+    }
+    // Cached BSS book lists (all loaded languages)
+    for (const lang of Object.keys(BSS_BOOKS_CACHE)) {
+      const books = BSS_BOOKS_CACHE[lang];
+      if (!books) continue;
+      for (const b of books) {
+        if (normalizeBookNameForMatch(b.name) === lower) {
+          const id = Number(b.id);
+          if (id >= 1 && id <= 66) return ALL[id - 1];
+        }
+      }
+    }
     return null;
+  }
+
+  function attachGeneratorPassageMeta(entry, bookEn, chapter, verseNum, bookId) {
+    if (!entry) return entry;
+    const enFromId = bookEnFromId(bookId ?? entry.bssBookId);
+    const langHint = entry.version ? getTranslationLang(entry.version) : null;
+    bookEn = enFromId || bookEn ||
+      (entry.bookName ? resolveBookEnFromRaw(entry.bookName, langHint) : null);
+    if (!bookEn || chapter == null || verseNum == null) return entry;
+    const verseStart = parseInt(verseNum, 10);
+    const bid = bookId ?? entry.bssBookId;
+    if (bid != null) entry.bssBookId = parseInt(bid, 10);
+    entry.passageParsed = {
+      book: bookEn,
+      chapter: parseInt(chapter, 10),
+      verseStart,
+      verseEnd: verseStart
+    };
+    entry.genBook = bookEn;
+    entry.genChapter = entry.passageParsed.chapter;
+    entry.genVerse = verseStart;
+    entry.canonicalRef = buildRefFromParsed(entry.passageParsed);
+    return entry;
+  }
+
+  function parseReferenceLoose(query, langHint) {
+    const trimmed = (query || '').trim();
+    if (!trimmed) return null;
+    const m = trimmed.match(/^(.+?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/);
+    if (!m) return null;
+    const bookEn = resolveBookEnFromRaw(m[1].trim(), langHint);
+    if (!bookEn) return null;
+    const chapter = parseInt(m[2], 10);
+    if (m[3]) {
+      const verseStart = parseInt(m[3], 10);
+      const verseEnd = m[4] ? parseInt(m[4], 10) : verseStart;
+      return { book: bookEn, chapter, verseStart, verseEnd, wholeChapter: false };
+    }
+    return { book: bookEn, chapter, verseStart: null, verseEnd: null, wholeChapter: true };
+  }
+
+  function ensureGeneratorEntryMeta(entry) {
+    if (!entry) return;
+    if (entry.passageParsed?.book) {
+      if (!entry.canonicalRef) entry.canonicalRef = buildRefFromParsed(entry.passageParsed);
+      return;
+    }
+    const parsed = getPassageParsedFromEntry(entry);
+    if (parsed?.book) {
+      entry.passageParsed = parsed;
+      if (!entry.canonicalRef) entry.canonicalRef = buildRefFromParsed(parsed);
+    } else if (!entry.canonicalRef) {
+      entry.canonicalRef = entry.ref;
+    }
   }
 
   // Parse a reference string like "John 3:16" or "Psalm 23:1" and fetch from HAO
@@ -3720,6 +3823,64 @@
     return { ...UI_LANG.en, ...(UI_LANG[langCode] || {}) };
   }
 
+  function writeBssBooksLangCache() {
+    try {
+      const payload = {};
+      Object.keys(LANG_BOOK_NAME_MAP).forEach(code => {
+        payload[code] = LANG_BOOK_NAME_MAP[code];
+      });
+      localStorage.setItem(BSS_BOOKS_LANG_CACHE_KEY, JSON.stringify(payload));
+    } catch { /* quota */ }
+  }
+
+  function hydrateBssBooksLangFromStorage() {
+    try {
+      const raw = localStorage.getItem(BSS_BOOKS_LANG_CACHE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return;
+      Object.keys(data).forEach(code => {
+        const map = data[code];
+        if (!map || typeof map !== 'object') return;
+        LANG_BOOK_NAME_MAP[code] = map;
+        BSS_BOOKS_CACHE[code] = Object.keys(map).map(id => ({
+          id: Number(id),
+          name: map[id],
+          shortname: map[id]
+        }));
+      });
+    } catch { /* ignore */ }
+  }
+
+  function collectTranslationLangCodes() {
+    const codes = new Set(['en']);
+    const add = (b) => {
+      if (!b) return;
+      const code = b.lang_short || getTranslationLang(b.module || b.value);
+      if (code) codes.add(code);
+    };
+    Object.values(BSS_BIBLES).forEach(add);
+    Object.values(HAO_BIBLES).forEach(add);
+    Object.values(BOLLS_BIBLES).forEach(add);
+    return [...codes];
+  }
+
+  async function preloadAllTranslationBookNames(priorityLang) {
+    const codes = collectTranslationLangCodes();
+    if (priorityLang) await loadBooksForLang(priorityLang).catch(() => {});
+    const pending = codes.filter(c => c !== priorityLang && !BSS_BOOKS_CACHE[c]);
+    for (let i = 0; i < pending.length; i += 4) {
+      await Promise.all(pending.slice(i, i + 4).map(c => loadBooksForLang(c).catch(() => {})));
+    }
+    writeBssBooksLangCache();
+  }
+
+  async function ensureBooksForVersion(version) {
+    const lang = getTranslationLang(version || 'kjv');
+    await loadBooksForLang(lang);
+    return lang;
+  }
+
   async function loadBooksForLang(langCode) {
     langCode = langCode || 'en';
     if (BSS_BOOKS_CACHE[langCode]) return BSS_BOOKS_CACHE[langCode];
@@ -3730,6 +3891,7 @@
         const map = {};
         data.results.forEach(b => { map[Number(b.id)] = b.name; });
         LANG_BOOK_NAME_MAP[langCode] = map;
+        writeBssBooksLangCache();
         return data.results;
       }
     } catch { /* use fallback below */ }
@@ -3902,7 +4064,15 @@
     const multi = parseBssPassageVerses(data, module);
     if (!multi?.verses?.length) return null;
     const v = multi.verses[0];
-    return { text: v.text, ref: multi.ref, version: module };
+    return {
+      text: v.text,
+      ref: multi.ref,
+      version: module,
+      bookName: multi.bookName,
+      bssBookId: multi.bookId,
+      chapter: multi.chapter,
+      verse: v.num
+    };
   }
 
   function formatPassageRef(book, chapter, verses) {
@@ -3935,9 +4105,10 @@
     }
     if (!verses.length) return null;
     const bookName = passage.book_name || passage.book_raw;
+    const bookId = passage.book_id != null ? Number(passage.book_id) : null;
     const chapterNum = verses[0].chapter;
     const ref = formatPassageRef(bookName, chapterNum, verses);
-    return { verses, ref, bookName, chapter: chapterNum };
+    return { verses, ref, bookName, chapter: chapterNum, bookId };
   }
 
   async function fetchBssPassageVerses(module, reference, filterStart, filterEnd) {
@@ -3988,7 +4159,12 @@
     const chapter = Math.floor(Math.random() * CHAPTER_COUNTS[bookIdx]) + 1;
     const verse = Math.floor(Math.random() * 30) + 1;
     const entry = await fetchBssReference(module, `${bookName} ${chapter}:${verse}`);
-    if (entry) return entry;
+    if (entry) {
+      const bookEn = bookEnFromId(entry.bssBookId) || bookName;
+      const ch = entry.chapter ?? chapter;
+      const v = entry.verse ?? verse;
+      return attachGeneratorPassageMeta(entry, bookEn, ch, v, entry.bssBookId);
+    }
     return fetchRandomBssVerse(module, scope, attempt + 1);
   }
 
@@ -4094,6 +4270,7 @@
       populateTranslationSelects();
     }
     await loadBooksForLang('en');
+    void preloadAllTranslationBookNames();
   }
 
   async function loadBibleList() {
@@ -5167,7 +5344,6 @@
   let _customGenIntent = { d: 'random', m: 'random' };
   let _preReadGeneratorState = null;
   let _versionChangeTimer = null;
-  let _refSearchCandidates = null;
   const LANG_BOOK_NAME_MAP = {};
 
   function activePanel() {
@@ -5445,6 +5621,26 @@
     });
   }
 
+  function scrollToCenterVerseDisplay(p) {
+    const el = document.getElementById(p + '-verseDisplay');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const elCenter = rect.top + rect.height / 2;
+    const viewCenter = window.innerHeight / 2;
+    const top = window.scrollY + elCenter - viewCenter;
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    smoothScrollToY(Math.min(maxScroll, Math.max(0, top)), 1000);
+  }
+
+  function scheduleScrollToCenterVerseDisplay(p) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToCenterVerseDisplay(p);
+        setTimeout(() => scrollToCenterVerseDisplay(p), 400);
+      });
+    });
+  }
+
   function smoothScrollToY(targetY, durationMs) {
     const top = Math.max(0, targetY);
     if (prefersReducedMotion()) {
@@ -5567,13 +5763,31 @@
     closeReadBibleConfirmModal();
     if (!target?.parsed) return;
     const p = target.p;
-    const parsed = target.parsed;
+    let parsed = { ...target.parsed };
+    const genVersion = document.getElementById(p + '-version')?.value;
+    if (genVersion) await ensureBooksForVersion(genVersion);
+    if (genVersion) {
+      ['d', 'm'].forEach(pl => {
+        const vsel = document.getElementById(pl + '-version');
+        if (vsel) vsel.value = genVersion;
+      });
+    }
     ['d', 'm'].forEach(pl => {
       const sel = document.getElementById(pl + '-testament');
       if (sel) sel.value = 'read';
     });
     const active = activePanel();
     await updateBooks(active, { forceReadInit: true });
+    const version = document.getElementById(p + '-version')?.value;
+    if (version) {
+      const avail = getAvailableBookIds(version);
+      const bookId = BOOK_NUM[parsed.book];
+      if (!avail.includes(bookId)) {
+        const isOt = bookId <= 39;
+        const fallbackId = avail.find(id => (isOt ? id <= 39 : id >= 40)) || avail[0];
+        if (fallbackId) parsed = { ...parsed, book: ALL[fallbackId - 1] };
+      }
+    }
     const verse = parsed.verseStart || 1;
     const end = parsed.verseEnd ?? verse;
     await showReadChapterAndScrollToVerse(p, parsed.book, parsed.chapter, verse, end, {
@@ -5582,7 +5796,7 @@
     });
   }
 
-  function onVerseDisplayTap(e) {
+  async function onVerseDisplayTap(e) {
     const sel = window.getSelection();
     if (sel && sel.toString().trim()) return;
     const block = e.target.closest('.verse-gen-tappable');
@@ -5593,8 +5807,11 @@
     if (isReadBibleMode(p)) return;
     const entry = current[p];
     if (!entry || entry.readVerses?.length) return;
+    const version = document.getElementById(p + '-version')?.value || entry.version;
+    if (version) await ensureBooksForVersion(version);
+    ensureGeneratorEntryMeta(entry);
+    const parsed = getPassageParsedFromEntry(entry);
     const refText = getCanonicalReference(entry) || entry.ref;
-    const parsed = parseReferenceSearch(refText);
     if (!parsed?.book || parsed.chapter == null) {
       showToast('Could not open this reference in Read Bible.');
       return;
@@ -5821,20 +6038,27 @@
   }
 
   function getRefSearchCandidates() {
-    if (_refSearchCandidates) return _refSearchCandidates;
     const candidates = [];
     ALL.forEach((b) => {
-      const alts = [b];
+      const alts = new Set([b]);
       let idx = OT.indexOf(b);
-      if (idx >= 0 && OT_FR[idx]) alts.push(OT_FR[idx]);
+      if (idx >= 0 && OT_FR[idx]) alts.add(OT_FR[idx]);
       else {
         idx = NT.indexOf(b);
-        if (idx >= 0 && NT_FR[idx]) alts.push(NT_FR[idx]);
+        if (idx >= 0 && NT_FR[idx]) alts.add(NT_FR[idx]);
       }
-      candidates.push({ en: b, alts });
+      const bookId = ALL.indexOf(b) + 1;
+      for (const code of Object.keys(LANG_BOOK_NAME_MAP)) {
+        const name = LANG_BOOK_NAME_MAP[code][bookId];
+        if (name) alts.add(name);
+      }
+      candidates.push({ en: b, alts: [...alts] });
     });
-    candidates.sort((a, b) => b.en.length - a.en.length);
-    _refSearchCandidates = candidates;
+    candidates.sort((a, b) => {
+      const maxA = Math.max(...a.alts.map(s => s.length));
+      const maxB = Math.max(...b.alts.map(s => s.length));
+      return maxB - maxA;
+    });
     return candidates;
   }
 
@@ -5901,9 +6125,19 @@
   }
 
   function parsedFromPassageData(data) {
-    const fromRef = parseReferenceSearch(data.ref);
+    const bookFromId = bookEnFromId(data.bookId);
+    if (bookFromId && data.verses?.length) {
+      return {
+        book: bookFromId,
+        chapter: parseInt(data.chapter ?? data.verses[0].chapter, 10),
+        verseStart: data.verses[0].num,
+        verseEnd: data.verses[data.verses.length - 1].num
+      };
+    }
+    const langHint = data.version ? getTranslationLang(data.version) : null;
+    const fromRef = parseReferenceSearch(data.ref) || parseReferenceLoose(data.ref, langHint);
     if (fromRef) return fromRef;
-    const bookEn = resolveBookEnFromRaw(data.bookName || '') ||
+    const bookEn = resolveBookEnFromRaw(data.bookName || '', langHint) ||
       (data.bookName && ALL.includes(data.bookName) ? data.bookName : null);
     if (!bookEn || !data.verses?.length) return null;
     const chapter = data.chapter ?? data.verses[0].chapter;
@@ -5916,12 +6150,54 @@
   }
 
   function getPassageParsedFromEntry(entry) {
-    if (entry.passageParsed) return entry.passageParsed;
-    const fromRef = parseReferenceSearch(entry.ref);
+    if (!entry) return null;
+    const langHint = entry.version ? getTranslationLang(entry.version) : null;
+    if (entry.passageParsed?.book) return entry.passageParsed;
+    const fromBssId = bookEnFromId(entry.bssBookId);
+    if (fromBssId) {
+      const ch = entry.chapter ?? entry.genChapter ?? entry.passageChapter;
+      const vs = entry.verse ?? entry.genVerse;
+      if (ch != null && vs != null) {
+        const verseStart = parseInt(vs, 10);
+        return {
+          book: fromBssId,
+          chapter: parseInt(ch, 10),
+          verseStart,
+          verseEnd: verseStart
+        };
+      }
+      const refParsed = parseReferenceSearch(entry.canonicalRef || entry.ref) ||
+        parseReferenceLoose(entry.canonicalRef || entry.ref, langHint);
+      if (refParsed?.book) return refParsed;
+    }
+    if (entry.genBook && entry.genChapter != null) {
+      const v = entry.genVerse ?? 1;
+      return {
+        book: entry.genBook,
+        chapter: parseInt(entry.genChapter, 10),
+        verseStart: parseInt(v, 10),
+        verseEnd: parseInt(v, 10)
+      };
+    }
+    const ref = entry.canonicalRef || entry.ref;
+    const fromRef = parseReferenceSearch(ref) || parseReferenceLoose(ref, langHint);
     if (fromRef) return fromRef;
+    if (entry.bookName) {
+      const bookEn = resolveBookEnFromRaw(entry.bookName, langHint);
+      if (bookEn && entry.chapter != null) {
+        const vs = entry.verse ?? entry.genVerse ?? 1;
+        const verseStart = parseInt(vs, 10);
+        return {
+          book: bookEn,
+          chapter: parseInt(entry.chapter, 10),
+          verseStart,
+          verseEnd: verseStart
+        };
+      }
+    }
     if (entry.readVerses?.length) {
       const bookEn = entry.readBook || entry.passageBook ||
-        (entry.bookName ? resolveBookEnFromRaw(entry.bookName) : null);
+        (entry.bookName ? resolveBookEnFromRaw(entry.bookName, langHint) : null);
       let chapter = entry.readChapter ?? entry.passageChapter ?? entry.readVerses[0].chapter;
       if (bookEn && chapter != null) {
         return {
@@ -5933,7 +6209,7 @@
       }
       const chapterOnly = entry.ref.match(/^(.+?)\s+(\d+)$/);
       if (chapterOnly) {
-        const bookFromRef = resolveBookEnFromRaw(chapterOnly[1].trim());
+        const bookFromRef = resolveBookEnFromRaw(chapterOnly[1].trim(), langHint);
         if (bookFromRef) {
           return {
             book: bookFromRef,
@@ -6562,6 +6838,7 @@
      RENDER VERSE
   ══════════════════════════════════════ */
   async function renderCurrentEntry(p, entry) {
+    if (entry && !entry.readVerses?.length) ensureGeneratorEntryMeta(entry);
     if (entry?.readVerses?.length) {
       renderSearchedPassage(p, {
         verses: entry.readVerses,
@@ -6575,7 +6852,8 @@
     }
   }
 
-  async function renderVerse(p, entry) {
+  async function renderVerse(p, entry, options) {
+    options = options || {};
     const display = document.getElementById(p+'-verseDisplay');
     const isDesk  = p === 'd';
     if (document.fonts && document.fonts.load) {
@@ -6615,6 +6893,10 @@
     const n = verseCount[p];
     const ordinal = n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th';
     counter.textContent = `✦ Verse ${ordinal} of your journey ✦`;
+
+    if (options.scrollToCenter && !isReadBibleMode(p)) {
+      scheduleScrollToCenterVerseDisplay(p);
+    }
   }
 
   /* ══════════════════════════════════════
@@ -6753,6 +7035,7 @@
 
   async function onVersionChangeImpl(p) {
     const version = document.getElementById(p + '-version').value;
+    void ensureBooksForVersion(version);
     readChapterCache = {};
     if (isBollsMode(version)) {
       delete BOLLS_BOOK_IDS_BY_MODULE[version];
@@ -6895,9 +7178,9 @@
       const verseTimeout = apiFetchTimeoutMs() + (isRestrictedMobileBrowser() ? 2000 : 6000);
       let entry = await withTimeout(fetchRandomBssVerse(version, scope), verseTimeout, null);
       if (!entry) entry = getLocalVerse(scope.book, version);
-      if (entry && !entry.canonicalRef) entry.canonicalRef = entry.ref;
+      if (entry) ensureGeneratorEntryMeta(entry);
       current[p] = entry;
-      await renderVerse(p, entry);
+      await renderVerse(p, entry, { scrollToCenter: true });
     } catch {
       if (retryCount < 1 && !apiCircuitOpen()) {
         generate(p, retryCount + 1, scope);
@@ -6905,7 +7188,7 @@
       }
       const entry = getLocalVerse(scope.book, version);
       current[p] = entry;
-      await renderVerse(p, entry);
+      await renderVerse(p, entry, { scrollToCenter: true });
     } finally {
       display.classList.remove('loading');
     }
@@ -7586,6 +7869,7 @@
   // so the user sees the full Translation list instantly on page load.
   // Priority: localStorage cache → comprehensive built-in fallback.
   (function instantInit() {
+    hydrateBssBooksLangFromStorage();
     const cached = readBssBiblesCache();
     BSS_BIBLES = cached || { ...BSS_FALLBACK_BIBLES };
     populateTranslationSelects();
