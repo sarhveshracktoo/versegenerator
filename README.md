@@ -96,3 +96,6 @@ This project is still growing, and I am constantly improving it. If you try the 
 Every piece of feedback helps make the project better.
 
 If you enjoy the website, please share it with others and help spread God's Word. ✝️📖✨
+
+This HTML project is free to use and edit from your own perspective. However, please do not use it to sell or make money from it. I created this project to help people, and I worked hard writing my prompts and ideas to make the website user-friendly. If you decide to sell it or profit from it against this request, I leave that matter in God’s hands.
+
