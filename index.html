@@ -786,6 +786,30 @@
       font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
       letter-spacing: 0;
     }
+    .read-verse-segment {
+      border-radius: 4px;
+      padding: 0 0.08em;
+      margin: 0 -0.08em;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    .read-verse-segment.verse-phrase-flash {
+      animation: versePhraseFlash 2.4s ease-out;
+    }
+    @keyframes versePhraseFlash {
+      0% {
+        background: rgba(var(--accent-rgb), 0.42);
+        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.32);
+      }
+      70% {
+        background: rgba(var(--accent-rgb), 0.12);
+        box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.14);
+      }
+      100% {
+        background: transparent;
+        box-shadow: none;
+      }
+    }
     .read-mode-actions-hidden { display: none !important; }
 
     /* Action buttons */
@@ -4893,6 +4917,62 @@
     });
   }
 
+  function scrollToReadVerses(p, verseStart, verseEnd) {
+    const display = document.getElementById(p + '-verseDisplay');
+    const passage = display?.querySelector('.read-passage-text');
+    if (!passage) return;
+    const start = Math.min(verseStart, verseEnd);
+    const end = Math.max(verseStart, verseEnd);
+    let firstTarget = null;
+    passage.querySelectorAll('.read-verse-segment').forEach(el => {
+      const n = parseInt(el.getAttribute('data-verse-num'), 10);
+      if (Number.isNaN(n) || n < start || n > end) return;
+      el.classList.remove('verse-phrase-flash');
+      void el.offsetWidth;
+      el.classList.add('verse-phrase-flash');
+      setTimeout(() => el.classList.remove('verse-phrase-flash'), 2400);
+      if (!firstTarget && n === start) firstTarget = el;
+    });
+    const target = firstTarget || passage.querySelector(`.read-verse-segment[data-verse-num="${start}"]`);
+    if (!target) {
+      scrollReadAreaToTop(p);
+      return;
+    }
+    requestAnimationFrame(() => {
+      const offset = p === 'm' ? 88 : 32;
+      const top = window.scrollY + target.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    });
+  }
+
+  function scheduleScrollToReadVerses(p, verseStart, verseEnd) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToReadVerses(p, verseStart, verseEnd));
+    });
+  }
+
+  async function showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verseEnd) {
+    const version = document.getElementById(p + '-version').value;
+    const key = readChapterCacheKey(version, bookEn, chapter);
+    let chapterData = readChapterCache[key];
+
+    if (!chapterData?.verses?.length) {
+      await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
+      chapterData = readChapterCache[key];
+    } else {
+      renderReadPassage(p, chapterData, false);
+    }
+
+    if (!chapterData?.verses?.length) return;
+
+    _readSyncLock = true;
+    syncReadSelectors(p, bookEn, chapter, verse);
+    _readSyncLock = false;
+
+    const end = verseEnd ?? verse;
+    scheduleScrollToReadVerses(p, verse, end);
+  }
+
   function scrollVerseDisplayAfterSearch(p) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => scrollReadAreaToTop(p));
@@ -5005,7 +5085,9 @@
   }
 
   function formatVersesHtml(verses) {
-    return verses.map(v => `<sup class="verse-num">${v.num}</sup>${escapeHtml(v.text)}`).join(' ');
+    return verses.map(v =>
+      `<span class="read-verse-segment" data-verse-num="${v.num}"><sup class="verse-num">${v.num}</sup>${escapeHtml(v.text)}</span>`
+    ).join(' ');
   }
 
   function populateSelectOptions(sel, count, startAt = 1) {
@@ -5406,9 +5488,18 @@
     if (bookEn && chapterNum) {
       const verseSelVal = document.getElementById(p + '-read-verse')?.value;
       let syncVerse;
-      if (verseSelVal === READ_VERSE_WHOLE) syncVerse = READ_VERSE_WHOLE;
-      else if (data.verses.length > 1) syncVerse = READ_VERSE_WHOLE;
-      else syncVerse = data.verses[0]?.num || 1;
+      if (verseSelVal === READ_VERSE_WHOLE) {
+        syncVerse = READ_VERSE_WHOLE;
+      } else {
+        const vNum = parseInt(verseSelVal, 10);
+        if (!Number.isNaN(vNum) && data.verses.some(v => v.num === vNum)) {
+          syncVerse = vNum;
+        } else if (data.verses.length > 1) {
+          syncVerse = READ_VERSE_WHOLE;
+        } else {
+          syncVerse = data.verses[0]?.num || 1;
+        }
+      }
       _readSyncLock = true;
       syncReadSelectors(p, bookEn, chapterNum, syncVerse);
       _readSyncLock = false;
@@ -5495,7 +5586,6 @@
   async function onReadVerseChange(p) {
     if (_readSyncLock) return;
     const verseVal = document.getElementById(p + '-read-verse').value;
-    const version = document.getElementById(p + '-version').value;
     const bookEn = document.getElementById(p + '-read-book').value;
     const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10);
 
@@ -5503,10 +5593,12 @@
       _readSyncLock = true;
       syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
       _readSyncLock = false;
+      const version = document.getElementById(p + '-version').value;
       const key = readChapterCacheKey(version, bookEn, chapter);
       const cached = readChapterCache[key];
       if (cached) {
         renderReadPassage(p, cached, false);
+        scrollReadAreaToTop(p);
         return;
       }
       await loadReadChapterAt(p, bookEn, chapter);
@@ -5514,33 +5606,12 @@
     }
 
     const verse = parseInt(verseVal, 10);
+    if (Number.isNaN(verse)) return;
+
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
-    const passageTimeout = apiFetchTimeoutMs() + 3000;
-    if (isHaoMode(version)) {
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchHaoPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isBollsMode(version)) {
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchBollsPassageVerses(version, bookEn, chapter, verse, verse), passageTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this verse.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else {
-      await loadReadPassage(p, buildReadReference(bookEn, chapter, verse, verse, version));
-    }
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse);
   }
 
   async function onReadSearch(p) {
@@ -5551,7 +5622,6 @@
       showToast('Enter a reference like Matthew 6, Matthew 24:5, or Matthew 24:5-15');
       return;
     }
-    const version = document.getElementById(p + '-version').value;
     const bookSel = document.getElementById(p + '-read-book');
 
     if (parsed.wholeChapter) {
@@ -5569,49 +5639,8 @@
     syncReadSelectors(p, parsed.book, parsed.chapter, parsed.verseStart);
     _readSyncLock = false;
 
-    const readSearchTimeout = apiFetchTimeoutMs() + 3000;
-    if (isHaoMode(version)) {
-      const chapterData = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
-      _readSyncLock = true;
-      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
-      _readSyncLock = false;
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchHaoPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else if (isBollsMode(version)) {
-      const chapterData = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, null, null), readSearchTimeout, null);
-      if (chapterData?.verses?.length) populateReadVerseSelect(p, chapterData.verses[chapterData.verses.length - 1].num, { defaultWhole: false });
-      _readSyncLock = true;
-      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
-      _readSyncLock = false;
-      const display = document.getElementById(p + '-verseDisplay');
-      setReadDisplayLoading(p, !hasReadPassageContent(display));
-      try {
-        const data = await withTimeout(fetchBollsPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd), readSearchTimeout, null);
-        if (data) renderReadPassage(p, data);
-        else display.innerHTML = `<p class="${p === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage.</p>`;
-      } finally {
-        clearReadDisplayLoading(p);
-      }
-    } else {
-      const bookApi = getApiBookName(parsed.book, version);
-      const probe = await withTimeout(fetchBssPassageVerses(version, `${bookApi} ${parsed.chapter}`), readSearchTimeout, null);
-      if (probe?.verses?.length) populateReadVerseSelect(p, probe.verses[probe.verses.length - 1].num, { defaultWhole: false });
-      _readSyncLock = true;
-      document.getElementById(p + '-read-verse').value = String(parsed.verseStart);
-      _readSyncLock = false;
-      const ref = buildReadReference(parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd, version);
-      await loadReadPassage(p, ref, parsed.verseStart, parsed.verseEnd);
-    }
-    const display = document.getElementById(p + '-verseDisplay');
-    if (hasReadPassageContent(display)) scrollVerseDisplayAfterSearch(p);
+    const verseEnd = parsed.verseEnd ?? parsed.verseStart;
+    await showReadChapterAndScrollToVerse(p, parsed.book, parsed.chapter, parsed.verseStart, verseEnd);
   }
 
   async function refreshReadBibleLabels(p) {
