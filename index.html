@@ -4754,6 +4754,7 @@
   let _layoutIsMobile = null;
   /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
   let _customGenIntent = { d: 'random', m: 'random' };
+  let _preReadGeneratorState = null;
   let _versionChangeTimer = null;
   let _refSearchCandidates = null;
   const LANG_BOOK_NAME_MAP = {};
@@ -4817,6 +4818,103 @@
     ['share', 'speak', 'img'].forEach(suffix => {
       const btn = document.getElementById(p + '-' + suffix + '-btn');
       if (btn) btn.classList.toggle('read-mode-actions-hidden', readMode);
+    });
+  }
+
+  function cloneVerseEntry(entry) {
+    return entry ? JSON.parse(JSON.stringify(entry)) : null;
+  }
+
+  function saveGeneratorStateBeforeRead() {
+    if (_preReadGeneratorState) return;
+    _preReadGeneratorState = {
+      entry: current[activePanel()] ? cloneVerseEntry(current[activePanel()]) : null,
+      history: { d: history.d.slice(), m: history.m.slice() },
+      future: { d: future.d.slice(), m: future.m.slice() },
+      verseCount: { d: verseCount.d, m: verseCount.m },
+      customGenIntent: { d: _customGenIntent.d, m: _customGenIntent.m }
+    };
+  }
+
+  function showGeneratorPlaceholder(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+    if (display) {
+      display.classList.remove('loading', 'read-updating');
+      display.innerHTML = isDesk
+        ? '<p class="verse-placeholder">Click above to receive the Word…</p>'
+        : '<p class="mob-placeholder">Tap the button below to receive the Word…</p>';
+    }
+    document.getElementById(p + '-actions').style.display = 'flex';
+    setReadModeActions(p, false);
+    const prevBtn = document.getElementById(p + '-prev-btn');
+    const nextBtn = document.getElementById(p + '-next-btn');
+    if (prevBtn) prevBtn.disabled = history[p].length === 0;
+    if (nextBtn) nextBtn.disabled = future[p].length === 0;
+    const counter = document.getElementById(p + '-counter');
+    if (counter) {
+      if (verseCount[p] > 0) {
+        counter.style.display = 'block';
+        const n = verseCount[p];
+        const ordinal = n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n + 'th';
+        counter.textContent = `✦ Verse ${ordinal} of your journey ✦`;
+      } else {
+        counter.style.display = 'none';
+      }
+    }
+    const imgWrap = document.getElementById(p + '-imageWrap');
+    if (imgWrap) imgWrap.style.display = 'none';
+  }
+
+  async function restoreGeneratorViewFromRead() {
+    ['d', 'm'].forEach(clearReadDisplayLoading);
+
+    let entry = null;
+    if (_preReadGeneratorState) {
+      const state = _preReadGeneratorState;
+      _preReadGeneratorState = null;
+      history.d = state.history.d.slice();
+      history.m = state.history.m.slice();
+      future.d = state.future.d.slice();
+      future.m = state.future.m.slice();
+      verseCount.d = state.verseCount.d;
+      verseCount.m = state.verseCount.m;
+      _customGenIntent.d = state.customGenIntent.d;
+      _customGenIntent.m = state.customGenIntent.m;
+      entry = state.entry;
+    }
+
+    if (entry) {
+      const cloned = cloneVerseEntry(entry);
+      current.d = cloned;
+      current.m = cloned;
+      for (const pl of ['d', 'm']) {
+        await renderCurrentEntry(pl, cloned);
+      }
+      updateCustomSearchUI('d');
+      updateCustomSearchUI('m');
+      return;
+    }
+
+    current.d = null;
+    current.m = null;
+    for (const pl of ['d', 'm']) {
+      showGeneratorPlaceholder(pl);
+    }
+  }
+
+  function syncModeWrappersForAllPanels(testament) {
+    const showBooks = testament === 'custom';
+    const readMode = testament === 'read';
+    ['d', 'm'].forEach(pl => {
+      const readWrap = document.getElementById(pl + '-readBibleWrapper');
+      const wrapper = document.getElementById(pl + '-bookWrapper');
+      const customSearchWrap = document.getElementById(pl + '-customSearchWrapper');
+      const genBtn = document.getElementById(pl === 'd' ? 'd-generate-btn' : 'm-generate-btn');
+      if (readWrap) readWrap.style.display = readMode ? '' : 'none';
+      if (customSearchWrap) customSearchWrap.style.display = showBooks ? '' : 'none';
+      if (wrapper) wrapper.style.display = showBooks ? '' : 'none';
+      if (genBtn) genBtn.style.display = readMode ? 'none' : '';
     });
   }
 
@@ -5753,8 +5851,15 @@
       testament = 'custom';
     }
     testamentSel.dataset.prevValue = testament;
+
+    const other = p === 'd' ? 'm' : 'd';
+    const otherTestSel = document.getElementById(other + '-testament');
+    if (otherTestSel && otherTestSel.value !== testament) {
+      otherTestSel.value = testament;
+      otherTestSel.dataset.prevValue = testament;
+    }
+
     const wrapper   = document.getElementById(p+'-bookWrapper');
-    const readWrap  = document.getElementById(p+'-readBibleWrapper');
     const showBooks = testament === 'custom';
     const readMode  = testament === 'read';
     const availableIds = getAvailableBookIds(version);
@@ -5820,7 +5925,7 @@
     } catch {
       setBookLabelState(p, 'error');
     }
-    if (readWrap) readWrap.style.display = readMode ? '' : 'none';
+    syncModeWrappersForAllPanels(testament);
 
     const customSearchWrap = document.getElementById(p + '-customSearchWrapper');
     if (customSearchWrap) customSearchWrap.style.display = showBooks ? '' : 'none';
@@ -5851,6 +5956,9 @@
     updateCustomSearchUI(p);
 
     if (readMode) {
+      if (prevTest !== 'read' && !options.skipReadInit) {
+        saveGeneratorStateBeforeRead();
+      }
       setReadModeActions(p, true);
       initReadSwipe();
       if (isBollsMode(version)) await ensureBollsBooksDiscovered(version);
@@ -5862,6 +5970,9 @@
       }
     } else {
       setReadModeActions(p, false);
+      if (prevTest === 'read' && !options.skipGeneratorRestore) {
+        await restoreGeneratorViewFromRead();
+      }
     }
   }
 
