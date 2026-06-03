@@ -4689,8 +4689,27 @@
     });
   }
 
+  function scrollPageToBottom() {
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    const maxScroll = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight,
+      document.body.scrollHeight - window.innerHeight
+    );
+    window.scrollTo({ top: maxScroll, behavior });
+  }
+
   function toggleControlPanel() {
-    setControlPanelOpen(!_controlPanelOpen);
+    const opening = !_controlPanelOpen;
+    setControlPanelOpen(opening);
+    if (opening) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollPageToBottom();
+          setTimeout(scrollPageToBottom, 400);
+        });
+      });
+    }
   }
 
   function initThemeSystem() {
