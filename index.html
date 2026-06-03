@@ -7348,6 +7348,7 @@
     let lastAppliedVolume = -1;
     let autoPlayOnLoad = false;
     let autoPlayUnlockBound = false;
+    let pendingAudibleUnmute = false;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
@@ -7411,22 +7412,58 @@
       }
     }
 
-    function bindAutoPlayUnlockOnInteraction() {
-      if (autoPlayUnlockBound || userMuted) return;
-      autoPlayUnlockBound = true;
-      const unlock = () => {
-        document.removeEventListener('pointerdown', unlock, true);
-        document.removeEventListener('keydown', unlock, true);
-        autoPlayUnlockBound = false;
-        if (userMuted || !playerReady || !ytPlayer) return;
+    function needsMutedAutoplayBootstrap() {
+      const ua = navigator.userAgent || '';
+      if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
+      try {
+        if (typeof getLayoutMode === 'function' && getLayoutMode() === 'mobile') return true;
+      } catch { /* ignore */ }
+      return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function playAtSavedVolumeMuted() {
+      if (!ytPlayer) return;
+      try {
+        lastAppliedVolume = -1;
+        ytPlayer.setVolume(savedVolume);
+        ytPlayer.mute();
+      } catch (e) { /* ignore */ }
+    }
+
+    function finishAudibleUnmute() {
+      if (userMuted || !playerReady || !ytPlayer) return;
+      pendingAudibleUnmute = false;
+      autoPlayOnLoad = false;
+      applyAudiblePlaybackToPlayer();
+      try {
         const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
         const playing = window.YT && (
           state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING
         );
-        if (!playing) unmuteAndPlay();
+        if (!playing) ytPlayer.playVideo();
+      } catch (e) { /* ignore */ }
+    }
+
+    const AUTO_PLAY_UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'];
+
+    function removeAutoPlayUnlockListeners(unlock) {
+      AUTO_PLAY_UNLOCK_EVENTS.forEach(evt => {
+        document.removeEventListener(evt, unlock, true);
+      });
+    }
+
+    function bindAutoPlayUnlockOnInteraction() {
+      if (autoPlayUnlockBound || userMuted) return;
+      if (!pendingAudibleUnmute && !autoPlayOnLoad) return;
+      autoPlayUnlockBound = true;
+      const unlock = () => {
+        removeAutoPlayUnlockListeners(unlock);
+        autoPlayUnlockBound = false;
+        finishAudibleUnmute();
       };
-      document.addEventListener('pointerdown', unlock, true);
-      document.addEventListener('keydown', unlock, true);
+      AUTO_PLAY_UNLOCK_EVENTS.forEach(evt => {
+        document.addEventListener(evt, unlock, { capture: true, passive: true });
+      });
     }
 
     function syncVolumeUI(vol) {
@@ -7512,6 +7549,8 @@
       }
       if (userMuted) {
         ensureMutedSilent();
+      } else if (pendingAudibleUnmute) {
+        playAtSavedVolumeMuted();
       } else {
         applyAudiblePlaybackToPlayer();
       }
@@ -7567,6 +7606,8 @@
     }
 
     function unmuteAndPlay() {
+      pendingAudibleUnmute = false;
+      autoPlayOnLoad = false;
       userMuted = false;
       updateMuteUI();
       if (isPrefsSaveEnabled()) persistMusicPrefs();
@@ -7605,21 +7646,33 @@
 
     function tryAutoPlayAfterPreload(attempt) {
       if (userMuted || !playerReady || !ytPlayer || !autoPlayOnLoad) return;
+      if (needsMutedAutoplayBootstrap()) pendingAudibleUnmute = true;
       if (pickRandomPlaylistVideo(true)) {
         autoPlayOnLoad = false;
+        if (pendingAudibleUnmute) bindAutoPlayUnlockOnInteraction();
         return;
       }
       const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
       if (list && list.length && playlistPicked) {
-        applyAudiblePlaybackToPlayer();
+        if (pendingAudibleUnmute) playAtSavedVolumeMuted();
+        else applyAudiblePlaybackToPlayer();
         try { ytPlayer.playVideo(); } catch (e) { /* ignore */ }
         autoPlayOnLoad = false;
+        if (pendingAudibleUnmute) bindAutoPlayUnlockOnInteraction();
         return;
       }
       if (attempt > 28) {
-        unmuteAndPlay();
-        autoPlayOnLoad = false;
-        bindAutoPlayUnlockOnInteraction();
+        if (needsMutedAutoplayBootstrap()) {
+          pendingAudibleUnmute = true;
+          userMuted = false;
+          updateMuteUI();
+          pickRandomPlaylistVideo(true) || unmuteAndPlay();
+          autoPlayOnLoad = false;
+          bindAutoPlayUnlockOnInteraction();
+        } else {
+          unmuteAndPlay();
+          autoPlayOnLoad = false;
+        }
         return;
       }
       setTimeout(() => tryAutoPlayAfterPreload(attempt + 1), 350);
@@ -7635,6 +7688,7 @@
         try {
           ytPlayer.setVolume(savedVolume);
         } catch (e) { /* ignore */ }
+        if (needsMutedAutoplayBootstrap()) pendingAudibleUnmute = true;
         preloadPlaylist();
         setTimeout(() => tryAutoPlayAfterPreload(0), 500);
         bindAutoPlayUnlockOnInteraction();
@@ -7658,6 +7712,8 @@
             ytPlayer.mute();
             ytPlayer.pauseVideo();
           } catch (e) { /* ignore */ }
+        } else if (pendingAudibleUnmute) {
+          playAtSavedVolumeMuted();
         } else {
           try {
             ytPlayer.unMute();
@@ -7688,6 +7744,9 @@
     }
 
     volumeSliders.forEach(sl => {
+      sl.addEventListener('touchstart', () => {
+        if (pendingAudibleUnmute) finishAudibleUnmute();
+      }, { passive: true });
       sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
       sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
     });
@@ -7715,6 +7774,24 @@
     syncSavePrefCheckboxes(isPrefsSaveEnabled());
     syncVolumeUI(savedVolume);
     updateMuteUI();
+
+    window.addEventListener('pageshow', () => {
+      if (!pendingAudibleUnmute && !autoPlayOnLoad) return;
+      if (!playerReady || userMuted) return;
+      bindAutoPlayUnlockOnInteraction();
+      if (pendingAudibleUnmute) {
+        try {
+          const state = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+          const playing = window.YT && (
+            state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING
+          );
+          if (!playing && ytPlayer) pickRandomPlaylistVideo(true);
+        } catch (e) { /* ignore */ }
+      }
+    });
+
+    document.getElementById('m-generate-btn')?.addEventListener('click', finishAudibleUnmute, { capture: true, passive: true });
+    document.getElementById('d-generate-btn')?.addEventListener('click', finishAudibleUnmute, { capture: true, passive: true });
 
     function createPlayer() {
       if (ytPlayer) return;
