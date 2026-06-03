@@ -7346,6 +7346,8 @@
     let preloadDone = false;
     let volumeRafId = 0;
     let lastAppliedVolume = -1;
+    let autoPlayOnLoad = false;
+    let autoPlayUnlockBound = false;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
@@ -7396,15 +7398,35 @@
     function loadMusicSettings() {
       userMuted = true;
       savedVolume = DEFAULT_VOLUME;
+      autoPlayOnLoad = false;
       if (!isPrefsSaveEnabled()) return;
       const prefs = readSavedPrefs();
       if (!prefs) return;
       savedVolume = prefs.volume;
-      if (prefs.volume >= 1 && prefs.volume <= 100 && !prefs.muted) {
+      if (prefs.volume >= 1 && prefs.volume <= 100) {
         userMuted = false;
+        autoPlayOnLoad = true;
       } else {
         userMuted = !!prefs.muted;
       }
+    }
+
+    function bindAutoPlayUnlockOnInteraction() {
+      if (autoPlayUnlockBound || userMuted) return;
+      autoPlayUnlockBound = true;
+      const unlock = () => {
+        document.removeEventListener('pointerdown', unlock, true);
+        document.removeEventListener('keydown', unlock, true);
+        autoPlayUnlockBound = false;
+        if (userMuted || !playerReady || !ytPlayer) return;
+        const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+        const playing = window.YT && (
+          state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING
+        );
+        if (!playing) unmuteAndPlay();
+      };
+      document.addEventListener('pointerdown', unlock, true);
+      document.addEventListener('keydown', unlock, true);
     }
 
     function syncVolumeUI(vol) {
@@ -7505,17 +7527,13 @@
       return true;
     }
 
-    function tryPickRandomPreload(attempt) {
+    function tryPickRandomPreload(attempt, andPlay) {
       if (playlistPicked || !ytPlayer) return;
-      if (pickRandomPlaylistVideo(false)) return;
-      if (attempt < 10) setTimeout(() => tryPickRandomPreload(attempt + 1), 350);
+      if (pickRandomPlaylistVideo(!!andPlay)) return;
+      if (attempt < 12) setTimeout(() => tryPickRandomPreload(attempt + 1, andPlay), 350);
     }
 
-    function preloadPlaylistMuted() {
-      if (!ytPlayer || !playerReady || preloadDone) return;
-      preloadDone = true;
-      playlistPicked = false;
-      ensureMutedSilent();
+    function loadPlaylistIntoPlayer() {
       try {
         ytPlayer.loadPlaylist({
           listType: 'playlist',
@@ -7525,7 +7543,16 @@
           suggestedQuality: QUALITY_144
         });
       } catch (e) { /* ignore */ }
-      setTimeout(() => tryPickRandomPreload(0), 400);
+    }
+
+    function preloadPlaylist() {
+      if (!ytPlayer || !playerReady || preloadDone) return;
+      preloadDone = true;
+      playlistPicked = false;
+      if (userMuted) ensureMutedSilent();
+      loadPlaylistIntoPlayer();
+      const playAudible = !userMuted && autoPlayOnLoad;
+      setTimeout(() => tryPickRandomPreload(0, playAudible), 400);
     }
 
     function muteAndStop() {
@@ -7563,7 +7590,7 @@
       };
 
       if (playerReady) {
-        if (!preloadDone) preloadPlaylistMuted();
+        if (!preloadDone) preloadPlaylist();
         startPlayback();
       }
     }
@@ -7577,15 +7604,22 @@
     }
 
     function tryAutoPlayAfterPreload(attempt) {
-      if (userMuted || !playerReady || !ytPlayer) return;
-      if (attempt > 24) {
-        unmuteAndPlay();
+      if (userMuted || !playerReady || !ytPlayer || !autoPlayOnLoad) return;
+      if (pickRandomPlaylistVideo(true)) {
+        autoPlayOnLoad = false;
         return;
       }
       const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
-      if (list && list.length) {
-        if (!playlistPicked) pickRandomPlaylistVideo(true);
-        else unmuteAndPlay();
+      if (list && list.length && playlistPicked) {
+        applyAudiblePlaybackToPlayer();
+        try { ytPlayer.playVideo(); } catch (e) { /* ignore */ }
+        autoPlayOnLoad = false;
+        return;
+      }
+      if (attempt > 28) {
+        unmuteAndPlay();
+        autoPlayOnLoad = false;
+        bindAutoPlayUnlockOnInteraction();
         return;
       }
       setTimeout(() => tryAutoPlayAfterPreload(attempt + 1), 350);
@@ -7594,10 +7628,19 @@
     function onPlayerReady(event) {
       playerReady = true;
       ytPlayer = event.target;
-      ensureMutedSilent();
-      preloadPlaylistMuted();
-      if (!userMuted) {
+      if (userMuted) {
+        ensureMutedSilent();
+        preloadPlaylist();
+      } else if (autoPlayOnLoad) {
+        try {
+          ytPlayer.setVolume(savedVolume);
+        } catch (e) { /* ignore */ }
+        preloadPlaylist();
         setTimeout(() => tryAutoPlayAfterPreload(0), 500);
+        bindAutoPlayUnlockOnInteraction();
+      } else {
+        ensureMutedSilent();
+        preloadPlaylist();
       }
     }
 
@@ -7605,7 +7648,7 @@
       if (!window.YT || !YT.PlayerState) return;
 
       if (!playlistPicked && (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.PAUSED)) {
-        pickRandomPlaylistVideo(false);
+        pickRandomPlaylistVideo(!userMuted);
       }
 
       if (event.data === YT.PlayerState.PLAYING) {
@@ -7654,7 +7697,17 @@
         const enabled = cb.checked;
         syncSavePrefCheckboxes(enabled);
         setPrefsSaveEnabled(enabled);
-        if (enabled) persistMusicPrefs();
+        if (enabled) {
+          if (savedVolume >= 1 && savedVolume <= 100) {
+            userMuted = false;
+            autoPlayOnLoad = false;
+            updateMuteUI();
+          }
+          persistMusicPrefs();
+          if (!userMuted && playerReady) unmuteAndPlay();
+        } else {
+          autoPlayOnLoad = false;
+        }
       });
     });
 
