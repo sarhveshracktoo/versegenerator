@@ -1974,6 +1974,54 @@
     @media (min-width: 769px) and (max-width: 1100px) {
       .control-panel-banner { max-width: min(720px, 94vw); }
     }
+    .control-pref-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .control-pref-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .control-pref-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      opacity: 0.9;
+    }
+    .control-pref-select {
+      width: 100%;
+      box-sizing: border-box;
+      background-color: rgba(0, 0, 0, 0.28);
+      color: var(--parchment);
+      border: 1px solid var(--glass-border);
+      padding: 9px 30px 9px 10px;
+      font-family: 'EB Garamond', serif;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+    }
+    .control-pref-select:hover,
+    .control-pref-select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+      outline: none;
+      background-color: rgba(var(--accent-rgb), 0.1);
+    }
+    @media (max-width: 768px) {
+      .control-pref-grid { grid-template-columns: 1fr; gap: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -2183,7 +2231,22 @@
     <div class="devotional-collapse" id="d-control-collapse">
       <div class="devotional-inner">
         <div class="devotional-panel-body">
-          <h3 class="control-section-title">Themes</h3>
+          <h3 class="control-section-title">Preferences</h3>
+          <p class="control-section-hint">Choose your default mode and translation. They apply immediately and are remembered on your device.</p>
+          <div class="control-pref-grid" role="group" aria-label="Default preferences">
+            <div class="control-pref-field">
+              <label class="control-pref-label" for="d-default-mode">Default Mode</label>
+              <select id="d-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
+                <option value="custom">Verse Generator</option>
+                <option value="read">Read Bible</option>
+              </select>
+            </div>
+            <div class="control-pref-field">
+              <label class="control-pref-label" for="d-default-translation">Default Translation</label>
+              <select id="d-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
+            </div>
+          </div>
+          <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
           <p class="control-section-hint">Choose an appearance. Your selection is saved automatically.</p>
           <div class="theme-grid" id="d-theme-grid" role="radiogroup" aria-label="Website themes"></div>
           <h3 class="control-section-title" style="margin-top:18px;">Background Music</h3>
@@ -2414,7 +2477,22 @@
       <div class="devotional-collapse" id="m-control-collapse">
         <div class="devotional-inner">
           <div class="devotional-panel-body">
-            <h3 class="control-section-title">Themes</h3>
+            <h3 class="control-section-title">Preferences</h3>
+            <p class="control-section-hint">Choose your default mode and translation. They apply immediately and are remembered on your device.</p>
+            <div class="control-pref-grid" role="group" aria-label="Default preferences">
+              <div class="control-pref-field">
+                <label class="control-pref-label" for="m-default-mode">Default Mode</label>
+                <select id="m-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
+                  <option value="custom">Verse Generator</option>
+                  <option value="read">Read Bible</option>
+                </select>
+              </div>
+              <div class="control-pref-field">
+                <label class="control-pref-label" for="m-default-translation">Default Translation</label>
+                <select id="m-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
+              </div>
+            </div>
+            <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
             <p class="control-section-hint">Choose an appearance. Your selection is saved automatically.</p>
             <div class="theme-grid" id="m-theme-grid" role="radiogroup" aria-label="Website themes"></div>
             <h3 class="control-section-title" style="margin-top:18px;">Background Music</h3>
@@ -3830,6 +3908,7 @@
       const hasPrev = optionValueExists(sel, prev);
       sel.value = hasPrev ? prev : (BSS_BIBLES.kjv ? 'kjv' : sel.options[0]?.value || 'kjv');
     });
+    populateDefaultTranslationSelects();
   }
 
   // Read cached Bible list from localStorage (synchronous)
@@ -4689,14 +4768,16 @@
     });
   }
 
-  function scrollPageToBottom() {
+  function scrollToControlPanel() {
+    const p = activePanel();
+    const panel = document.getElementById(p + '-control-panel');
+    if (!panel) return;
     const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
-    const maxScroll = Math.max(
-      0,
-      document.documentElement.scrollHeight - window.innerHeight,
-      document.body.scrollHeight - window.innerHeight
-    );
-    window.scrollTo({ top: maxScroll, behavior });
+    const offset = p === 'm' ? 72 : 24;
+    requestAnimationFrame(() => {
+      const top = window.scrollY + panel.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior });
+    });
   }
 
   function toggleControlPanel() {
@@ -4705,8 +4786,8 @@
     if (opening) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          scrollPageToBottom();
-          setTimeout(scrollPageToBottom, 400);
+          scrollToControlPanel();
+          setTimeout(scrollToControlPanel, 400);
         });
       });
     }
@@ -4716,6 +4797,145 @@
     buildThemeGrid(document.getElementById('d-theme-grid'));
     buildThemeGrid(document.getElementById('m-theme-grid'));
     applyTheme(getSavedThemeId(), { save: false, animate: false });
+  }
+
+  /* ══════════════════════════════════════
+     CONTROL PANEL — DEFAULT MODE & TRANSLATION
+  ══════════════════════════════════════ */
+  const DEFAULT_MODE_STORAGE_KEY = 'vg-default-mode';
+  const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
+  const DEFAULT_MODES = [
+    { id: 'custom', label: 'Verse Generator' },
+    { id: 'read', label: 'Read Bible' }
+  ];
+
+  function getSavedDefaultMode() {
+    try {
+      const saved = localStorage.getItem(DEFAULT_MODE_STORAGE_KEY);
+      if (saved && DEFAULT_MODES.some(m => m.id === saved)) return saved;
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  function getSavedDefaultTranslation() {
+    try {
+      const saved = localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY);
+      if (saved) return saved;
+    } catch { /* ignore */ }
+    return null;
+  }
+
+  function isValidTranslationModule(module) {
+    const sel = document.getElementById('d-version');
+    return !!(module && sel && optionValueExists(sel, module));
+  }
+
+  function syncDefaultPrefSelects(mode, translation) {
+    if (mode) {
+      document.querySelectorAll('[data-default-mode-select]').forEach(sel => {
+        if (optionValueExists(sel, mode)) sel.value = mode;
+      });
+    }
+    if (translation) {
+      document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+        if (optionValueExists(sel, translation)) sel.value = translation;
+      });
+    }
+  }
+
+  function populateDefaultTranslationSelects() {
+    const source = document.getElementById('d-version');
+    if (!source) return;
+    const saved = getSavedDefaultTranslation();
+    const activeVersion = document.getElementById(activePanel() + '-version')?.value
+      || document.getElementById('d-version')?.value
+      || 'kjv';
+    const pick = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+    document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+      const prev = sel.value;
+      sel.innerHTML = source.innerHTML;
+      if (optionValueExists(sel, pick)) sel.value = pick;
+      else if (optionValueExists(sel, prev)) sel.value = prev;
+      else if (optionValueExists(sel, 'kjv')) sel.value = 'kjv';
+    });
+  }
+
+  function applySavedDefaultsOnLoad() {
+    const trans = getSavedDefaultTranslation();
+    if (trans) {
+      ['d', 'm'].forEach(p => {
+        const sel = document.getElementById(p + '-version');
+        if (sel && optionValueExists(sel, trans)) sel.value = trans;
+      });
+    }
+    const mode = getSavedDefaultMode();
+    if (mode) {
+      ['d', 'm'].forEach(p => {
+        const sel = document.getElementById(p + '-testament');
+        if (sel) sel.value = mode;
+      });
+    }
+  }
+
+  async function applyDefaultMode(modeId, options) {
+    options = options || {};
+    if (!DEFAULT_MODES.some(m => m.id === modeId)) return;
+    if (options.save !== false) {
+      try { localStorage.setItem(DEFAULT_MODE_STORAGE_KEY, modeId); } catch { /* private mode */ }
+    }
+    syncDefaultPrefSelects(modeId, null);
+    let changed = false;
+    ['d', 'm'].forEach(pl => {
+      const tSel = document.getElementById(pl + '-testament');
+      if (tSel && tSel.value !== modeId) {
+        tSel.value = modeId;
+        changed = true;
+      }
+    });
+    if (changed || options.force) {
+      await updateBooks(activePanel());
+    }
+  }
+
+  async function applyDefaultTranslation(version, options) {
+    options = options || {};
+    if (!isValidTranslationModule(version)) return;
+    if (options.save !== false) {
+      try { localStorage.setItem(DEFAULT_TRANSLATION_STORAGE_KEY, version); } catch { /* private mode */ }
+    }
+    syncDefaultPrefSelects(null, version);
+    const active = activePanel();
+    const vSel = document.getElementById(active + '-version');
+    const prev = vSel?.value;
+    syncVersionSelects(version);
+    if (prev !== version) {
+      await onVersionChangeImpl(active);
+    }
+  }
+
+  function bindDefaultPreferenceControls() {
+    document.querySelectorAll('[data-default-mode-select]').forEach(sel => {
+      if (sel.dataset.bound === '1') return;
+      sel.dataset.bound = '1';
+      sel.addEventListener('change', () => { void applyDefaultMode(sel.value); });
+    });
+    document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+      if (sel.dataset.bound === '1') return;
+      sel.dataset.bound = '1';
+      sel.addEventListener('change', () => { void applyDefaultTranslation(sel.value); });
+    });
+  }
+
+  function initDefaultPreferencesUI() {
+    populateDefaultTranslationSelects();
+    bindDefaultPreferenceControls();
+    const mode = getSavedDefaultMode()
+      || document.getElementById('d-testament')?.value
+      || 'custom';
+    const trans = getSavedDefaultTranslation()
+      || document.getElementById('d-version')?.value
+      || 'kjv';
+    syncDefaultPrefSelects(mode, isValidTranslationModule(trans) ? trans : 'kjv');
   }
 
   /* ══════════════════════════════════════
@@ -7016,6 +7236,7 @@
     void loadDevotionalsCatalog();
     initDevotionalTextSize();
     initThemeSystem();
+    initDefaultPreferencesUI();
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -7036,7 +7257,8 @@
     const cached = readBssBiblesCache();
     BSS_BIBLES = cached || { ...BSS_FALLBACK_BIBLES };
     populateTranslationSelects();
-    // Set both panels to KJV by default (avoids any "Loading…" flash)
+    applySavedDefaultsOnLoad();
+    // Ensure a valid translation if saved default is missing or stale
     ['d', 'm'].forEach(p => {
       const sel = document.getElementById(p + '-version');
       if (sel && !optionValueExists(sel, sel.value)) sel.value = 'kjv';
