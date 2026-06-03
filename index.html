@@ -1078,41 +1078,6 @@
         min-width: 2.2em;
       }
     }
-    .control-vol-save-row {
-      margin-top: 12px;
-    }
-    .control-vol-save-label {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      cursor: pointer;
-      font-family: 'EB Garamond', serif;
-      font-size: 0.95rem;
-      color: var(--parchment);
-      line-height: 1.35;
-      user-select: none;
-    }
-    .control-vol-save-checkbox {
-      width: 16px;
-      height: 16px;
-      margin-top: 2px;
-      flex-shrink: 0;
-      accent-color: var(--gold);
-      cursor: pointer;
-    }
-    .control-vol-save-text {
-      font-family: 'Cinzel', serif;
-      font-size: 0.62rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--gold-light);
-    }
-    .control-vol-save-hint {
-      margin-top: 8px;
-      margin-bottom: 0;
-    }
-
     /* ══ MOBILE LAYOUT ══ */
     #mobile-view { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
 
@@ -2295,13 +2260,6 @@
               <span class="bg-music-volume-value" id="d-bg-music-volume-value">20%</span>
             </div>
           </div>
-          <div class="control-vol-save-row">
-            <label class="control-vol-save-label" for="d-bg-music-save-prefs">
-              <input type="checkbox" class="control-vol-save-checkbox" id="d-bg-music-save-prefs" data-bg-music-save-prefs>
-              <span class="control-vol-save-text">Save Volume Preference</span>
-            </label>
-            <p class="control-section-hint control-vol-save-hint">Audio starts muted. Moving the volume slider unmutes. When saved, a volume of 1–100% plays automatically on your next visit. If music is not playing just tap on mute/unmute button.</p>
-          </div>
         </div>
       </div>
     </div>
@@ -2547,13 +2505,6 @@
                 <input type="range" id="m-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
                 <span class="bg-music-volume-value" id="m-bg-music-volume-value">20%</span>
               </div>
-            </div>
-            <div class="control-vol-save-row">
-              <label class="control-vol-save-label" for="m-bg-music-save-prefs">
-                <input type="checkbox" class="control-vol-save-checkbox" id="m-bg-music-save-prefs" data-bg-music-save-prefs>
-                <span class="control-vol-save-text">Save Volume Preference</span>
-              </label>
-              <p class="control-section-hint control-vol-save-hint">Audio starts muted. Moving the volume slider unmutes. When saved, a volume of 1–100% plays automatically on your next visit. If music is not playing just tap on mute/unmute button.</p>
             </div>
           </div>
         </div>
@@ -7333,8 +7284,8 @@
   (function initBackgroundMusic() {
     const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
     const DEFAULT_VOLUME = 20;
-    const PREFS_SAVE_KEY = 'vg-bg-music-save-prefs';
-    const PREFS_DATA_KEY = 'vg-bg-music-prefs';
+    const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
+    const LEGACY_PREFS_KEY = 'vg-bg-music-prefs';
     const QUALITY_144 = 'tiny';
 
     let ytPlayer = null;
@@ -7346,124 +7297,38 @@
     let preloadDone = false;
     let volumeRafId = 0;
     let lastAppliedVolume = -1;
-    let autoPlayOnLoad = false;
-    let autoPlayUnlockBound = false;
-    let pendingAudibleUnmute = false;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
-    const savePrefCheckboxes = Array.from(document.querySelectorAll('[data-bg-music-save-prefs]'));
 
-    function isPrefsSaveEnabled() {
-      try { return localStorage.getItem(PREFS_SAVE_KEY) === '1'; } catch { return false; }
-    }
-
-    function setPrefsSaveEnabled(on) {
+    function readSavedVolume() {
       try {
-        if (on) localStorage.setItem(PREFS_SAVE_KEY, '1');
-        else {
-          localStorage.removeItem(PREFS_SAVE_KEY);
-          localStorage.removeItem(PREFS_DATA_KEY);
-        }
-      } catch { /* private mode */ }
-    }
-
-    function readSavedPrefs() {
-      try {
-        const raw = localStorage.getItem(PREFS_DATA_KEY);
-        if (!raw) return null;
-        const data = JSON.parse(raw);
-        const vol = parseInt(data.volume, 10);
-        if (!Number.isNaN(vol) && vol >= 0 && vol <= 100) {
-          return { volume: vol, muted: !!data.muted };
+        const v = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY), 10);
+        if (!Number.isNaN(v) && v >= 0 && v <= 100) return v;
+        const raw = localStorage.getItem(LEGACY_PREFS_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          const legacy = parseInt(data.volume, 10);
+          if (!Number.isNaN(legacy) && legacy >= 0 && legacy <= 100) {
+            localStorage.setItem(VOLUME_STORAGE_KEY, String(legacy));
+            return legacy;
+          }
         }
       } catch { /* ignore */ }
       return null;
     }
 
-    function persistMusicPrefs() {
-      if (!isPrefsSaveEnabled()) return;
+    function persistVolume(vol) {
       try {
-        localStorage.setItem(PREFS_DATA_KEY, JSON.stringify({
-          volume: savedVolume,
-          muted: userMuted
-        }));
-      } catch { /* ignore */ }
-    }
-
-    function syncSavePrefCheckboxes(checked) {
-      savePrefCheckboxes.forEach(cb => { cb.checked = checked; });
+        localStorage.setItem(VOLUME_STORAGE_KEY, String(Math.max(0, Math.min(100, Math.round(vol)))));
+      } catch { /* private mode */ }
     }
 
     function loadMusicSettings() {
       userMuted = true;
-      savedVolume = DEFAULT_VOLUME;
-      autoPlayOnLoad = false;
-      if (!isPrefsSaveEnabled()) return;
-      const prefs = readSavedPrefs();
-      if (!prefs) return;
-      savedVolume = prefs.volume;
-      if (prefs.volume >= 1 && prefs.volume <= 100) {
-        userMuted = false;
-        autoPlayOnLoad = true;
-      } else {
-        userMuted = !!prefs.muted;
-      }
-    }
-
-    function needsMutedAutoplayBootstrap() {
-      const ua = navigator.userAgent || '';
-      if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
-      try {
-        if (typeof getLayoutMode === 'function' && getLayoutMode() === 'mobile') return true;
-      } catch { /* ignore */ }
-      return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-    }
-
-    function playAtSavedVolumeMuted() {
-      if (!ytPlayer) return;
-      try {
-        lastAppliedVolume = -1;
-        ytPlayer.setVolume(savedVolume);
-        ytPlayer.mute();
-      } catch (e) { /* ignore */ }
-    }
-
-    function finishAudibleUnmute() {
-      if (userMuted || !playerReady || !ytPlayer) return;
-      pendingAudibleUnmute = false;
-      autoPlayOnLoad = false;
-      applyAudiblePlaybackToPlayer();
-      try {
-        const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
-        const playing = window.YT && (
-          state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING
-        );
-        if (!playing) ytPlayer.playVideo();
-      } catch (e) { /* ignore */ }
-    }
-
-    const AUTO_PLAY_UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'];
-
-    function removeAutoPlayUnlockListeners(unlock) {
-      AUTO_PLAY_UNLOCK_EVENTS.forEach(evt => {
-        document.removeEventListener(evt, unlock, true);
-      });
-    }
-
-    function bindAutoPlayUnlockOnInteraction() {
-      if (autoPlayUnlockBound || userMuted) return;
-      if (!pendingAudibleUnmute && !autoPlayOnLoad) return;
-      autoPlayUnlockBound = true;
-      const unlock = () => {
-        removeAutoPlayUnlockListeners(unlock);
-        autoPlayUnlockBound = false;
-        finishAudibleUnmute();
-      };
-      AUTO_PLAY_UNLOCK_EVENTS.forEach(evt => {
-        document.addEventListener(evt, unlock, { capture: true, passive: true });
-      });
+      const vol = readSavedVolume();
+      savedVolume = vol != null ? vol : DEFAULT_VOLUME;
     }
 
     function syncVolumeUI(vol) {
@@ -7490,7 +7355,7 @@
       const v = Math.max(0, Math.min(100, Math.round(vol)));
       savedVolume = v;
       syncVolumeUI(v);
-      if (options.save !== false && isPrefsSaveEnabled()) persistMusicPrefs();
+      if (options.save !== false) persistVolume(v);
       if (userMuted) return;
       if (options.immediate) {
         cancelAnimationFrame(volumeRafId);
@@ -7549,8 +7414,6 @@
       }
       if (userMuted) {
         ensureMutedSilent();
-      } else if (pendingAudibleUnmute) {
-        playAtSavedVolumeMuted();
       } else {
         applyAudiblePlaybackToPlayer();
       }
@@ -7588,16 +7451,14 @@
       if (!ytPlayer || !playerReady || preloadDone) return;
       preloadDone = true;
       playlistPicked = false;
-      if (userMuted) ensureMutedSilent();
+      ensureMutedSilent();
       loadPlaylistIntoPlayer();
-      const playAudible = !userMuted && autoPlayOnLoad;
-      setTimeout(() => tryPickRandomPreload(0, playAudible), 400);
+      setTimeout(() => tryPickRandomPreload(0, false), 400);
     }
 
     function muteAndStop() {
       userMuted = true;
       updateMuteUI();
-      if (isPrefsSaveEnabled()) persistMusicPrefs();
       if (!ytPlayer) return;
       try {
         ytPlayer.mute();
@@ -7606,11 +7467,8 @@
     }
 
     function unmuteAndPlay() {
-      pendingAudibleUnmute = false;
-      autoPlayOnLoad = false;
       userMuted = false;
       updateMuteUI();
-      if (isPrefsSaveEnabled()) persistMusicPrefs();
       if (!ytPlayer) return;
 
       const startPlayback = () => {
@@ -7644,58 +7502,11 @@
       else muteAndStop();
     }
 
-    function tryAutoPlayAfterPreload(attempt) {
-      if (userMuted || !playerReady || !ytPlayer || !autoPlayOnLoad) return;
-      if (needsMutedAutoplayBootstrap()) pendingAudibleUnmute = true;
-      if (pickRandomPlaylistVideo(true)) {
-        autoPlayOnLoad = false;
-        if (pendingAudibleUnmute) bindAutoPlayUnlockOnInteraction();
-        return;
-      }
-      const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
-      if (list && list.length && playlistPicked) {
-        if (pendingAudibleUnmute) playAtSavedVolumeMuted();
-        else applyAudiblePlaybackToPlayer();
-        try { ytPlayer.playVideo(); } catch (e) { /* ignore */ }
-        autoPlayOnLoad = false;
-        if (pendingAudibleUnmute) bindAutoPlayUnlockOnInteraction();
-        return;
-      }
-      if (attempt > 28) {
-        if (needsMutedAutoplayBootstrap()) {
-          pendingAudibleUnmute = true;
-          userMuted = false;
-          updateMuteUI();
-          pickRandomPlaylistVideo(true) || unmuteAndPlay();
-          autoPlayOnLoad = false;
-          bindAutoPlayUnlockOnInteraction();
-        } else {
-          unmuteAndPlay();
-          autoPlayOnLoad = false;
-        }
-        return;
-      }
-      setTimeout(() => tryAutoPlayAfterPreload(attempt + 1), 350);
-    }
-
     function onPlayerReady(event) {
       playerReady = true;
       ytPlayer = event.target;
-      if (userMuted) {
-        ensureMutedSilent();
-        preloadPlaylist();
-      } else if (autoPlayOnLoad) {
-        try {
-          ytPlayer.setVolume(savedVolume);
-        } catch (e) { /* ignore */ }
-        if (needsMutedAutoplayBootstrap()) pendingAudibleUnmute = true;
-        preloadPlaylist();
-        setTimeout(() => tryAutoPlayAfterPreload(0), 500);
-        bindAutoPlayUnlockOnInteraction();
-      } else {
-        ensureMutedSilent();
-        preloadPlaylist();
-      }
+      ensureMutedSilent();
+      preloadPlaylist();
     }
 
     function onPlayerStateChange(event) {
@@ -7712,8 +7523,6 @@
             ytPlayer.mute();
             ytPlayer.pauseVideo();
           } catch (e) { /* ignore */ }
-        } else if (pendingAudibleUnmute) {
-          playAtSavedVolumeMuted();
         } else {
           try {
             ytPlayer.unMute();
@@ -7736,62 +7545,21 @@
       if (userMuted) {
         savedVolume = Math.max(0, Math.min(100, Math.round(v)));
         syncVolumeUI(savedVolume);
+        persistVolume(savedVolume);
         unmuteAndPlay();
-        if (isPrefsSaveEnabled()) persistMusicPrefs();
         return;
       }
       setVolumeLevel(v, { save: true, immediate: !!immediate });
     }
 
     volumeSliders.forEach(sl => {
-      sl.addEventListener('touchstart', () => {
-        if (pendingAudibleUnmute) finishAudibleUnmute();
-      }, { passive: true });
       sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
       sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
     });
 
-    savePrefCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        const enabled = cb.checked;
-        syncSavePrefCheckboxes(enabled);
-        setPrefsSaveEnabled(enabled);
-        if (enabled) {
-          if (savedVolume >= 1 && savedVolume <= 100) {
-            userMuted = false;
-            autoPlayOnLoad = false;
-            updateMuteUI();
-          }
-          persistMusicPrefs();
-          if (!userMuted && playerReady) unmuteAndPlay();
-        } else {
-          autoPlayOnLoad = false;
-        }
-      });
-    });
-
     loadMusicSettings();
-    syncSavePrefCheckboxes(isPrefsSaveEnabled());
     syncVolumeUI(savedVolume);
     updateMuteUI();
-
-    window.addEventListener('pageshow', () => {
-      if (!pendingAudibleUnmute && !autoPlayOnLoad) return;
-      if (!playerReady || userMuted) return;
-      bindAutoPlayUnlockOnInteraction();
-      if (pendingAudibleUnmute) {
-        try {
-          const state = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState();
-          const playing = window.YT && (
-            state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING
-          );
-          if (!playing && ytPlayer) pickRandomPlaylistVideo(true);
-        } catch (e) { /* ignore */ }
-      }
-    });
-
-    document.getElementById('m-generate-btn')?.addEventListener('click', finishAudibleUnmute, { capture: true, passive: true });
-    document.getElementById('d-generate-btn')?.addEventListener('click', finishAudibleUnmute, { capture: true, passive: true });
 
     function createPlayer() {
       if (ytPlayer) return;
