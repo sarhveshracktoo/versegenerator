@@ -1078,6 +1078,40 @@
         min-width: 2.2em;
       }
     }
+    .control-vol-save-row {
+      margin-top: 12px;
+    }
+    .control-vol-save-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      font-family: 'EB Garamond', serif;
+      font-size: 0.95rem;
+      color: var(--parchment);
+      line-height: 1.35;
+      user-select: none;
+    }
+    .control-vol-save-checkbox {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      flex-shrink: 0;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+    .control-vol-save-text {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+    .control-vol-save-hint {
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
 
     /* ══ MOBILE LAYOUT ══ */
     #mobile-view { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
@@ -2261,6 +2295,13 @@
               <span class="bg-music-volume-value" id="d-bg-music-volume-value">20%</span>
             </div>
           </div>
+          <div class="control-vol-save-row">
+            <label class="control-vol-save-label" for="d-bg-music-save-prefs">
+              <input type="checkbox" class="control-vol-save-checkbox" id="d-bg-music-save-prefs" data-bg-music-save-prefs>
+              <span class="control-vol-save-text">Save Volume Preference</span>
+            </label>
+            <p class="control-section-hint control-vol-save-hint">Audio starts muted. Moving the volume slider unmutes. When saved, a volume of 1–100% plays automatically on your next visit.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -2506,6 +2547,13 @@
                 <input type="range" id="m-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
                 <span class="bg-music-volume-value" id="m-bg-music-volume-value">20%</span>
               </div>
+            </div>
+            <div class="control-vol-save-row">
+              <label class="control-vol-save-label" for="m-bg-music-save-prefs">
+                <input type="checkbox" class="control-vol-save-checkbox" id="m-bg-music-save-prefs" data-bg-music-save-prefs>
+                <span class="control-vol-save-text">Save Volume Preference</span>
+              </label>
+              <p class="control-section-hint control-vol-save-hint">Audio starts muted. Moving the volume slider unmutes. When saved, a volume of 1–100% plays automatically on your next visit.</p>
             </div>
           </div>
         </div>
@@ -7285,7 +7333,8 @@
   (function initBackgroundMusic() {
     const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
     const DEFAULT_VOLUME = 20;
-    const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
+    const PREFS_SAVE_KEY = 'vg-bg-music-save-prefs';
+    const PREFS_DATA_KEY = 'vg-bg-music-prefs';
     const QUALITY_144 = 'tiny';
 
     let ytPlayer = null;
@@ -7301,19 +7350,61 @@
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
+    const savePrefCheckboxes = Array.from(document.querySelectorAll('[data-bg-music-save-prefs]'));
 
-    function loadMusicSettings() {
-      userMuted = true;
+    function isPrefsSaveEnabled() {
+      try { return localStorage.getItem(PREFS_SAVE_KEY) === '1'; } catch { return false; }
+    }
+
+    function setPrefsSaveEnabled(on) {
       try {
-        const storedVol = parseInt(localStorage.getItem(VOLUME_STORAGE_KEY), 10);
-        if (!Number.isNaN(storedVol) && storedVol >= 0 && storedVol <= 100) {
-          savedVolume = storedVol;
+        if (on) localStorage.setItem(PREFS_SAVE_KEY, '1');
+        else {
+          localStorage.removeItem(PREFS_SAVE_KEY);
+          localStorage.removeItem(PREFS_DATA_KEY);
         }
       } catch { /* private mode */ }
     }
 
-    function persistVolume(vol) {
-      try { localStorage.setItem(VOLUME_STORAGE_KEY, String(vol)); } catch { /* ignore */ }
+    function readSavedPrefs() {
+      try {
+        const raw = localStorage.getItem(PREFS_DATA_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        const vol = parseInt(data.volume, 10);
+        if (!Number.isNaN(vol) && vol >= 0 && vol <= 100) {
+          return { volume: vol, muted: !!data.muted };
+        }
+      } catch { /* ignore */ }
+      return null;
+    }
+
+    function persistMusicPrefs() {
+      if (!isPrefsSaveEnabled()) return;
+      try {
+        localStorage.setItem(PREFS_DATA_KEY, JSON.stringify({
+          volume: savedVolume,
+          muted: userMuted
+        }));
+      } catch { /* ignore */ }
+    }
+
+    function syncSavePrefCheckboxes(checked) {
+      savePrefCheckboxes.forEach(cb => { cb.checked = checked; });
+    }
+
+    function loadMusicSettings() {
+      userMuted = true;
+      savedVolume = DEFAULT_VOLUME;
+      if (!isPrefsSaveEnabled()) return;
+      const prefs = readSavedPrefs();
+      if (!prefs) return;
+      savedVolume = prefs.volume;
+      if (prefs.volume >= 1 && prefs.volume <= 100 && !prefs.muted) {
+        userMuted = false;
+      } else {
+        userMuted = !!prefs.muted;
+      }
     }
 
     function syncVolumeUI(vol) {
@@ -7340,7 +7431,7 @@
       const v = Math.max(0, Math.min(100, Math.round(vol)));
       savedVolume = v;
       syncVolumeUI(v);
-      if (options.save !== false) persistVolume(v);
+      if (options.save !== false && isPrefsSaveEnabled()) persistMusicPrefs();
       if (userMuted) return;
       if (options.immediate) {
         cancelAnimationFrame(volumeRafId);
@@ -7376,6 +7467,16 @@
       } catch (e) { /* ignore */ }
     }
 
+    function applyAudiblePlaybackToPlayer() {
+      if (!ytPlayer || userMuted) return;
+      try {
+        lastAppliedVolume = -1;
+        ytPlayer.setVolume(savedVolume);
+        ytPlayer.unMute();
+        applyVolumeToPlayer(savedVolume);
+      } catch (e) { /* ignore */ }
+    }
+
     function pickRandomPlaylistVideo(andPlay) {
       if (!ytPlayer) return false;
       const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
@@ -7387,7 +7488,11 @@
       } catch (e) {
         try { ytPlayer.playVideo(); } catch (e2) { /* ignore */ }
       }
-      ensureMutedSilent();
+      if (userMuted) {
+        ensureMutedSilent();
+      } else {
+        applyAudiblePlaybackToPlayer();
+      }
       forceQuality144();
       if (!andPlay || userMuted) {
         setTimeout(() => {
@@ -7426,6 +7531,7 @@
     function muteAndStop() {
       userMuted = true;
       updateMuteUI();
+      if (isPrefsSaveEnabled()) persistMusicPrefs();
       if (!ytPlayer) return;
       try {
         ytPlayer.mute();
@@ -7436,6 +7542,7 @@
     function unmuteAndPlay() {
       userMuted = false;
       updateMuteUI();
+      if (isPrefsSaveEnabled()) persistMusicPrefs();
       if (!ytPlayer) return;
 
       const startPlayback = () => {
@@ -7469,11 +7576,29 @@
       else muteAndStop();
     }
 
+    function tryAutoPlayAfterPreload(attempt) {
+      if (userMuted || !playerReady || !ytPlayer) return;
+      if (attempt > 24) {
+        unmuteAndPlay();
+        return;
+      }
+      const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+      if (list && list.length) {
+        if (!playlistPicked) pickRandomPlaylistVideo(true);
+        else unmuteAndPlay();
+        return;
+      }
+      setTimeout(() => tryAutoPlayAfterPreload(attempt + 1), 350);
+    }
+
     function onPlayerReady(event) {
       playerReady = true;
       ytPlayer = event.target;
       ensureMutedSilent();
       preloadPlaylistMuted();
+      if (!userMuted) {
+        setTimeout(() => tryAutoPlayAfterPreload(0), 500);
+      }
     }
 
     function onPlayerStateChange(event) {
@@ -7506,18 +7631,35 @@
 
     muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
 
+    function onVolumeSliderChange(sl, immediate) {
+      const v = parseInt(sl.value, 10);
+      if (Number.isNaN(v)) return;
+      if (userMuted) {
+        savedVolume = Math.max(0, Math.min(100, Math.round(v)));
+        syncVolumeUI(savedVolume);
+        unmuteAndPlay();
+        if (isPrefsSaveEnabled()) persistMusicPrefs();
+        return;
+      }
+      setVolumeLevel(v, { save: true, immediate: !!immediate });
+    }
+
     volumeSliders.forEach(sl => {
-      sl.addEventListener('input', () => {
-        const v = parseInt(sl.value, 10);
-        if (!Number.isNaN(v)) setVolumeLevel(v, { save: true, immediate: false });
-      });
-      sl.addEventListener('change', () => {
-        const v = parseInt(sl.value, 10);
-        if (!Number.isNaN(v)) setVolumeLevel(v, { save: true, immediate: true });
+      sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
+      sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
+    });
+
+    savePrefCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const enabled = cb.checked;
+        syncSavePrefCheckboxes(enabled);
+        setPrefsSaveEnabled(enabled);
+        if (enabled) persistMusicPrefs();
       });
     });
 
     loadMusicSettings();
+    syncSavePrefCheckboxes(isPrefsSaveEnabled());
     syncVolumeUI(savedVolume);
     updateMuteUI();
 
