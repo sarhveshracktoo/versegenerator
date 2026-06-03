@@ -1370,6 +1370,66 @@
     }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
+    /* Scroll to Mode panel */
+    .scroll-to-mode-btn {
+      position: fixed;
+      z-index: 12;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,0.42);
+      background: linear-gradient(145deg, rgba(42,26,10,0.94), rgba(20,12,4,0.98));
+      color: var(--gold-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.2s ease, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scroll-to-mode-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .scroll-to-mode-btn.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .scroll-to-mode-btn:hover,
+    .scroll-to-mode-btn:focus-visible {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+      outline: none;
+    }
+    .scroll-to-mode-btn--desktop {
+      right: 20px;
+      bottom: 28px;
+    }
+    .scroll-to-mode-btn--mobile {
+      right: 16px;
+      left: auto;
+      bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+      opacity: 0;
+    }
+    .scroll-to-mode-btn--mobile.is-visible {
+      opacity: 0.58;
+    }
+    .scroll-to-mode-btn--mobile.is-visible:hover,
+    .scroll-to-mode-btn--mobile.is-visible:focus-visible {
+      opacity: 0.9;
+    }
+    body.layout-mobile .scroll-to-mode-btn--desktop { display: none; }
+    body:not(.layout-mobile) .scroll-to-mode-btn--mobile { display: none; }
+    body.has-iab-banner .scroll-to-mode-btn--mobile {
+      bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+    }
+
     /* Facebook IAB banner */
     #fb-iab-banner {
       display: none;
@@ -2266,7 +2326,7 @@
     <div class="card-ornament">· · ✦ · ·</div>
     <div class="verse-counter" id="d-counter" style="display:none;"></div>
 
-    <div class="controls">
+    <div class="controls" id="d-mode-panel">
       <div class="control-group">
         <label for="d-testament" id="d-testament-label">Mode</label>
         <select id="d-testament" onchange="updateBooks('d')">
@@ -2517,7 +2577,7 @@
       <div class="mob-card-orn">· ✦ ·</div>
       <div class="mob-verse-counter" id="m-counter" style="display:none;"></div>
 
-      <div class="mob-select-row">
+      <div class="mob-select-row" id="m-mode-panel">
         <div class="mob-field">
           <span class="mob-label" id="m-testament-label">Mode</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
@@ -2916,6 +2976,17 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<button type="button" id="scroll-to-mode-desktop" class="scroll-to-mode-btn scroll-to-mode-btn--desktop" aria-label="Back to mode panel" title="Back to mode panel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+</button>
+<button type="button" id="scroll-to-mode-mobile" class="scroll-to-mode-btn scroll-to-mode-btn--mobile" aria-label="Back to mode panel" title="Back to mode panel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+</button>
 
 <script>
   /* ══════════════════════════════════════
@@ -3730,6 +3801,7 @@
         await updateBooks(activePanel());
       }
     }
+    updateScrollToModeButtons();
   }
 
   /* ══════════════════════════════════════
@@ -5663,6 +5735,63 @@
     requestAnimationFrame(tick);
   }
 
+  let _scrollToModeTicking = false;
+
+  function getModePanelScrollTop(p) {
+    const anchor = document.getElementById(p + '-mode-panel');
+    if (!anchor) return 0;
+    const offset = p === 'm' ? 72 : 24;
+    return Math.max(0, window.scrollY + anchor.getBoundingClientRect().top - offset);
+  }
+
+  function scrollToModePanel() {
+    const p = activePanel();
+    smoothScrollToY(getModePanelScrollTop(p), 1000);
+  }
+
+  function isPastMobileTextSizeSection() {
+    const el = document.getElementById('m-size-slider')?.closest('.mob-field');
+    if (!el) return false;
+    return window.scrollY > el.offsetTop + el.offsetHeight - 8;
+  }
+
+  function updateScrollToModeButtons() {
+    const deskBtn = document.getElementById('scroll-to-mode-desktop');
+    const mobBtn = document.getElementById('scroll-to-mode-mobile');
+    const mobileLayout = document.body.classList.contains('layout-mobile');
+    if (deskBtn) deskBtn.classList.toggle('is-visible', !mobileLayout);
+    if (mobBtn) {
+      const show = mobileLayout && isReadBibleMode('m') && isPastMobileTextSizeSection();
+      mobBtn.classList.toggle('is-visible', show);
+    }
+  }
+
+  function initScrollToModeButtons() {
+    const deskBtn = document.getElementById('scroll-to-mode-desktop');
+    const mobBtn = document.getElementById('scroll-to-mode-mobile');
+    const onClick = () => scrollToModePanel();
+    if (deskBtn && deskBtn.dataset.bound !== '1') {
+      deskBtn.dataset.bound = '1';
+      deskBtn.addEventListener('click', onClick);
+    }
+    if (mobBtn && mobBtn.dataset.bound !== '1') {
+      mobBtn.dataset.bound = '1';
+      mobBtn.addEventListener('click', onClick);
+    }
+    if (window._scrollToModeScrollBound) return;
+    window._scrollToModeScrollBound = true;
+    window.addEventListener('scroll', () => {
+      if (_scrollToModeTicking) return;
+      _scrollToModeTicking = true;
+      requestAnimationFrame(() => {
+        _scrollToModeTicking = false;
+        updateScrollToModeButtons();
+      });
+    }, { passive: true });
+    window.addEventListener('resize', updateScrollToModeButtons);
+    updateScrollToModeButtons();
+  }
+
   function flashReadVerseRange(p, verseStart, verseEnd, flashTimes) {
     const display = document.getElementById(p + '-verseDisplay');
     const passage = display?.querySelector('.read-passage-text');
@@ -6798,6 +6927,7 @@
         await restoreGeneratorViewFromRead();
       }
     }
+    updateScrollToModeButtons();
   }
 
   /* ══════════════════════════════════════
@@ -7836,6 +7966,7 @@
     initVerseSize();
     initReadSwipe();
     bindVerseDisplayOpenReadHandlers();
+    initScrollToModeButtons();
     clearAllVersePanelLoading();
 
     const version = document.getElementById('d-version')?.value || 'kjv';
