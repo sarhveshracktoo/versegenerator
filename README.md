@@ -62,7 +62,8 @@ Users can generate shareable images that include the displayed Bible verse. Thes
 
 ### 📲 Install as an App
 
-The website supports installation directly from the browser. Users can add it to their desktop or mobile home screen, allowing it to function like a dedicated app without needing to download it from an app store.
+The website supports installation directly from the browser. Users can add it to their desktop or mobile home screen, allowing it to function like a dedicated app without needing to download it from an app store. On mobile browsers, users can tap the **three dots menu** and choose **Add to Home screen**. On desktop, users can click the **three dots menu** in the top-right corner, go to **Cast, save and share**, then select **Install page as app**. This method may vary depending on the browser, but it works best on Chrome.
+
 
 ### ⚡ Optimized for Speed
 
