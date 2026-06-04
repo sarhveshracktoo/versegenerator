@@ -80,11 +80,6 @@ I built this project because I wanted a simple and distraction-free way for peop
 What started as a dream years ago has become a real website that anyone can use for free.
 
 ## Website
-
-https://versegenerator.edgeone.app/
-
-Alternative link:
-
 https://sarhveshracktoo.github.io/versegenerator/
 
 For the best experience, open it in your web browser on desktop or mobile.
