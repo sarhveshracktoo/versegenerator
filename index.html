@@ -8704,7 +8704,7 @@
       </svg>
     </div>
     <div id="iab-title">Open in Your Browser</div>
-    <p id="iab-msg">For the best experience and fewer bugs, please open this website in your browser. Some features may not work properly in TikTok or Facebook's in-app browser, and the Bible books may keep loading.</p>
+    <p id="iab-msg">For the best experience and fewer bugs, please open this website in your browser. Some features may not work properly in TikTok, Facebook, or Instagram's in-app browser, and the Bible books may keep loading.</p>
     <p id="iab-copy-hint">Tap a button to copy the link, then paste it in your browser — or tap the three-dot menu in the top-right corner and select "Open in Browser".</p>
     <div id="iab-btn-row">
       <button class="iab-open-btn" onclick="iabCopyLink(this, 'https://versegenerator.edgeone.app/')">
@@ -8769,11 +8769,12 @@ function iabFallbackCopy(url, callback) {
 (function () {
   var ua = navigator.userAgent || '';
 
-  // Detect TikTok and Facebook in-app browsers
-  var isTikTok  = /musical_ly|bytedance|tiktok/i.test(ua);
+  // Detect TikTok, Facebook, and Instagram in-app browsers
+  var isTikTok   = /musical_ly|bytedance|tiktok/i.test(ua);
   var isFacebook = /FBAN|FBAV|FB_IAB|FB4A|FBIOS|Facebook/i.test(ua);
+  var isInstagram = /instagram/i.test(ua);
 
-  if (!isTikTok && !isFacebook) return;
+  if (!isTikTok && !isFacebook && !isInstagram) return;
 
   var overlay = document.getElementById('iab-overlay');
 
