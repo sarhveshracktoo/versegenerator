@@ -621,11 +621,15 @@
     [data-theme="dark-blue-glass"] select,
     [data-theme="dark-brown-beige"] select,
     [data-theme="dark-yellow"] select,
+    [data-theme="dark-black-glass"] select,
+    [data-theme="dark-green-glass"] select,
     [data-theme="dark-grey-glass"] .mob-select,
     [data-theme="dark-red-glass"] .mob-select,
     [data-theme="dark-blue-glass"] .mob-select,
     [data-theme="dark-brown-beige"] .mob-select,
-    [data-theme="dark-yellow"] .mob-select {
+    [data-theme="dark-yellow"] .mob-select,
+    [data-theme="dark-black-glass"] .mob-select,
+    [data-theme="dark-green-glass"] .mob-select {
       color-scheme: dark;
     }
 
@@ -1901,6 +1905,100 @@
       --verse-placeholder-color: rgba(240, 228, 190, 0.68);
       --btn-accent-text: #1a1404;
     }
+    [data-theme="dark-black-glass"] {
+      --gold: #b8b8c0;
+      --gold-light: #e4e4ea;
+      --gold-dark: #686870;
+      --parchment: #dcdce2;
+      --parchment-dark: #b8b8c0;
+      --ink: #080808;
+      --ink-light: #2a2a30;
+      --crimson: #c05050;
+      --shadow: rgba(0, 0, 0, 0.65);
+      --bg-base: #000000;
+      --bg-gradient-a: #0a0a0c;
+      --bg-gradient-b: #020202;
+      --watermark-opacity: 0.05;
+      --glass-banner-bg: linear-gradient(135deg, rgba(16, 16, 18, 0.94), rgba(4, 4, 6, 0.92));
+      --glass-votd-bg: rgba(10, 10, 12, 0.78);
+      --glass-weekly-bg: rgba(8, 8, 10, 0.74);
+      --glass-border: rgba(180, 180, 190, 0.18);
+      --glass-border-strong: rgba(200, 200, 210, 0.28);
+      --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      --glass-header-hover: rgba(200, 200, 210, 0.08);
+      --card-bg: linear-gradient(160deg, #1a1a1e 0%, #101012 50%, #08080a 100%);
+      --card-shadow: 0 0 0 1px rgba(140, 140, 150, 0.28), 0 0 0 4px rgba(80, 80, 90, 0.1), 0 10px 44px rgba(0, 0, 0, 0.58), inset 0 0 50px rgba(0, 0, 0, 0.28);
+      --card-mob-shadow: var(--card-shadow);
+      --display-bg: rgba(255, 255, 255, 0.05);
+      --display-border: rgba(160, 160, 170, 0.2);
+      --input-bg: rgba(255, 255, 255, 0.07);
+      --input-bg-hover: rgba(255, 255, 255, 0.12);
+      --select-bg: rgba(255, 255, 255, 0.07);
+      --select-bg-active: rgba(255, 255, 255, 0.12);
+      --select-option-bg: #0c0c0e;
+      --select-option-color: #e4e4ea;
+      --input-focus-ring: 0 0 0 3px rgba(180, 180, 190, 0.18);
+      --btn-gen-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+      --mob-topbar-bg: linear-gradient(180deg, #000000 0%, rgba(4, 4, 6, 0.94) 100%);
+      --mob-bottom-fade: linear-gradient(0deg, rgba(0, 0, 0, 0.99) 75%, rgba(4, 4, 6, 0.94) 90%, rgba(0, 0, 0, 0) 100%);
+      --header-text-shadow: 0 2px 16px rgba(180, 180, 190, 0.2);
+      --accent-rgb: 180, 180, 190;
+      --card-text: #e4e4ea;
+      --card-text-muted: #9898a4;
+      --verse-quote-color: #f0f0f4;
+      --verse-read-color: #dcdce4;
+      --verse-ref-color: #d8d8e2;
+      --verse-num-color: #b8b8c4;
+      --verse-placeholder-color: rgba(200, 200, 210, 0.62);
+      --btn-accent-text: #080808;
+    }
+    [data-theme="dark-green-glass"] {
+      --gold: #8ec8a0;
+      --gold-light: #b8e4c4;
+      --gold-dark: #4a8860;
+      --parchment: #e4f4e8;
+      --parchment-dark: #b8dcc4;
+      --ink: #061008;
+      --ink-light: #284838;
+      --crimson: #a84848;
+      --shadow: rgba(4, 16, 8, 0.55);
+      --bg-base: #040c06;
+      --bg-gradient-a: #0c2014;
+      --bg-gradient-b: #061008;
+      --watermark-opacity: 0.1;
+      --glass-banner-bg: linear-gradient(135deg, rgba(12, 36, 22, 0.9), rgba(6, 18, 10, 0.88));
+      --glass-votd-bg: rgba(10, 32, 18, 0.65);
+      --glass-weekly-bg: rgba(8, 26, 14, 0.62);
+      --glass-border: rgba(100, 190, 130, 0.28);
+      --glass-border-strong: rgba(120, 210, 150, 0.38);
+      --glass-shadow: 0 10px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(180, 240, 200, 0.08);
+      --glass-header-hover: rgba(80, 170, 110, 0.12);
+      --card-bg: linear-gradient(160deg, #1e4830 0%, #163c28 50%, #103020 100%);
+      --card-shadow: 0 0 0 1px rgba(80, 160, 110, 0.4), 0 0 0 4px rgba(40, 100, 70, 0.15), 0 8px 40px rgba(0, 0, 0, 0.45), inset 0 0 50px rgba(20, 60, 40, 0.25);
+      --card-mob-shadow: var(--card-shadow);
+      --display-bg: rgba(180, 240, 200, 0.08);
+      --display-border: rgba(80, 160, 110, 0.3);
+      --input-bg: rgba(200, 240, 210, 0.1);
+      --input-bg-hover: rgba(200, 240, 210, 0.16);
+      --select-bg: rgba(200, 240, 210, 0.1);
+      --select-bg-active: rgba(200, 240, 210, 0.16);
+      --select-option-bg: #0c2014;
+      --select-option-color: #e4f4e8;
+      --input-focus-ring: 0 0 0 3px rgba(80, 170, 110, 0.25);
+      --btn-gen-shadow: 0 4px 18px rgba(20, 60, 40, 0.5);
+      --mob-topbar-bg: linear-gradient(180deg, #040c06 0%, rgba(6, 16, 10, 0.92) 100%);
+      --mob-bottom-fade: linear-gradient(0deg, rgba(4, 12, 8, 0.98) 75%, rgba(4, 12, 8, 0.92) 90%, rgba(4, 12, 8, 0) 100%);
+      --header-text-shadow: 0 2px 14px rgba(100, 190, 130, 0.35);
+      --accent-rgb: 100, 190, 130;
+      --card-text: #e4f4e8;
+      --card-text-muted: #a0c8b0;
+      --verse-quote-color: #f0faf4;
+      --verse-read-color: #e0f0e6;
+      --verse-ref-color: #b8e4c4;
+      --verse-num-color: #8ec8a0;
+      --verse-placeholder-color: rgba(200, 230, 210, 0.68);
+      --btn-accent-text: #061008;
+    }
 
     /* Theme-applied surfaces */
     body {
@@ -2162,6 +2260,12 @@
     }
     .theme-swatch--dark-yellow {
       background: linear-gradient(135deg, #121004, #5c5020 55%, rgba(220, 190, 80, 0.45));
+    }
+    .theme-swatch--dark-black-glass {
+      background: linear-gradient(135deg, #000000, #101012 55%, rgba(180, 180, 190, 0.3));
+    }
+    .theme-swatch--dark-green-glass {
+      background: linear-gradient(135deg, #040c06, #1e4830 55%, rgba(100, 190, 130, 0.4));
     }
     .theme-option-label {
       font-family: 'Cinzel', serif;
@@ -5143,7 +5247,9 @@
     { id: 'dark-red-glass', label: 'Dark Red Glass' },
     { id: 'dark-blue-glass', label: 'Dark Blue Glass' },
     { id: 'dark-brown-beige', label: 'Dark Brown Beige Glass' },
-    { id: 'dark-yellow', label: 'Dark Yellow' }
+    { id: 'dark-yellow', label: 'Dark Yellow' },
+    { id: 'dark-black-glass', label: 'Dark Black Glass' },
+    { id: 'dark-green-glass', label: 'Dark Green Glass' }
   ];
   let _controlPanelOpen = false;
 
