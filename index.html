@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -701,35 +700,38 @@
     .passage-load-error .mob-placeholder {
       margin: 0;
     }
-    .passage-refresh-btn {
-      display: inline-flex;
-      align-items: center;
+    .passage-load-error-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
       justify-content: center;
-      width: 44px;
-      height: 44px;
-      padding: 0;
+      align-items: center;
+    }
+    .passage-action-btn {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
       border: 1px solid var(--gold-dark);
-      border-radius: 50%;
       background: rgba(var(--accent-rgb), 0.12);
       color: var(--gold);
-      cursor: pointer;
-      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-    .passage-refresh-btn:hover,
-    .passage-refresh-btn:focus-visible {
+    .passage-action-btn:hover,
+    .passage-action-btn:focus-visible {
       border-color: var(--gold);
       background: rgba(var(--accent-rgb), 0.22);
       color: var(--gold-light);
       outline: none;
-      transform: rotate(-20deg);
+      transform: translateY(-1px);
     }
-    .passage-refresh-btn:active {
-      transform: rotate(-90deg) scale(0.94);
-    }
-    .passage-refresh-btn svg {
-      display: block;
-      pointer-events: none;
+    .passage-action-btn:active {
+      transform: translateY(0) scale(0.98);
     }
     .verse-text {
       color:var(--verse-quote-color);
@@ -2542,7 +2544,7 @@
       <div class="devotional-inner">
         <div class="devotional-panel-body">
           <h3 class="control-section-title">Preferences</h3>
-          <p class="control-section-hint">Choose your default mode and translation. They apply immediately and are remembered on your device.</p>
+          <p class="control-section-hint">Choose your default mode and translation, then fresh the page.</p>
           <div class="control-pref-grid" role="group" aria-label="Default preferences">
             <div class="control-pref-field">
               <label class="control-pref-label" for="d-default-mode">Default Mode</label>
@@ -2788,7 +2790,7 @@
         <div class="devotional-inner">
           <div class="devotional-panel-body">
             <h3 class="control-section-title">Preferences</h3>
-            <p class="control-section-hint">Choose your default mode and translation. They apply immediately and are remembered on your device.</p>
+            <p class="control-section-hint">Choose your default mode and translation, then refresh the page.</p>
             <div class="control-pref-grid" role="group" aria-label="Default preferences">
               <div class="control-pref-field">
                 <label class="control-pref-label" for="m-default-mode">Default Mode</label>
@@ -5522,6 +5524,7 @@
   /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
   let _customGenIntent = { d: 'random', m: 'random' };
   let _preReadGeneratorState = null;
+  const PASSAGE_ERROR_REFRESH_RESTORE_KEY = 'vg-passage-error-refresh-restore';
   let _versionChangeTimer = null;
   const LANG_BOOK_NAME_MAP = {};
 
@@ -6681,17 +6684,116 @@
     if (counter) counter.style.display = 'none';
   }
 
+  function collectGeneratorStateSnapshot() {
+    if (_preReadGeneratorState) {
+      return {
+        entry: _preReadGeneratorState.entry,
+        history: { d: _preReadGeneratorState.history.d.slice(), m: _preReadGeneratorState.history.m.slice() },
+        future: { d: _preReadGeneratorState.future.d.slice(), m: _preReadGeneratorState.future.m.slice() },
+        verseCount: { d: _preReadGeneratorState.verseCount.d, m: _preReadGeneratorState.verseCount.m },
+        customGenIntent: { d: _preReadGeneratorState.customGenIntent.d, m: _preReadGeneratorState.customGenIntent.m }
+      };
+    }
+    const hasHistory = history.d.length > 0 || history.m.length > 0 || current.d || current.m;
+    if (!hasHistory) return null;
+    return {
+      entry: current[activePanel()] ? cloneVerseEntry(current[activePanel()]) : null,
+      history: { d: history.d.slice(), m: history.m.slice() },
+      future: { d: future.d.slice(), m: future.m.slice() },
+      verseCount: { d: verseCount.d, m: verseCount.m },
+      customGenIntent: { d: _customGenIntent.d, m: _customGenIntent.m }
+    };
+  }
+
+  function hasRestorableGeneratorHistory(state) {
+    if (!state) return false;
+    return !!(state.entry || state.history.d.length || state.history.m.length);
+  }
+
+  function saveGeneratorStateForPassageErrorRefresh() {
+    const state = collectGeneratorStateSnapshot();
+    if (!hasRestorableGeneratorHistory(state)) return;
+    try {
+      sessionStorage.setItem(PASSAGE_ERROR_REFRESH_RESTORE_KEY, JSON.stringify(state));
+    } catch { /* quota / private mode */ }
+  }
+
+  function consumePassageErrorRefreshRestore() {
+    try {
+      const raw = sessionStorage.getItem(PASSAGE_ERROR_REFRESH_RESTORE_KEY);
+      if (!raw) return null;
+      sessionStorage.removeItem(PASSAGE_ERROR_REFRESH_RESTORE_KEY);
+      const state = JSON.parse(raw);
+      return hasRestorableGeneratorHistory(state) ? state : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function refreshPageFromPassageError() {
+    saveGeneratorStateForPassageErrorRefresh();
+    location.reload();
+  }
+
+  async function reloadReadPassage(p) {
+    const bookEn = document.getElementById(p + '-read-book')?.value;
+    if (!bookEn) return;
+    const chapter = parseInt(document.getElementById(p + '-read-chapter')?.value, 10) || 1;
+    const verseVal = document.getElementById(p + '-read-verse')?.value;
+    const version = document.getElementById(p + '-version')?.value;
+    const key = readChapterCacheKey(version, bookEn, chapter);
+    delete readChapterCache[key];
+    _readLoadId[p]++;
+
+    if (verseVal === READ_VERSE_WHOLE) {
+      await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
+      return;
+    }
+    const verse = parseInt(verseVal, 10);
+    if (Number.isNaN(verse)) {
+      await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
+      return;
+    }
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse);
+  }
+
+  async function applyPassageErrorRefreshRestore(state) {
+    history.d = state.history.d.slice();
+    history.m = state.history.m.slice();
+    future.d = state.future.d.slice();
+    future.m = state.future.m.slice();
+    verseCount.d = state.verseCount.d;
+    verseCount.m = state.verseCount.m;
+    _customGenIntent.d = state.customGenIntent.d;
+    _customGenIntent.m = state.customGenIntent.m;
+
+    if (state.entry) {
+      const cloned = cloneVerseEntry(state.entry);
+      current.d = cloned;
+      current.m = cloned;
+      for (const pl of ['d', 'm']) {
+        await renderCurrentEntry(pl, cloned);
+      }
+    } else {
+      current.d = null;
+      current.m = null;
+      for (const pl of ['d', 'm']) {
+        showGeneratorPlaceholder(pl);
+      }
+    }
+    updateCustomSearchUI('d');
+    updateCustomSearchUI('m');
+  }
+
   function passageLoadErrorHtml(p) {
     const cls = p === 'd' ? 'verse-placeholder' : 'mob-placeholder';
     return (
       '<div class="passage-load-error">' +
-        '<p class="' + cls + '">Could not load this passage. try refresh the page</p>' +
-        '<button type="button" class="passage-refresh-btn" onclick="location.reload()" aria-label="Refresh page" title="Refresh page">' +
-          '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-            '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>' +
-            '<path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0 0 20.49 15"/>' +
-          '</svg>' +
-        '</button>' +
+        '<p class="' + cls + '">Could not load this passage. Keep reloading the passage or try refresh the page</p>' +
+        '<div class="passage-load-error-actions">' +
+          '<button type="button" class="passage-action-btn" onclick="reloadReadPassage(\'' + p + '\')">Reload Passage</button>' +
+          '<button type="button" class="passage-action-btn" onclick="refreshPageFromPassageError()">Refresh Page</button>' +
+        '</div>' +
       '</div>'
     );
   }
@@ -8054,6 +8156,17 @@
       document.body.classList.add('has-iab-banner');
     }
 
+    const pendingGeneratorRestore = consumePassageErrorRefreshRestore();
+    if (pendingGeneratorRestore) {
+      ['d', 'm'].forEach(pl => {
+        const sel = document.getElementById(pl + '-testament');
+        if (sel) {
+          sel.value = 'custom';
+          sel.dataset.prevValue = 'custom';
+        }
+      });
+    }
+
     hydrateWeeklyCatalogFromCache();
     if (!_weeklyVersesList.length) {
       _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
@@ -8070,6 +8183,9 @@
     }
 
     await initLayout();
+    if (pendingGeneratorRestore) {
+      await applyPassageErrorRefreshRestore(pendingGeneratorRestore);
+    }
     initVerseSize();
     initReadSwipe();
     bindVerseDisplayOpenReadHandlers();
