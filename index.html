@@ -39,6 +39,8 @@
       --shadow: rgba(42,26,10,0.4);
       --verse-size: 22px;
       --devotional-text-size: 15px;
+      --read-me-text-size: 15px;
+      --legal-text-size: 14px;
       --bg-base: #1a0f05;
       --bg-gradient-a: #2e1a06;
       --bg-gradient-b: #1f0e03;
@@ -2181,8 +2183,199 @@
       -webkit-backdrop-filter: blur(14px);
       animation: fadeUp 0.85s ease 0.18s both;
     }
-    .control-panel-banner.is-open .devotional-chevron svg {
+    .control-panel-banner.is-open .devotional-chevron svg,
+    .read-me-banner.is-open .devotional-chevron svg,
+    .legal-banner.is-open .devotional-chevron svg {
       transform: rotate(180deg);
+    }
+    .read-me-content {
+      font-family: 'EB Garamond', serif;
+      font-size: var(--read-me-text-size);
+      line-height: 1.58;
+      color: var(--parchment);
+      opacity: 0.92;
+      max-height: 55vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      transition: font-size 0.12s ease;
+    }
+    .read-me-content .read-me-h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.78em;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin: 18px 0 10px;
+    }
+    .read-me-content .read-me-h3:first-child { margin-top: 8px; }
+    .read-me-content .read-me-h4 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72em;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 14px 0 8px;
+    }
+    .read-me-banner .devotional-panel-body {
+      padding-top: 4px;
+    }
+    .read-me-banner .devotional-slider-row {
+      margin: 4px 0 10px;
+    }
+    .mob-devotional-banner.read-me-banner .read-me-content {
+      max-height: 50vh;
+    }
+    .read-me-footer {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(201, 168, 76, 0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .read-me-social-icons {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .read-me-footer .social-icon-btn {
+      width: 42px;
+      height: 42px;
+    }
+    .read-me-footer .social-icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    .read-me-created-by {
+      color: rgba(201, 168, 76, 0.45);
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-decoration: none;
+      transition: color 0.2s;
+      cursor: pointer;
+      text-align: center;
+    }
+    .read-me-created-by:hover {
+      color: rgba(201, 168, 76, 0.8);
+    }
+    .mob-devotional-banner.read-me-banner .read-me-footer .social-icon-btn {
+      width: 36px;
+      height: 36px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    .mob-devotional-banner.read-me-banner .read-me-footer .social-icon-btn svg {
+      width: 15px;
+      height: 15px;
+    }
+    .read-me-content .read-me-p {
+      margin: 0 0 11px;
+    }
+    .read-me-content a {
+      color: var(--gold-light);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: color 0.2s ease, opacity 0.2s ease;
+    }
+    .read-me-content a:hover,
+    .read-me-content a:focus-visible {
+      color: var(--gold);
+      opacity: 1;
+    }
+    .read-me-content strong {
+      color: var(--gold-light);
+      font-weight: 600;
+    }
+    .read-me-content em {
+      font-style: italic;
+      opacity: 0.95;
+    }
+    .legal-banner .devotional-panel-body {
+      padding-top: 4px;
+    }
+    .legal-banner .devotional-slider-row {
+      margin: 4px 0 10px;
+    }
+    .legal-content {
+      font-family: 'EB Garamond', serif;
+      font-size: var(--legal-text-size);
+      line-height: 1.55;
+      color: var(--parchment);
+      opacity: 0.92;
+      max-height: 55vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      transition: font-size 0.12s ease;
+    }
+    .mob-devotional-banner.legal-banner .legal-content {
+      max-height: 50vh;
+    }
+    .legal-content .legal-title {
+      font-size: 1.02em;
+      line-height: 1.45;
+      margin: 4px 0 18px;
+      color: var(--gold-light);
+      text-align: center;
+    }
+    .legal-content .legal-title strong {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--gold-light);
+    }
+    .legal-content .legal-h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.92em;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin: 20px 0 10px;
+      padding-top: 4px;
+      border-top: 1px solid rgba(201, 168, 76, 0.14);
+    }
+    .legal-content .legal-h2:first-of-type {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .legal-content .legal-h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8em;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 14px 0 8px;
+    }
+    .legal-content .legal-p {
+      margin: 0 0 10px;
+    }
+    .legal-content .legal-ul {
+      margin: 0 0 12px 1.1em;
+      padding: 0;
+    }
+    .legal-content .legal-li {
+      margin-bottom: 6px;
+    }
+    .legal-content a {
+      color: var(--gold-light);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: color 0.2s ease;
+    }
+    .legal-content a:hover,
+    .legal-content a:focus-visible {
+      color: var(--gold);
+    }
+    .legal-content strong {
+      color: var(--gold-light);
+      font-weight: 600;
     }
     .control-section-title {
       font-family: 'Cinzel', serif;
@@ -2580,21 +2773,68 @@
     </div>
   </div>
 
-  <div class="social-icons" style="display:flex;gap:18px;margin-top:28px;animation:fadeUp 1s ease 0.5s both;">
-    <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-    </a>
-    <a href="https://x.com/G0D15L0VE" target="_blank" class="social-icon-btn" title="X" style="background:#000;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-    </a>
-    <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-    </a>
-    <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub" style="background:#24292e;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-    </a>
+  <!-- Read Me -->
+  <div class="devotional-banner control-panel-banner read-me-banner" id="d-read-me-panel">
+    <button type="button" class="devotional-header" id="d-read-me-toggle" aria-expanded="false" aria-controls="d-read-me-collapse" aria-label="Expand Read Me" onclick="toggleReadMePanel()">
+      <span class="banner-label">Read Me</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-read-me-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body">
+          <div class="devotional-slider-row">
+            <span class="devotional-slider-label">Text Size</span>
+            <input type="range" id="d-read-me-size-slider" min="12" max="24" value="15" oninput="setReadMeTextSize(this.value)" aria-label="Read Me text size">
+          </div>
+          <div class="read-me-content" id="d-read-me-content"></div>
+          <div class="read-me-footer">
+            <div class="read-me-social-icons">
+              <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
+                <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              </a>
+              <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X" style="background:#000;">
+                <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
+                <svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </a>
+              <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub" style="background:#24292e;">
+                <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              </a>
+            </div>
+            <span class="read-me-created-by" role="button" tabindex="0" onclick="openCreatedByModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCreatedByModal();}">Created using Claude &amp; Cursor</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <span onclick="openCreatedByModal()" style="margin-top:14px;margin-bottom:4px;color:rgba(201,168,76,0.45);font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.14em;text-decoration:none;transition:color 0.2s;animation:fadeUp 1s ease 0.7s both;cursor:pointer;" onmouseover="this.style.color='rgba(201,168,76,0.8)'" onmouseout="this.style.color='rgba(201,168,76,0.45)'">Created using Claude &amp; Cursor</span>
+
+  <!-- Copyright & Legal Notice -->
+  <div class="devotional-banner control-panel-banner legal-banner" id="d-legal-panel">
+    <button type="button" class="devotional-header" id="d-legal-toggle" aria-expanded="false" aria-controls="d-legal-collapse" aria-label="Expand Copyright and Legal Notice" onclick="toggleLegalPanel()">
+      <span class="banner-label">Copyright &amp; Legal Notice</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-legal-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body">
+          <div class="devotional-slider-row">
+            <span class="devotional-slider-label">Text Size</span>
+            <input type="range" id="d-legal-size-slider" min="12" max="24" value="14" oninput="setLegalTextSize(this.value)" aria-label="Copyright and legal notice text size">
+          </div>
+          <div class="legal-content" id="d-legal-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ MOBILE VIEW ══════════ -->
@@ -2827,27 +3067,368 @@
         </div>
       </div>
     </div>
+
+    <!-- Read Me (mobile) -->
+    <div class="devotional-banner control-panel-banner read-me-banner mob-devotional-banner" id="m-read-me-panel">
+      <button type="button" class="devotional-header" id="m-read-me-toggle" aria-expanded="false" aria-controls="m-read-me-collapse" aria-label="Expand Read Me" onclick="toggleReadMePanel()">
+        <span class="banner-label">Read Me</span>
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </button>
+      <div class="devotional-collapse" id="m-read-me-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body">
+            <div class="devotional-slider-row">
+              <span class="devotional-slider-label">Text Size</span>
+              <input type="range" id="m-read-me-size-slider" min="12" max="24" value="15" oninput="setReadMeTextSize(this.value)" aria-label="Read Me text size">
+            </div>
+            <div class="read-me-content" id="m-read-me-content"></div>
+            <div class="read-me-footer">
+              <div class="read-me-social-icons">
+                <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
+                  <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+                <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X" style="background:#000;">
+                  <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+                <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
+                  <svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub" style="background:#24292e;">
+                  <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+              </div>
+              <span class="read-me-created-by" role="button" tabindex="0" onclick="openCreatedByModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCreatedByModal();}">Created using Claude &amp; Cursor</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Copyright & Legal Notice (mobile) -->
+    <div class="devotional-banner control-panel-banner legal-banner mob-devotional-banner" id="m-legal-panel">
+      <button type="button" class="devotional-header" id="m-legal-toggle" aria-expanded="false" aria-controls="m-legal-collapse" aria-label="Expand Copyright and Legal Notice" onclick="toggleLegalPanel()">
+        <span class="banner-label">Copyright &amp; Legal Notice</span>
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </button>
+      <div class="devotional-collapse" id="m-legal-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body">
+            <div class="devotional-slider-row">
+              <span class="devotional-slider-label">Text Size</span>
+              <input type="range" id="m-legal-size-slider" min="12" max="24" value="14" oninput="setLegalTextSize(this.value)" aria-label="Copyright and legal notice text size">
+            </div>
+            <div class="legal-content" id="m-legal-content"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="mob-bottom">
     <button class="mob-btn-generate" id="m-generate-btn" onclick="generate('m')">✦ Reveal a Verse ✦</button>
-    <div class="mob-social-icons" style="display:flex;gap:12px;justify-content:center;align-items:center;">
-      <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" class="social-icon-btn mob-social-icon-btn" title="YouTube" style="background:#FF0000;">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-      </a>
-      <a href="https://x.com/G0D15L0VE" target="_blank" class="social-icon-btn mob-social-icon-btn" title="X" style="background:#000;">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-      </a>
-      <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" class="social-icon-btn mob-social-icon-btn" title="Facebook" style="background:#1877F2;">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-      </a>
-      <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="GitHub" style="background:#24292e;">
-        <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-      </a>
-    </div>
-    <span onclick="openCreatedByModal()" style="color:rgba(201,168,76,0.4);font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.14em;text-decoration:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='rgba(201,168,76,0.75)'" onmouseout="this.style.color='rgba(201,168,76,0.4)'">Created using Claude &amp; Cursor</span>
   </div>
 </div>
+
+<script type="text/plain" id="read-me-source">My Bible Verse Generator Project 📖✨
+
+A few years ago, it was my dream to create a website where anyone could freely access God's Word, discover Bible verses, and grow closer to Scripture without ads, subscriptions, or distractions.
+
+At that time, I had no knowledge of coding, HTML, JavaScript, APIs, or website development. Building a website seemed impossible. But thanks to modern AI tools such as Claude AI and Cursor, I was finally able to turn that dream into reality and launch my own Bible web application.
+
+**Philippians 4:8** has always been an inspiration for this project:
+
+*"Finally, brethren, whatsoever things are true, whatsoever things are honest, whatsoever things are just, whatsoever things are pure, whatsoever things are lovely, whatsoever things are of good report; if there be any virtue, and if there be any praise, think on these things."*
+
+The goal of this website is simple: make Bible reading, Bible study, and daily encouragement available to everyone, completely free.
+
+## Features
+
+### 📅 Daily Verse
+
+Every day, the website automatically displays a Bible verse selected for that specific date. This provides users with fresh daily encouragement and a new Scripture to meditate on each day.
+
+### 📖 Verse of the Week
+
+In addition to the daily verse, the website includes a Verse of the Week feature. Each week displays a carefully selected verse along with a short note or reflection. The system automatically follows the calendar and updates throughout the year.
+
+### 🎲 Random Verse Generator
+
+Users can instantly generate random Bible verses with a single click. This feature is perfect for daily inspiration, personal devotion, encouragement, or discovering passages they may not have read before.
+
+### 📚 Generate Verses From Specific Books
+
+Instead of generating verses from the entire Bible, users can choose a specific book such as Psalms, Proverbs, John, Romans, Genesis, Isaiah, and many others. This allows focused study while still enjoying random verse generation.
+
+### 📖 Complete Bible Reader
+
+The website includes a full Bible reading mode that allows users to browse books, chapters, and verses directly within the app. Users can navigate through Scripture without needing another website or application.
+
+### 🌍 Up to 80 Bible Translations
+
+Readers can choose from dozens of Bible translations, making the Bible accessible to people from different backgrounds and reading preferences. Switching translations is quick and synchronized across the application.
+
+### 🔍 Fast Book and Chapter Navigation
+
+Books and chapters can be selected quickly, making it easy to jump to any part of the Bible without endless scrolling or searching.
+
+### 🔠 Adjustable Font Size
+
+Users can increase or decrease text size for better readability, making the website more comfortable for both desktop and mobile users.
+
+### 📋 Copy Verse
+
+Any displayed verse can be copied instantly to the clipboard for note-taking, Bible study, sermons, devotionals, or sharing with friends and family.
+
+### 📱 Share to Social Media
+
+Users can quickly share verses through WhatsApp, X (Twitter), and other sharing options available on their device.
+
+### 🔊 Text-to-Speech Audio
+
+The website can read Bible verses aloud using built-in text-to-speech technology. This helps users who prefer listening, have visual difficulties, or want to hear Scripture while multitasking.
+
+### 🎨 Bible Verse Image Generator
+
+Users can generate shareable images that include the displayed Bible verse. These images can be posted on social media, used as wallpapers, shared with friends, or included in church groups and ministries.
+
+### 📲 Install as an App
+
+The website supports installation directly from the browser. Users can add it to their desktop or mobile home screen, allowing it to function like a dedicated app without needing to download it from an app store. On mobile browsers, users can tap the **three dots menu** and choose **Add to Home screen**. On desktop, users can click the **three dots menu** in the top-right corner, go to **Cast, save and share**, then select **Install page as app**. This method may vary depending on the browser, but it works best on Chrome.
+
+
+### ⚡ Optimized for Speed
+
+The website is designed to load quickly and remain lightweight, even on slower internet connections, providing a smooth experience across different devices.
+
+### 🚫 Completely Free
+
+No subscriptions. No premium plans. No advertisements. No hidden fees. The project was created simply to help people access and engage with God's Word.
+
+## Why I Built It
+
+I built this project because I wanted a simple and distraction-free way for people to discover Scripture, read the Bible, find encouragement, and share God's Word with others.
+
+What started as a dream years ago has become a real website that anyone can use for free.
+
+## Website
+https://linktr.ee/versegenerator
+
+For the best experience, open it in your web browser on desktop or mobile.
+
+## Feedback Welcome 🙏
+
+This project is still growing, and I am constantly improving it. If you try the website and have suggestions, bug reports, feature requests, or ideas for future updates, I would love to hear them.
+
+Every piece of feedback helps make the project better.
+
+If you enjoy the website, please share it with others and help spread God's Word. ✝️📖✨
+
+This HTML project is free to use and edit from your own perspective. However, please do not use it to sell or make money from it. I created this project to help people, and I worked hard writing my prompts and ideas to make the website user-friendly. If you decide to sell it or profit from it against this request, I leave that matter in God's hands.
+
+Contact: sarveshr28@gmail.com</script>
+
+<script type="text/plain" id="legal-notice-source"># Copyright & Bible Translation Notice
+
+## Copyright Notice
+
+This website is a non-commercial educational and devotional resource created for the purpose of Bible study, personal reading, research, and spiritual encouragement.
+
+The Bible translations made available on this website remain the intellectual property of their respective copyright holders, publishers, translators, organizations, and licensors. All trademarks, copyrights, and related rights belong to their respective owners.
+
+No ownership is claimed over any Bible translation displayed on this website unless explicitly stated otherwise.
+
+## Educational and Personal Use
+
+The content provided on this website is intended solely for:
+
+* Personal Bible study
+* Educational purposes
+* Research and reference
+* Religious and devotional use
+* Non-commercial learning activities
+
+This website does not sell, license, redistribute, or commercially exploit any copyrighted Bible translation.
+
+## Translation Sources
+
+Bible translations available through this website may be obtained from publicly accessible sources, APIs, repositories, archives, or publishers that permit access for educational, research, or personal use.
+
+Where applicable, copyright notices and attribution requirements provided by the respective publishers and translation owners are respected and acknowledged.
+
+## Copyright Ownership
+
+All Bible translation texts remain the exclusive property of their respective copyright holders, including but not limited to translation committees, Bible societies, publishers, ministries, and licensing organizations.
+
+Examples may include:
+
+* Crossway
+* Biblica
+* Lockman Foundation
+* Tyndale House Publishers
+* Bible Hub
+* American Bible Society
+* United Bible Societies
+* Christian Standard Bible Publishers
+* Various public-domain translation providers
+
+The inclusion of any translation on this website does not imply ownership, endorsement, partnership, or affiliation with the translation's copyright holder.
+
+## Public Domain Translations
+
+Certain Bible translations may be in the public domain. Public-domain texts are used in accordance with their public-domain status.
+
+## Fair Use and Educational Access
+
+This website operates under the belief that providing limited access to Scripture for personal study, education, research, and devotional purposes serves the public interest and promotes biblical literacy.
+
+If any content is believed to infringe upon copyright or licensing requirements, the website owner will promptly review the matter and take appropriate corrective action.
+
+## Copyright Concerns and Removal Requests
+
+If you are a copyright owner, publisher, translator, or authorized representative and believe that any content on this website infringes your rights or violates licensing requirements, please contact the website administrator with the relevant information.
+
+Upon receiving a valid request, the content will be reviewed and, where appropriate, corrected, credited, restricted, or removed in a timely manner.
+
+## No Commercial Use
+
+This website is provided free of charge and is not intended to generate revenue from copyrighted Bible translations. The primary purpose of the website is educational, devotional, and informational.
+
+## Disclaimer
+
+The website owner makes no representation regarding ownership of third-party Bible translations. Users are encouraged to consult the official publishers and copyright holders for licensing information, permissions, and authorized distribution policies.
+
+By using this website, users acknowledge that all Bible translations remain subject to the copyrights, trademarks, licenses, and legal protections of their respective owners.
+
+# Website Disclaimer
+
+The information, Bible verses, devotionals, translations, and other content provided on this website are intended for educational, informational, devotional, and personal study purposes only.
+
+While reasonable efforts are made to provide accurate Scripture references and content, the website owner makes no warranties regarding the completeness, accuracy, reliability, or availability of any information presented.
+
+Bible translations displayed on this website remain the property of their respective copyright holders.
+
+Users are encouraged to consult official publishers and copyright owners for authoritative editions and licensing information.
+
+This website is provided "as is" without warranties of any kind, either express or implied.
+
+The website owner shall not be liable for any direct, indirect, incidental, consequential, or special damages arising from the use of this website or reliance upon any content contained herein.
+
+By using this website, you acknowledge and agree to this disclaimer.
+
+# Terms of Service
+
+Effective Date: June 2026
+
+By accessing and using this website, you agree to comply with these Terms of Service.
+
+## Acceptable Use
+
+You agree to use this website only for lawful purposes and in a manner that does not interfere with the operation of the website or the rights of other users.
+
+## Intellectual Property
+
+All Bible translations, trademarks, logos, and copyrighted materials remain the property of their respective owners.
+
+The website itself, including its design, layout, functionality, and original content, remains the property of the website owner unless otherwise stated.
+
+## Educational Purpose
+
+This website is intended primarily for:
+
+* Bible study
+* Personal devotion
+* Research
+* Educational use
+
+## Third-Party Content
+
+Some content may be provided through third-party APIs, repositories, or external sources.
+
+The website owner is not responsible for the accuracy, availability, or policies of third-party services.
+
+## Service Availability
+
+The website owner reserves the right to modify, suspend, or discontinue any part of the website at any time without notice.
+
+## Limitation of Liability
+
+To the maximum extent permitted by law, the website owner shall not be liable for any damages resulting from the use or inability to use the website.
+
+## Governing Law
+
+These Terms shall be governed by the applicable laws of the user's jurisdiction and any applicable international copyright laws.
+
+# Privacy Policy
+
+Effective Date: June 2026
+
+This website respects the privacy of its users.
+
+## Information Collection
+
+The website generally does not require users to create accounts or provide personal information.
+
+Any information voluntarily submitted by users may be used solely for responding to inquiries or improving the website.
+
+## Analytics
+
+Anonymous usage statistics may be collected to help improve performance and user experience.
+
+No personally identifiable information is intentionally sold, rented, or shared with third parties.
+
+## Cookies
+
+The website may use browser storage, cookies, or local storage to:
+
+* Remember user preferences
+* Save selected Bible translations
+* Save display settings
+* Improve user experience
+
+## Third-Party Services
+
+Some features may rely on third-party services, APIs, or content providers. Such services may have their own privacy policies.
+
+Users are encouraged to review those policies separately.
+
+## Data Security
+
+Reasonable efforts are made to protect website data, but no internet transmission or electronic storage method can be guaranteed to be completely secure.
+
+## Changes
+
+This Privacy Policy may be updated periodically. Continued use of the website constitutes acceptance of any updates.
+
+# DMCA & Copyright Removal Policy
+
+This website respects the intellectual property rights of others.
+
+If you are a copyright owner or authorized representative and believe that content appearing on this website infringes your copyright, please submit a notice containing:
+
+* Your full name
+* Organization (if applicable)
+* Contact information
+* Identification of the copyrighted work
+* Identification of the allegedly infringing content
+* A statement that you have a good-faith belief the use is unauthorized
+* A statement that the information provided is accurate
+
+Upon receiving a valid copyright notice, the website owner will promptly investigate the matter and may:
+
+* Remove the content
+* Restrict access to the content
+* Add required attribution
+* Take any other appropriate corrective action
+
+The website owner respects legitimate copyright claims and aims to resolve such matters quickly and professionally.</script>
 
 <!-- Hidden background music (YouTube IFrame API) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
@@ -5287,8 +5868,21 @@ async function ensureTranslationLoadedForScope(version, scope) {
   await loadGhTranslationData(version);
 }
 
+function mergeApocryphaBookIds(version, ids) {
+  if (!translationHasApocryphaBooks(version)) return ids;
+  const apoIds = getApocryphaBookIdsForModule(version);
+  const seen = new Set(ids);
+  const merged = [...ids];
+  apoIds.forEach(id => { if (!seen.has(id)) merged.push(id); });
+  merged.sort((a, b) => a - b);
+  return merged;
+}
+
 function pickRandomBookIds(scope, version) {
-  const available = getAvailableBookIds(version);
+  let available = getAvailableBookIds(version);
+  if (!scope.book && !scope.randomScope) {
+    available = mergeApocryphaBookIds(version, available);
+  }
   if (scope.book) {
     const id = BOOK_NUM[scope.book];
     // Always honor an explicit book choice — never widen to OT/NT when apocrypha
@@ -5428,7 +6022,12 @@ function hasFullCanonicalBooks(data) {
 
 function needsApocryphaMergeRefresh(module, data) {
   const base = getApocryphaMergeBaseModule(module);
-  return !!(base && data && !hasFullCanonicalBooks(data));
+  if (!base || !data) return false;
+  if (!hasFullCanonicalBooks(data)) return true;
+  const apoIds = getApocryphaBookIdsForModule(module);
+  if (!apoIds.length) return false;
+  const cached = new Set(data.bookIds || []);
+  return apoIds.some(id => !cached.has(id));
 }
 
 function mergeGhTranslationData(baseData, supplementData) {
@@ -5719,13 +6318,16 @@ async function ensureGhBooksDiscovered(module) {
 
 function getAvailableBookIds(version) {
   version = normalizeGhModuleId(version);
-  if (VERSION_BOOK_IDS_CACHE[version]?.length) return VERSION_BOOK_IDS_CACHE[version];
-  if (GH_BOOK_IDS_BY_MODULE[version]?.length) {
-    VERSION_BOOK_IDS_CACHE[version] = [...GH_BOOK_IDS_BY_MODULE[version]];
-    return VERSION_BOOK_IDS_CACHE[version];
+  let ids;
+  if (VERSION_BOOK_IDS_CACHE[version]?.length) ids = [...VERSION_BOOK_IDS_CACHE[version]];
+  else if (GH_BOOK_IDS_BY_MODULE[version]?.length) {
+    ids = [...GH_BOOK_IDS_BY_MODULE[version]];
+    VERSION_BOOK_IDS_CACHE[version] = ids;
+  } else {
+    const meta = getGhMeta(version);
+    ids = getBookIdsFromTestament(meta?.testament || 'both', { includeApocrypha: !!meta?.hasApocrypha });
   }
-  const meta = getGhMeta(version);
-  return getBookIdsFromTestament(meta?.testament || 'both');
+  return mergeApocryphaBookIds(version, ids);
 }
 
 function getAvailableBooks(version) {
@@ -7014,6 +7616,226 @@ function applyTranslationRtl(version) {
     }
   }
 
+  let _readMePanelOpen = false;
+
+  function formatReadMeInline(text) {
+    let s = escapeHtml(text);
+    s = s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    s = s.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1">$1</a>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    return s;
+  }
+
+  function renderReadMeHtml(raw) {
+    if (!raw) return '';
+    const blocks = raw.trim().split(/\n\n+/);
+    const parts = [];
+    blocks.forEach(block => {
+      const text = block.trim();
+      if (!text) return;
+      if (text.startsWith('## ')) {
+        parts.push(`<h3 class="read-me-h3">${formatReadMeInline(text.slice(3))}</h3>`);
+      } else if (text.startsWith('### ')) {
+        parts.push(`<h4 class="read-me-h4">${formatReadMeInline(text.slice(4))}</h4>`);
+      } else if (/^https?:\/\/\S+$/i.test(text)) {
+        const url = text;
+        parts.push(`<p class="read-me-p"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>`);
+      } else {
+        parts.push(`<p class="read-me-p">${formatReadMeInline(text.replace(/\n/g, ' '))}</p>`);
+      }
+    });
+    return parts.join('');
+  }
+
+  function setReadMePanelOpen(open) {
+    _readMePanelOpen = open;
+    ['d', 'm'].forEach(p => {
+      const panel = document.getElementById(p + '-read-me-panel');
+      const btn = document.getElementById(p + '-read-me-toggle');
+      if (panel) panel.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse Read Me' : 'Expand Read Me');
+      }
+    });
+  }
+
+  function scrollToReadMePanel() {
+    const p = activePanel();
+    const panel = document.getElementById(p + '-read-me-panel');
+    if (!panel) return;
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    const offset = p === 'm' ? 72 : 24;
+    requestAnimationFrame(() => {
+      const top = window.scrollY + panel.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior });
+    });
+  }
+
+  function toggleReadMePanel() {
+    const opening = !_readMePanelOpen;
+    setReadMePanelOpen(opening);
+    if (opening) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToReadMePanel();
+          setTimeout(scrollToReadMePanel, 400);
+        });
+      });
+    }
+  }
+
+  function initReadMePanel() {
+    const source = document.getElementById('read-me-source');
+    const html = renderReadMeHtml(source ? source.textContent : '');
+    ['d-read-me-content', 'm-read-me-content'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+  }
+
+  const READ_ME_TEXT_SIZE_KEY = 'vg-read-me-text-px';
+  const READ_ME_TEXT_SIZE_DEFAULT = 15;
+  const READ_ME_TEXT_SIZE_MIN = 12;
+  const READ_ME_TEXT_SIZE_MAX = 24;
+
+  function setReadMeTextSize(val) {
+    const px = Math.min(
+      READ_ME_TEXT_SIZE_MAX,
+      Math.max(READ_ME_TEXT_SIZE_MIN, Number(val) || READ_ME_TEXT_SIZE_DEFAULT)
+    );
+    document.documentElement.style.setProperty('--read-me-text-size', px + 'px');
+    const dSlider = document.getElementById('d-read-me-size-slider');
+    const mSlider = document.getElementById('m-read-me-size-slider');
+    if (dSlider) dSlider.value = px;
+    if (mSlider) mSlider.value = px;
+    try { localStorage.setItem(READ_ME_TEXT_SIZE_KEY, String(px)); } catch { /* private mode */ }
+  }
+
+  function initReadMeTextSize() {
+    let px = READ_ME_TEXT_SIZE_DEFAULT;
+    try {
+      const saved = localStorage.getItem(READ_ME_TEXT_SIZE_KEY);
+      if (saved != null && saved !== '') {
+        const n = Number(saved);
+        if (!Number.isNaN(n)) px = n;
+      }
+    } catch { /* ignore */ }
+    setReadMeTextSize(px);
+  }
+
+  const LEGAL_NOTICE_TITLE = 'Copyright & Bible Translation Notice | Website Disclaimer | Terms of Service | Privacy Policy | DMCA & Copyright Removal Policy';
+
+  function renderLegalHtml(raw) {
+    if (!raw) return '';
+    const parts = [
+      `<p class="legal-title"><strong>${escapeHtml(LEGAL_NOTICE_TITLE)}</strong></p>`
+    ];
+    const blocks = raw.trim().split(/\n\n+/);
+    blocks.forEach(block => {
+      const text = block.trim();
+      if (!text) return;
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length && lines.every(l => l.startsWith('* '))) {
+        parts.push('<ul class="legal-ul">' + lines.map(l =>
+          `<li class="legal-li">${formatReadMeInline(l.slice(2))}</li>`
+        ).join('') + '</ul>');
+        return;
+      }
+      if (text.startsWith('# ')) {
+        parts.push(`<h2 class="legal-h2">${formatReadMeInline(text.slice(2).split('\n')[0])}</h2>`);
+      } else if (text.startsWith('## ')) {
+        parts.push(`<h3 class="legal-h3">${formatReadMeInline(text.slice(3).split('\n')[0])}</h3>`);
+      } else if (/^https?:\/\/\S+$/i.test(text)) {
+        const url = text;
+        parts.push(`<p class="legal-p"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a></p>`);
+      } else {
+        parts.push(`<p class="legal-p">${formatReadMeInline(text.replace(/\n/g, ' '))}</p>`);
+      }
+    });
+    return parts.join('');
+  }
+
+  let _legalPanelOpen = false;
+
+  function setLegalPanelOpen(open) {
+    _legalPanelOpen = open;
+    ['d', 'm'].forEach(p => {
+      const panel = document.getElementById(p + '-legal-panel');
+      const btn = document.getElementById(p + '-legal-toggle');
+      if (panel) panel.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse Copyright and Legal Notice' : 'Expand Copyright and Legal Notice');
+      }
+    });
+  }
+
+  function scrollToLegalPanel() {
+    const p = activePanel();
+    const panel = document.getElementById(p + '-legal-panel');
+    if (!panel) return;
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    const offset = p === 'm' ? 72 : 24;
+    requestAnimationFrame(() => {
+      const top = window.scrollY + panel.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior });
+    });
+  }
+
+  function toggleLegalPanel() {
+    const opening = !_legalPanelOpen;
+    setLegalPanelOpen(opening);
+    if (opening) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToLegalPanel();
+          setTimeout(scrollToLegalPanel, 400);
+        });
+      });
+    }
+  }
+
+  function initLegalPanel() {
+    const source = document.getElementById('legal-notice-source');
+    const html = renderLegalHtml(source ? source.textContent : '');
+    ['d-legal-content', 'm-legal-content'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+  }
+
+  const LEGAL_TEXT_SIZE_KEY = 'vg-legal-text-px';
+  const LEGAL_TEXT_SIZE_DEFAULT = 14;
+  const LEGAL_TEXT_SIZE_MIN = 12;
+  const LEGAL_TEXT_SIZE_MAX = 24;
+
+  function setLegalTextSize(val) {
+    const px = Math.min(
+      LEGAL_TEXT_SIZE_MAX,
+      Math.max(LEGAL_TEXT_SIZE_MIN, Number(val) || LEGAL_TEXT_SIZE_DEFAULT)
+    );
+    document.documentElement.style.setProperty('--legal-text-size', px + 'px');
+    const dSlider = document.getElementById('d-legal-size-slider');
+    const mSlider = document.getElementById('m-legal-size-slider');
+    if (dSlider) dSlider.value = px;
+    if (mSlider) mSlider.value = px;
+    try { localStorage.setItem(LEGAL_TEXT_SIZE_KEY, String(px)); } catch { /* private mode */ }
+  }
+
+  function initLegalTextSize() {
+    let px = LEGAL_TEXT_SIZE_DEFAULT;
+    try {
+      const saved = localStorage.getItem(LEGAL_TEXT_SIZE_KEY);
+      if (saved != null && saved !== '') {
+        const n = Number(saved);
+        if (!Number.isNaN(n)) px = n;
+      }
+    } catch { /* ignore */ }
+    setLegalTextSize(px);
+  }
+
   function initThemeSystem() {
     buildThemeGrid(document.getElementById('d-theme-grid'));
     buildThemeGrid(document.getElementById('m-theme-grid'));
@@ -7650,7 +8472,12 @@ function applyTranslationRtl(version) {
     _readSyncLock = false;
 
     const end = verseEnd ?? verse;
-    scheduleScrollToReadVerses(p, verse, end, options);
+    // Allow passage DOM to settle after async load before smooth scroll.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToReadVerses(p, verse, end, options);
+      });
+    });
   }
 
   let _readOpenTarget = null;
@@ -7693,10 +8520,17 @@ function applyTranslationRtl(version) {
     if (version) {
       const avail = getAvailableBookIds(version);
       const bookId = BOOK_NUM[parsed.book];
-      if (!avail.includes(bookId)) {
+      if (bookId && !avail.includes(bookId)) {
         const isOt = bookId <= 39;
-        const fallbackId = avail.find(id => (isOt ? id <= 39 : id >= 40)) || avail[0];
-        if (fallbackId) parsed = { ...parsed, book: ALL[fallbackId - 1] };
+        const isNt = bookId >= 40 && bookId <= 66;
+        const isApo = bookId >= 67;
+        const fallbackId = avail.find(id => {
+          if (isOt) return id <= 39;
+          if (isNt) return id >= 40 && id <= 66;
+          if (isApo) return id >= 67;
+          return false;
+        }) || avail[0];
+        if (fallbackId) parsed = { ...parsed, book: bookEnFromId(fallbackId) };
       }
     }
     const verse = parsed.verseStart || 1;
@@ -7770,8 +8604,8 @@ function applyTranslationRtl(version) {
     const scrollToTop = !!options.scrollToTop;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     const avail = getAvailableBookIds(version);
-    const bi = ALL.indexOf(bookEn);
-    if (bi < 0 || !avail.includes(bi + 1)) {
+    const bookId = BOOK_NUM[bookEn];
+    if (!bookId || !avail.includes(bookId)) {
       bookEn = getFirstAvailableBook(version);
       chapter = 1;
     }
@@ -9873,6 +10707,10 @@ function applyTranslationRtl(version) {
     void loadDevotionalsCatalog();
     initDevotionalTextSize();
     initThemeSystem();
+    initReadMePanel();
+    initReadMeTextSize();
+    initLegalPanel();
+    initLegalTextSize();
     initDefaultPreferencesUI();
   }
 
