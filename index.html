@@ -180,7 +180,7 @@
     .votd-panel, .weekly-banner {
       width:100%; max-width:760px;
       border-radius:10px;
-      margin-bottom:14px;
+      margin-bottom:6px;
       animation: fadeUp 0.8s ease 0.1s both;
       position: relative;
       padding: 0;
@@ -325,7 +325,7 @@
       width: 100%;
       max-width: 760px;
       border-radius: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 6px;
       background: linear-gradient(135deg, #181008, #241608);
       border: 1px solid rgba(201,168,76,0.22);
       animation: fadeUp 0.8s ease 0.12s both;
@@ -943,6 +943,18 @@
     .fav-empty { text-align:center; color:var(--card-text-muted); font-style:italic; opacity:0.72; font-size:0.9rem; }
 
     /* Social icon buttons */
+    .social-icons,
+    .mob-social-icons {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .social-icons {
+      margin-top: 28px;
+      animation: fadeUp 1s ease 0.5s both;
+    }
     .social-icon-btn {
       display: inline-flex;
       align-items: center;
@@ -951,8 +963,14 @@
       height: 46px;
       border-radius: 50%;
       text-decoration: none;
+      flex-shrink: 0;
       transition: transform 0.2s, box-shadow 0.2s;
       box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+    }
+    .social-icon-btn svg {
+      width: 20px;
+      height: 20px;
+      display: block;
     }
     .social-icon-btn:hover {
       transform: translateY(-3px) scale(1.08);
@@ -964,8 +982,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .mob-bottom .mob-social-icon-btn svg {
-      width: 15px;
-      height: 15px;
+      width: 18px;
+      height: 18px;
     }
     .mob-bottom .mob-social-icon-btn:hover {
       transform: translateY(-2px) scale(1.05);
@@ -1165,8 +1183,14 @@
       padding: 14px 14px 190px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 6px;
       overflow-y: auto;
+    }
+    .mob-content > .votd-panel,
+    .mob-content > .weekly-banner,
+    .mob-content > .devotional-banner,
+    .mob-content > .control-panel-banner {
+      margin-bottom: 0;
     }
 
     /* Mobile Verse of the Day / weekly banners */
@@ -2177,11 +2201,24 @@
       width: 100%;
       max-width: 760px;
       border-radius: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 6px;
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       animation: fadeUp 0.85s ease 0.18s both;
+    }
+    #d-devotional-banner,
+    #m-devotional-banner {
+      margin-bottom: 12px;
+    }
+    .mob-content > #m-devotional-banner {
+      margin-bottom: 0;
+    }
+    .legal-banner {
+      margin-bottom: 12px;
+    }
+    .mob-content > .legal-banner {
+      margin-bottom: 0;
     }
     .control-panel-banner.is-open .devotional-chevron svg,
     .read-me-banner.is-open .devotional-chevron svg,
@@ -2791,23 +2828,6 @@
             <input type="range" id="d-read-me-size-slider" min="12" max="24" value="15" oninput="setReadMeTextSize(this.value)" aria-label="Read Me text size">
           </div>
           <div class="read-me-content" id="d-read-me-content"></div>
-          <div class="read-me-footer">
-            <div class="read-me-social-icons">
-              <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
-                <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              </a>
-              <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X" style="background:#000;">
-                <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
-                <svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              </a>
-              <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub" style="background:#24292e;">
-                <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-              </a>
-            </div>
-            <span class="read-me-created-by" role="button" tabindex="0" onclick="openCreatedByModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCreatedByModal();}">Created using Claude &amp; Cursor</span>
-          </div>
         </div>
       </div>
     </div>
@@ -2835,6 +2855,25 @@
       </div>
     </div>
   </div>
+
+  <div class="social-icons">
+    <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+    </a>
+    <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X" style="background:#000;">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    </a>
+    <a href="https://sarhveshracktoo.github.io/versegenerator/" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Verse Generator" style="background:#24292e;">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <a href="https://www.whatsapp.com/channel/0029Vb8CD7bFi8xfs47HRF1w" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="WhatsApp Channel" style="background:#25D366;">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+  </div>
+  <span onclick="openCreatedByModal()" style="margin-top:14px;margin-bottom:4px;color:rgba(201,168,76,0.45);font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.14em;text-decoration:none;transition:color 0.2s;animation:fadeUp 1s ease 0.7s both;cursor:pointer;" onmouseover="this.style.color='rgba(201,168,76,0.8)'" onmouseout="this.style.color='rgba(201,168,76,0.45)'">Created using Claude &amp; Cursor</span>
 </div>
 
 <!-- ══════════ MOBILE VIEW ══════════ -->
@@ -3086,23 +3125,6 @@
               <input type="range" id="m-read-me-size-slider" min="12" max="24" value="15" oninput="setReadMeTextSize(this.value)" aria-label="Read Me text size">
             </div>
             <div class="read-me-content" id="m-read-me-content"></div>
-            <div class="read-me-footer">
-              <div class="read-me-social-icons">
-                <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="YouTube" style="background:#FF0000;">
-                  <svg viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                </a>
-                <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X" style="background:#000;">
-                  <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                </a>
-                <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Facebook" style="background:#1877F2;">
-                  <svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                </a>
-                <a href="https://github.com/sarhveshracktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub" style="background:#24292e;">
-                  <svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                </a>
-              </div>
-              <span class="read-me-created-by" role="button" tabindex="0" onclick="openCreatedByModal()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCreatedByModal();}">Created using Claude &amp; Cursor</span>
-            </div>
           </div>
         </div>
       </div>
@@ -3134,6 +3156,24 @@
 
   <div class="mob-bottom">
     <button class="mob-btn-generate" id="m-generate-btn" onclick="generate('m')">✦ Reveal a Verse ✦</button>
+    <div class="mob-social-icons">
+      <a href="https://www.youtube.com/@G0D15L0VE/shorts?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="YouTube" style="background:#FF0000;">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+      <a href="https://x.com/G0D15L0VE" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="X" style="background:#000;">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a href="https://www.facebook.com/Sarvesh.Racktoo" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="Facebook" style="background:#1877F2;">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <a href="https://sarhveshracktoo.github.io/versegenerator/" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="Verse Generator" style="background:#24292e;">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A8.02 8.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+      <a href="https://www.whatsapp.com/channel/0029Vb8CD7bFi8xfs47HRF1w" target="_blank" rel="noopener noreferrer" class="social-icon-btn mob-social-icon-btn" title="WhatsApp Channel" style="background:#25D366;">
+        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+    </div>
+    <span onclick="openCreatedByModal()" style="color:rgba(201,168,76,0.4);font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:0.14em;text-decoration:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='rgba(201,168,76,0.75)'" onmouseout="this.style.color='rgba(201,168,76,0.4)'">Created using Claude &amp; Cursor</span>
   </div>
 </div>
 
@@ -3738,7 +3778,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Amharic Bible",
       "abbreviation": "AMH",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Amharic/am_amh.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -3882,7 +3922,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Aramaic Bible in Plain English",
       "abbreviation": "ABPE",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ABPE.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -3966,7 +4006,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Bible in Simple Terms",
       "abbreviation": "BST",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BST.json",
-      "testament": "both",
+      "testament": "old",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -4098,7 +4138,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "GODBEY NT",
       "abbreviation": "GODBEYNT",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Godbey%20NT.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -4242,7 +4282,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Moffatt New Translation",
       "abbreviation": "MNT",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/MNT.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -4386,7 +4426,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Phillips New Testament",
       "abbreviation": "PHBT",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/PHBT.json",
-      "testament": "new",
+      "testament": "old",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -4674,7 +4714,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Hausa Bible (Literal)",
       "abbreviation": "HALIT",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hausa/ha_lit.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -5046,7 +5086,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Reina-Valera (1858)",
       "abbreviation": "RV1858",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/rv_1858.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -5106,7 +5146,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "translationName": "Swahili Bible",
       "abbreviation": "SWAHILI",
       "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Swahili/swahili.json",
-      "testament": "both",
+      "testament": "new",
       "isRTL": false,
       "hasApocrypha": false
     },
@@ -5715,9 +5755,13 @@ function resolveBookEnFromRaw(bookRaw, langHint) {
   }
   let bookEn = ALL.find(b => normalizeBookNameForMatch(b) === lower);
   if (bookEn) return bookEn;
+  const apoEn = APOCRYPHA.find(b => normalizeBookNameForMatch(b) === lower);
+  if (apoEn) return apoEn;
+  const aliasEarly = BOOK_NAME_ALIASES[lower];
+  if (aliasEarly) return aliasEarly;
   bookEn = ALL.find(b => {
     const en = normalizeBookNameForMatch(b);
-    return en.startsWith(lower) || lower.startsWith(en);
+    return en === lower || en.startsWith(lower);
   });
   if (bookEn) return bookEn;
   const frAll = [...OT_FR, ...NT_FR];
@@ -5738,6 +5782,9 @@ function resolveBookEnFromRaw(bookRaw, langHint) {
       }
     }
   }
+  const alias = BOOK_NAME_ALIASES[lower];
+  if (alias) return alias;
+  if (BOOK_NUM[bookRaw]) return bookRaw;
   return null;
 }
 
@@ -6112,9 +6159,9 @@ function normalizeGhBibleJson(raw, meta) {
     const chNum = parseInt(chapter, 10);
     const vNum = parseInt(verse, 10);
     if (!bookEn || !BOOK_NUM[bookEn] || !Number.isFinite(chNum) || !Number.isFinite(vNum)) return;
+    const book = ensureBook(bookEn, localizedName);
     const clean = cleanGhText(text);
     if (!clean) return;
-    const book = ensureBook(bookEn, localizedName);
     const chKey = String(chNum);
     const vKey = String(vNum);
     if (!book.chapters[chKey]) book.chapters[chKey] = {};
@@ -6125,8 +6172,13 @@ function normalizeGhBibleJson(raw, meta) {
   }
 
   function bookFromAny(value) {
-    const asNum = parseInt(value, 10);
-    if (Number.isFinite(asNum) && asNum >= 1 && asNum <= 66) return ALL[asNum - 1];
+    if (value == null) return null;
+    const str = String(value).trim();
+    if (/^\d+$/.test(str)) {
+      const asNum = parseInt(str, 10);
+      if (asNum >= 1 && asNum <= 66) return ALL[asNum - 1];
+      if (asNum >= 67) return APOCRYPHA[asNum - 67] || null;
+    }
     return resolveBookEnFromRaw(value) || (BOOK_NUM[value] ? value : null);
   }
 
@@ -7271,6 +7323,8 @@ function applyTranslationRtl(version) {
   let _devotionalLoadPromise = null;
   let _devotionalOpen = false;
   let _devotionalRenderedKey = null;
+  let _devotionalScriptureCache = {};
+  let _devotionalScriptureLoadId = 0;
 
   function getDevotionalDateKey(date) {
     const d = date || new Date();
@@ -7374,7 +7428,121 @@ function applyTranslationRtl(version) {
     return paragraphs.map(p => '<p class="devotional-prose">' + escapeHtml(p) + '</p>').join('');
   }
 
-  function paintDevotionalPanels(entry) {
+  function parseDevotionalScriptureRef(scripture) {
+    const s = String(scripture || '').trim();
+    if (!s) return null;
+    let refPart = '';
+    const lastQuote = s.lastIndexOf('"');
+    if (lastQuote >= 0 && lastQuote < s.length - 1) {
+      refPart = s.slice(lastQuote + 1).trim();
+    }
+    if (!refPart) {
+      const m = s.match(/\s+([1-3]?\s*[A-Za-z][A-Za-z.\s]*?)\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\s*$/);
+      if (m) refPart = `${m[1].trim()} ${m[2]}:${m[3].replace(/\s/g, '')}`;
+    }
+    if (!refPart) return null;
+    const parsed = parseReferenceSearch(refPart) || parseReferenceLoose(refPart, 'en');
+    if (!parsed?.book || parsed.chapter == null || parsed.wholeChapter) return null;
+    const ref = buildRefFromParsed(parsed);
+    return ref ? { ...parsed, ref } : null;
+  }
+
+  function formatDevotionalScriptureRefUpper(ref) {
+    const m = String(ref || '').match(/^(.+?)\s+(\d+:\d+(?:-\d+)?)$/);
+    if (!m) return String(ref || '').toUpperCase();
+    return `${m[1].toUpperCase()} ${m[2]}`;
+  }
+
+  function formatDevotionalScriptureLine(text, ref, kjvFallback) {
+    const quote = String(text || '').trim();
+    const displayRef = formatDevotionalScriptureRefUpper(ref);
+    let line = `"${quote}" ${displayRef}`;
+    if (kjvFallback) line += ' · KJV';
+    return line;
+  }
+
+  async function fetchDevotionalScriptureText(version, parsed) {
+    const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
+    const result = await withTimeout(
+      fetchGhPassageVerses(version, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd),
+      bannerTimeout,
+      null
+    );
+    if (!result?.verses?.length) return null;
+    const text = result.verses.map(v => v.text).join(' ').trim();
+    if (!verseFetchHasText({ text })) return null;
+    return { text, ref: result.ref || parsed.ref };
+  }
+
+  async function resolveDevotionalScriptureForTranslation(version, scriptureRaw) {
+    const original = String(scriptureRaw || '').trim();
+    if (!original) return { display: '', kjvFallback: false };
+
+    const parsed = parseDevotionalScriptureRef(original);
+    if (!parsed) return { display: original, kjvFallback: false };
+
+    version = normalizeGhModuleId(version || VOTD_KJV_VERSION);
+
+    let fetched = await fetchDevotionalScriptureText(version, parsed);
+    if (fetched?.text) {
+      return {
+        display: formatDevotionalScriptureLine(fetched.text, fetched.ref || parsed.ref, false),
+        kjvFallback: false
+      };
+    }
+
+    if (!isKjvLikeVersion(version)) {
+      fetched = await fetchDevotionalScriptureText(VOTD_KJV_VERSION, parsed);
+      if (fetched?.text) {
+        return {
+          display: formatDevotionalScriptureLine(fetched.text, fetched.ref || parsed.ref, true),
+          kjvFallback: true
+        };
+      }
+    }
+
+    return { display: original, kjvFallback: !isKjvLikeVersion(version) };
+  }
+
+  function paintDevotionalScripture(resolved) {
+    const line = typeof resolved === 'string' ? resolved : resolved?.display || '';
+    ['d', 'm'].forEach(p => {
+      const scriptEl = document.getElementById(p + '-devotional-scripture');
+      if (!scriptEl) return;
+      scriptEl.textContent = line;
+      scriptEl.style.display = line ? '' : 'none';
+    });
+  }
+
+  async function refreshDevotionalScripture(version, opts) {
+    opts = opts || {};
+    version = normalizeGhModuleId(version || document.getElementById('d-version')?.value || VOTD_KJV_VERSION);
+    await loadDevotionalsCatalog();
+    const entry = getTodaysDevotionalEntry();
+    if (!entry?.scripture) {
+      paintDevotionalScripture('');
+      return;
+    }
+
+    const cacheKey = getDevotionalDateKey() + ':' + version;
+    if (_devotionalScriptureCache[cacheKey] && !opts.force) {
+      paintDevotionalScripture(_devotionalScriptureCache[cacheKey]);
+      return;
+    }
+
+    const loadId = ++_devotionalScriptureLoadId;
+    if (_devotionalOpen && opts.showLoading !== false) {
+      paintDevotionalScripture('Loading scripture…');
+    }
+
+    const resolved = await resolveDevotionalScriptureForTranslation(version, entry.scripture);
+    if (loadId !== _devotionalScriptureLoadId) return;
+
+    _devotionalScriptureCache[cacheKey] = resolved;
+    paintDevotionalScripture(resolved);
+  }
+
+  function paintDevotionalPanels(entry, version) {
     if (!entry) {
       ['d', 'm'].forEach(p => {
         const dateEl = document.getElementById(p + '-devotional-date');
@@ -7395,33 +7563,32 @@ function applyTranslationRtl(version) {
       ? entry.month_name + ' ' + entry.day
       : getDevotionalDateKey();
     const title = (entry.title || '').trim();
-    const scripture = (entry.scripture || '').trim();
     const bodyHtml = formatDevotionalBodyHtml(entry.body);
 
     ['d', 'm'].forEach(p => {
       const dateEl = document.getElementById(p + '-devotional-date');
       const titleEl = document.getElementById(p + '-devotional-title');
-      const scriptEl = document.getElementById(p + '-devotional-scripture');
       const contentEl = document.getElementById(p + '-devotional-content');
       if (dateEl) dateEl.textContent = dateLine;
       if (titleEl) {
         titleEl.textContent = title || 'Daily Devotional';
         titleEl.style.display = '';
       }
-      if (scriptEl) {
-        scriptEl.textContent = scripture;
-        scriptEl.style.display = scripture ? '' : 'none';
-      }
       if (contentEl) contentEl.innerHTML = bodyHtml;
     });
     _devotionalRenderedKey = getDevotionalDateKey();
+    void refreshDevotionalScripture(version, { showLoading: false });
   }
 
   async function ensureTodaysDevotionalPainted() {
     const todayKey = getDevotionalDateKey();
-    if (_devotionalRenderedKey === todayKey && _devotionalsMap) return;
+    const version = normalizeGhModuleId(document.getElementById('d-version')?.value || VOTD_KJV_VERSION);
+    if (_devotionalRenderedKey === todayKey && _devotionalsMap) {
+      await refreshDevotionalScripture(version, { showLoading: false });
+      return;
+    }
     await loadDevotionalsCatalog();
-    paintDevotionalPanels(getTodaysDevotionalEntry());
+    paintDevotionalPanels(getTodaysDevotionalEntry(), version);
   }
 
   function setDevotionalPanelOpen(open) {
@@ -9894,6 +10061,7 @@ function applyTranslationRtl(version) {
     const inRead = isReadBibleMode(active);
     await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead });
     await loadVotdAndWeekly(version);
+    await refreshDevotionalScripture(version);
 
     const other = active === 'd' ? 'm' : 'd';
     const tActive = document.getElementById(active + '-testament');
@@ -10704,7 +10872,7 @@ function applyTranslationRtl(version) {
     prefetchGhTranslation(version);
 
     void preloadBannerVerses(version, { silent: true });
-    void loadDevotionalsCatalog();
+    void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
     initDevotionalTextSize();
     initThemeSystem();
     initReadMePanel();
@@ -10719,7 +10887,10 @@ function applyTranslationRtl(version) {
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
     if (_votdMeta.dateKey && _votdMeta.dateKey !== getVotdDateKey()) {
       _votdDisplayCache = {};
+      _devotionalScriptureCache = {};
+      _devotionalRenderedKey = null;
       void preloadBannerVerses(version, { silent: true });
+      void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
     }
   });
 
