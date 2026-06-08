@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5927,7 +5928,7 @@ function parseReferenceLoose(query, langHint) {
   return { book: bookEn, chapter, verseStart: null, verseEnd: null, wholeChapter: true };
 }
 
-function attachGeneratorPassageMeta(entry, bookEn, chapter, verseNum, bookId) {
+function attachGeneratorPassageMeta(entry, bookEn, chapter, verseNum, bookId, verseEnd) {
   if (!entry) return entry;
   const bid = bookId ?? entry.bssBookId;
   const standaloneBook = bid != null && bid >= APOCRYPHA_STANDALONE_ID_START ? bookEn : null;
@@ -5937,18 +5938,59 @@ function attachGeneratorPassageMeta(entry, bookEn, chapter, verseNum, bookId) {
     (entry.bookName ? resolveBookEnFromRaw(entry.bookName, langHint) : null);
   if (!bookEn || chapter == null || verseNum == null) return entry;
   const verseStart = parseInt(verseNum, 10);
+  const verseEndNum = verseEnd != null ? parseInt(verseEnd, 10) : verseStart;
   if (bid != null) entry.bssBookId = parseInt(bid, 10);
   entry.passageParsed = {
     book: bookEn,
     chapter: parseInt(chapter, 10),
     verseStart,
-    verseEnd: verseStart
+    verseEnd: verseEndNum
   };
   entry.genBook = bookEn;
   entry.genChapter = entry.passageParsed.chapter;
   entry.genVerse = verseStart;
   entry.canonicalRef = buildRefFromParsed(entry.passageParsed);
   return entry;
+}
+
+function pickRandomVerseCount() {
+  const r = Math.random();
+  if (r < 0.4) return 1;
+  if (r < 0.7) return 2;
+  return 3;
+}
+
+function collectConsecutiveVersesFrom(chapterData, startVerse, maxCount) {
+  const verses = [];
+  let v = parseInt(startVerse, 10);
+  if (!Number.isFinite(v) || maxCount < 1) return verses;
+  while (verses.length < maxCount) {
+    const text = chapterData[String(v)];
+    if (!text) break;
+    verses.push({ num: v, text });
+    v++;
+  }
+  return verses;
+}
+
+function buildGeneratorEntryFromVerses(module, bookEn, chapter, verses, bookId, bookName) {
+  const start = verses[0].num;
+  const end = verses[verses.length - 1].num;
+  const text = verses.length === 1 ? verses[0].text : verses.map(v => v.text).join(' ');
+  const ref = start === end
+    ? `${bookName} ${chapter}:${start}`
+    : `${bookName} ${chapter}:${start}-${end}`;
+  const entry = {
+    text,
+    ref,
+    version: module,
+    bookName,
+    bssBookId: bookId,
+    chapter,
+    verse: start,
+    genVerses: verses.length > 1 ? verses : undefined
+  };
+  return attachGeneratorPassageMeta(entry, bookEn, chapter, start, bookId, end);
 }
 
 function ensureGeneratorEntryMeta(entry) {
@@ -6710,14 +6752,16 @@ async function fetchRandomApocryphaStandaloneVerse(module, scope, attempt = 0) {
     if (attempt > 8) return null;
     return fetchRandomApocryphaStandaloneVerse(module, scope, attempt + 1);
   }
-  const vKey = vKeys[Math.floor(Math.random() * vKeys.length)];
-  const verse = parseInt(vKey, 10);
-  const text = bookData.chapters[chKey][vKey];
+  const desiredCount = pickRandomVerseCount();
+  const startVerse = parseInt(vKeys[Math.floor(Math.random() * vKeys.length)], 10);
+  const verses = collectConsecutiveVersesFrom(bookData.chapters[chKey], startVerse, desiredCount);
+  if (!verses.length) {
+    if (pinnedBook) return null;
+    if (attempt > 8) return null;
+    return fetchRandomApocryphaStandaloneVerse(module, scope, attempt + 1);
+  }
   const bookName = getGhLocalizedBookName(module, bookKey);
-  const ref = `${bookName} ${chapter}:${verse}`;
-  return attachGeneratorPassageMeta({
-    text, ref, version: module, bookName, bssBookId: bookData.bookId, chapter, verse
-  }, bookKey, chapter, verse, bookData.bookId);
+  return buildGeneratorEntryFromVerses(module, bookKey, chapter, verses, bookData.bookId, bookName);
 }
 
 async function fetchRandomGhVerse(module, scope, attempt = 0) {
@@ -6750,12 +6794,15 @@ async function fetchRandomGhVerse(module, scope, attempt = 0) {
     if (pinnedBook) return null;
     return fetchRandomGhVerse(module, scope, attempt + 1);
   }
-  const vKey = vKeys[Math.floor(Math.random() * vKeys.length)];
-  const verse = parseInt(vKey, 10);
-  const text = bookData.chapters[chKey][vKey];
+  const desiredCount = pickRandomVerseCount();
+  const startVerse = parseInt(vKeys[Math.floor(Math.random() * vKeys.length)], 10);
+  const verses = collectConsecutiveVersesFrom(bookData.chapters[chKey], startVerse, desiredCount);
+  if (!verses.length) {
+    if (pinnedBook) return null;
+    return fetchRandomGhVerse(module, scope, attempt + 1);
+  }
   const bookName = getGhLocalizedBookName(module, bookEn);
-  const ref = `${bookName} ${chapter}:${verse}`;
-  return attachGeneratorPassageMeta({ text, ref, version: module, bookName, bssBookId: bookId, chapter, verse }, bookEn, chapter, verse, bookId);
+  return buildGeneratorEntryFromVerses(module, bookEn, chapter, verses, bookId, bookName);
 }
 
 async function fetchBssPassageVerses(module, reference, filterStart, filterEnd) {
@@ -10225,14 +10272,18 @@ function applyTranslationRtl(version) {
       } catch { /* use fallback */ }
     }
     const cleanText = entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
-    const safeText = escapeHtml(cleanText);
+    const multiVerse = entry.genVerses?.length > 1;
+    const safeText = multiVerse ? formatVersesHtml(entry.genVerses) : escapeHtml(cleanText);
+    const textClass = multiVerse
+      ? (isDesk ? 'verse-text read-mode read-passage-text' : 'mob-verse-text read-mode read-passage-text')
+      : (isDesk ? 'verse-text' : 'mob-verse-text');
     const label = escapeHtml(getTranslationLabel(entry.version, entry.genBook || entry.passageParsed?.book));
     const safeRef = escapeHtml(entry.ref);
     const reveal = verseRevealClass();
     display.classList.remove('loading');
     display.innerHTML = isDesk
-      ? `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="verse-text">${safeText}</p><p class="verse-ref">${safeRef} &nbsp;·&nbsp; ${label}</p></div>`
-      : `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="mob-verse-text">${safeText}</p><p class="mob-verse-ref">${safeRef} · ${label}</p></div>`;
+      ? `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="${textClass}">${safeText}</p><p class="verse-ref">${safeRef} &nbsp;·&nbsp; ${label}</p></div>`
+      : `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="${textClass}">${safeText}</p><p class="mob-verse-ref">${safeRef} · ${label}</p></div>`;
 
     document.getElementById(p+'-actions').style.display = 'flex';
     setReadModeActions(p, false);
@@ -10724,8 +10775,9 @@ function applyTranslationRtl(version) {
   function getSpeakableText(p) {
     const entry = current[p];
     if (!entry) return '';
-    if (entry.readVerses?.length) {
-      return entry.readVerses.map(v => v.text).join(' ') + '. ' + entry.ref;
+    const verses = entry.readVerses || entry.genVerses;
+    if (verses?.length) {
+      return verses.map(v => v.text).join(' ') + '. ' + entry.ref;
     }
     return `${entry.text}. ${entry.ref}.`;
   }
@@ -10791,8 +10843,9 @@ function applyTranslationRtl(version) {
   ];
 
   function getImageSourceText(entry) {
-    if (entry.readVerses?.length) {
-      return entry.readVerses.map(v => `${v.num} ${v.text}`).join(' ');
+    const verses = entry.readVerses || entry.genVerses;
+    if (verses?.length) {
+      return verses.map(v => `${v.num} ${v.text}`).join(' ');
     }
     return entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
   }
@@ -10892,7 +10945,7 @@ function applyTranslationRtl(version) {
   function computeVerseImageLayout(ctx, entry) {
     const W = 1080;
     const rawText = getImageSourceText(entry);
-    const verses = entry.readVerses || [];
+    const verses = entry.readVerses || entry.genVerses || [];
     const verseCount = verses.length;
     const usePortrait = verseCount > 5;
     const maxW = W - 130;
