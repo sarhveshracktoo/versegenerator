@@ -938,6 +938,15 @@
     #d-mode-panel.hbv-desktop-mode > .control-group:first-child select {
       width: 100%;
     }
+    #m-mode-panel.hbv-mobile-mode {
+      grid-template-columns: 1fr;
+    }
+    #m-mode-panel.hbv-mobile-mode > .mob-field:first-child {
+      grid-column: 1 / -1;
+    }
+    #m-mode-panel.hbv-mobile-mode > .mob-field:first-child .mob-select {
+      width: 100%;
+    }
     .mob-hbv-actions {
       display: none;
       flex-wrap: wrap;
@@ -8859,6 +8868,11 @@ function applyTranslationRtl(version) {
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
     if (genBtn) genBtn.textContent = hbvMode ? 'Generate' : (getUiStrings(getTranslationLang(document.getElementById(p + '-version')?.value)).generate || '✦ Reveal a Verse ✦');
     if (p === 'd') applyHbvDesktopLayout(hbvMode);
+    if (p === 'm') {
+      const isMobile = document.body.classList.contains('layout-mobile');
+      const mobPanel = document.getElementById('m-mode-panel');
+      if (mobPanel) mobPanel.classList.toggle('hbv-mobile-mode', isMobile && hbvMode);
+    }
   }
 
   let _readSyncLock = false;
