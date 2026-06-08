@@ -879,6 +879,57 @@
     }
     .read-mode-actions-hidden { display: none !important; }
 
+    /* Hardest Bible Verse Generator */
+    .hbv-image-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 4px 0 8px;
+    }
+    .hbv-frame {
+      display: inline-block;
+      max-width: 100%;
+      padding: 12px;
+      background: linear-gradient(145deg, rgba(201,168,76,0.14), rgba(139,104,32,0.06));
+      border: 3px solid var(--gold-dark);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--gold), inset 0 0 14px rgba(201,168,76,0.1);
+      position: relative;
+    }
+    .hbv-frame::before,
+    .hbv-frame::after {
+      content: '✦';
+      position: absolute;
+      color: var(--gold);
+      font-size: 0.85rem;
+      opacity: 0.75;
+      line-height: 1;
+    }
+    .hbv-frame::before { top: -9px; left: 50%; transform: translateX(-50%); }
+    .hbv-frame::after { bottom: -9px; left: 50%; transform: translateX(-50%); }
+    .hbv-image {
+      display: block;
+      max-width: 100%;
+      max-height: min(70vh, 520px);
+      width: auto;
+      height: auto;
+      border-radius: 2px;
+      border: 1px solid rgba(139,104,32,0.35);
+    }
+    .hbv-actions {
+      display: none;
+      gap: 8px;
+      margin-top: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .mob-hbv-actions {
+      display: none;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
     /* Action buttons */
     .verse-actions { display:flex; gap:8px; margin-top:16px; justify-content:center; flex-wrap:wrap; }
     .btn-action {
@@ -2669,6 +2720,7 @@
         <select id="d-testament" onchange="updateBooks('d')">
           <option value="custom" selected>Verse Generator</option>
           <option value="read">Read Bible</option>
+          <option value="hbv">Hardest Bible Verse Generator</option>
         </select>
       </div>
       <div class="control-group">
@@ -2737,6 +2789,12 @@
       <p class="verse-placeholder">Click above to receive the Word…</p>
     </div>
 
+    <div class="hbv-actions" id="d-hbv-actions">
+      <button class="btn-action" id="d-hbv-prev-btn" onclick="showPrev('d')" disabled>◀ Previous</button>
+      <button class="btn-action" id="d-hbv-save-btn" onclick="saveHbvImage('d')">⬇ Save</button>
+      <button class="btn-action" id="d-hbv-next-btn" onclick="showNext('d')" disabled>Next ▶</button>
+    </div>
+
     <div class="image-wrap" id="d-imageWrap">
       <canvas id="d-imageCanvas"></canvas>
       <div class="image-action-row">
@@ -2783,6 +2841,7 @@
               <select id="d-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
                 <option value="custom">Verse Generator</option>
                 <option value="read">Read Bible</option>
+                <option value="hbv">Hardest Bible Verse Generator</option>
               </select>
             </div>
             <div class="control-pref-field">
@@ -2971,6 +3030,7 @@
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
             <option value="custom" selected>Verse Generator</option>
             <option value="read">Read Bible</option>
+            <option value="hbv">Hardest Bible Verse Generator</option>
           </select>
         </div>
         <div class="mob-field">
@@ -3037,6 +3097,12 @@
         <p class="mob-placeholder">Tap the button below to receive the Word…</p>
       </div>
 
+      <div class="mob-hbv-actions" id="m-hbv-actions">
+        <button class="mob-btn-action" id="m-hbv-prev-btn" onclick="showPrev('m')" disabled>◀ Previous</button>
+        <button class="mob-btn-action" id="m-hbv-save-btn" onclick="saveHbvImage('m')">⬇ Save</button>
+        <button class="mob-btn-action" id="m-hbv-next-btn" onclick="showNext('m')" disabled>Next ▶</button>
+      </div>
+
       <div class="mob-image-wrap" id="m-imageWrap">
         <canvas id="m-imageCanvas"></canvas>
         <div class="mob-image-action-row">
@@ -3080,6 +3146,7 @@
                 <select id="m-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
                   <option value="custom">Verse Generator</option>
                   <option value="read">Read Bible</option>
+                  <option value="hbv">Hardest Bible Verse Generator</option>
                 </select>
               </div>
               <div class="control-pref-field">
@@ -3181,13 +3248,13 @@
 
 A few years ago, it was my dream to create a website where anyone could freely access God's Word, discover Bible verses, and grow closer to Scripture without ads, subscriptions, or distractions.
 
-At that time, I had no knowledge of coding, HTML, JavaScript, APIs, or website development. Building a website seemed impossible. But thanks to the LORD our GOD I was finally able to turn that dream into reality and launch my own Bible web application using Claude and Cursor.
+At that time, I had no knowledge of coding, HTML, JavaScript, APIs, or website development. Building a website seemed impossible. But thanks to modern AI tools such as Claude AI and Cursor, I was finally able to turn that dream into reality and launch my own Bible web application.
 
 **Philippians 4:8** has always been an inspiration for this project:
 
 *"Finally, brethren, whatsoever things are true, whatsoever things are honest, whatsoever things are just, whatsoever things are pure, whatsoever things are lovely, whatsoever things are of good report; if there be any virtue, and if there be any praise, think on these things."*
 
-The goal of this website is simple: make Bible Verse Genrator to generate random Bible verse, Bible reading, and daily devotional encouragement available to everyone, completely free.
+The goal of this website is simple: make Bible reading, Bible study, and daily encouragement available to everyone, completely free.
 
 ## Features
 
@@ -3211,7 +3278,7 @@ Instead of generating verses from the entire Bible, users can choose a specific 
 
 The website includes a full Bible reading mode that allows users to browse books, chapters, and verses directly within the app. Users can navigate through Scripture without needing another website or application.
 
-### 🌍 Up to 120 Bible Translations and 50 Language
+### 🌍 Up to 80 Bible Translations
 
 Readers can choose from dozens of Bible translations, making the Bible accessible to people from different backgrounds and reading preferences. Switching translations is quick and synchronized across the application.
 
@@ -3271,7 +3338,7 @@ Every piece of feedback helps make the project better.
 
 If you enjoy the website, please share it with others and help spread God's Word. ✝️📖✨
 
-This single HTML Web project is free to use and edit from your own perspective. However, please do not use it to sell or make money from it. I created this project to help people, and I worked hard writing my prompts and ideas to make the website user-friendly. If you decide to sell it or profit from it against this request, I leave that matter in God's hands.
+This HTML project is free to use and edit from your own perspective. However, please do not use it to sell or make money from it. I created this project to help people, and I worked hard writing my prompts and ideas to make the website user-friendly. If you decide to sell it or profit from it against this request, I leave that matter in God's hands.
 
 Contact: sarveshr28@gmail.com</script>
 
@@ -5852,6 +5919,33 @@ async function apiGetJson(url, timeoutMs) {
   return null;
 }
 
+async function apiGetText(url, timeoutMs) {
+  if (apiCircuitOpen()) return null;
+  timeoutMs = timeoutMs || apiFetchTimeoutMs();
+
+  async function tryFetch() {
+    const res = await fetchWithTimeout(url, timeoutMs);
+    if (!res || !res.ok) throw new Error('http');
+    return await res.text();
+  }
+
+  const attempts = isRestrictedMobileBrowser()
+    ? [() => xhrGet(url, timeoutMs, false), tryFetch]
+    : [tryFetch, () => xhrGet(url, timeoutMs, false)];
+
+  for (const run of attempts) {
+    try {
+      const data = await run();
+      if (data != null) {
+        markApiSuccess();
+        return data;
+      }
+    } catch { /* try next transport */ }
+  }
+  markApiFailure();
+  return null;
+}
+
 function normalizeBookNameForMatch(s) {
   return String(s || '').toLowerCase().trim()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -8345,7 +8439,8 @@ function applyTranslationRtl(version) {
   const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
   const DEFAULT_MODES = [
     { id: 'custom', label: 'Verse Generator' },
-    { id: 'read', label: 'Read Bible' }
+    { id: 'read', label: 'Read Bible' },
+    { id: 'hbv', label: 'Hardest Bible Verse Generator' }
   ];
 
   function getSavedDefaultMode() {
@@ -8491,16 +8586,215 @@ function applyTranslationRtl(version) {
 
   function ensureStandardTestamentOptions(p) {
     const sel = document.getElementById(p + '-testament');
-    if (!sel || sel.options.length > 1) return;
+    if (!sel || optionValueExists(sel, 'hbv')) return;
     const prev = sel.value;
     sel.innerHTML =
       '<option value="custom" selected>Verse Generator</option>' +
-      '<option value="read">Read Bible</option>';
+      '<option value="read">Read Bible</option>' +
+      '<option value="hbv">Hardest Bible Verse Generator</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
   }
 
   function isReadBibleMode(p) {
     return document.getElementById(p + '-testament').value === 'read';
+  }
+
+  function isHbvMode(p) {
+    return document.getElementById(p + '-testament').value === 'hbv';
+  }
+
+  const HBV_LIST_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/HBV/HBV.txt';
+  const HBV_CACHE_KEY = 'vg-hbv-urls-v1';
+  let _hbvUrls = null;
+  let _hbvUrlsLoadPromise = null;
+
+  function parseHbvImageUrls(text) {
+    if (!text) return [];
+    const urlRe = /^https?:\/\/\S+/i;
+    return text.split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => urlRe.test(line))
+      .map(line => line.match(urlRe)[0]);
+  }
+
+  async function loadHbvImageUrls(forceRefresh) {
+    if (!forceRefresh && _hbvUrls?.length) return _hbvUrls;
+    if (_hbvUrlsLoadPromise && !forceRefresh) return _hbvUrlsLoadPromise;
+    _hbvUrlsLoadPromise = (async () => {
+      if (!forceRefresh) {
+        try {
+          const cached = sessionStorage.getItem(HBV_CACHE_KEY);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length) {
+              _hbvUrls = parsed;
+              return _hbvUrls;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      const text = await apiGetText(HBV_LIST_URL, 30000);
+      const urls = parseHbvImageUrls(text);
+      if (urls.length) {
+        _hbvUrls = urls;
+        try { sessionStorage.setItem(HBV_CACHE_KEY, JSON.stringify(urls)); } catch { /* quota */ }
+      }
+      return _hbvUrls || [];
+    })();
+    return _hbvUrlsLoadPromise;
+  }
+
+  function pickRandomHbvUrl(urls) {
+    if (!urls?.length) return null;
+    return urls[Math.floor(Math.random() * urls.length)];
+  }
+
+  function preloadHbvImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image load failed'));
+      img.src = url;
+    });
+  }
+
+  function showHbvPlaceholder(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+    if (display) {
+      display.classList.remove('loading', 'read-updating');
+      display.innerHTML = isDesk
+        ? '<p class="verse-placeholder">Generate a Hardest Bible Image.</p>'
+        : '<p class="mob-placeholder">Generate a Hardest Bible Image.</p>';
+    }
+    const actions = document.getElementById(p + '-actions');
+    const hbvActions = document.getElementById(p + '-hbv-actions');
+    if (actions) actions.style.display = 'none';
+    if (hbvActions) hbvActions.style.display = 'none';
+    const counter = document.getElementById(p + '-counter');
+    if (counter) counter.style.display = 'none';
+    const imgWrap = document.getElementById(p + '-imageWrap');
+    if (imgWrap) imgWrap.style.display = 'none';
+  }
+
+  function updateHbvNav(p) {
+    const prevBtn = document.getElementById(p + '-hbv-prev-btn');
+    const nextBtn = document.getElementById(p + '-hbv-next-btn');
+    if (prevBtn) prevBtn.disabled = history[p].length === 0;
+    if (nextBtn) nextBtn.disabled = future[p].length === 0;
+  }
+
+  function setHbvActionsVisible(p, visible) {
+    const actions = document.getElementById(p + '-actions');
+    const hbvActions = document.getElementById(p + '-hbv-actions');
+    if (actions) actions.style.display = visible ? 'none' : (current[p] && !isHbvMode(p) ? 'flex' : 'none');
+    if (hbvActions) hbvActions.style.display = visible ? 'flex' : 'none';
+  }
+
+  async function renderHbvImage(p, entry) {
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+    if (!entry?.url) {
+      showHbvPlaceholder(p);
+      return;
+    }
+    display.classList.add('loading');
+    display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+    try {
+      await preloadHbvImage(entry.url);
+    } catch {
+      throw new Error('image load failed');
+    }
+    const reveal = verseRevealClass();
+    const safeUrl = escapeHtml(entry.url);
+    display.classList.remove('loading');
+    display.innerHTML = isDesk
+      ? `<div class="${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`
+      : `<div class="${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+    setHbvActionsVisible(p, true);
+    updateHbvNav(p);
+    const counter = document.getElementById(p + '-counter');
+    if (counter) counter.style.display = 'none';
+    const imgWrap = document.getElementById(p + '-imageWrap');
+    if (imgWrap) imgWrap.style.display = 'none';
+    if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
+  }
+
+  async function generateHbv(p, attempt) {
+    attempt = attempt || 0;
+    const display = document.getElementById(p + '-verseDisplay');
+    const isDesk = p === 'd';
+    if (attempt === 0) {
+      if (current[p]?.type === 'hbv') history[p].push(current[p]);
+      future[p] = [];
+      display.classList.add('loading');
+      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+    }
+    const urls = await loadHbvImageUrls();
+    if (!urls.length) {
+      display.classList.remove('loading');
+      showHbvPlaceholder(p);
+      showToast('Could not load image list. Check your connection and try again.');
+      return;
+    }
+    const url = pickRandomHbvUrl(urls);
+    const entry = { type: 'hbv', url };
+    try {
+      await renderHbvImage(p, entry);
+      current[p] = entry;
+      updateHbvNav(p);
+    } catch {
+      if (attempt < 4) {
+        await generateHbv(p, attempt + 1);
+        return;
+      }
+      display.classList.remove('loading');
+      showHbvPlaceholder(p);
+      showToast('Could not load this image. Try again.');
+    }
+  }
+
+  async function saveHbvImage(p) {
+    const entry = current[p];
+    if (!entry || entry.type !== 'hbv' || !entry.url) {
+      showToast('Generate an image first!');
+      return;
+    }
+    const filename = 'hardest-bible-verse.jpg';
+    try {
+      const res = await fetchWithTimeout(entry.url, 45000);
+      if (res?.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        showToast('Image saved!');
+        return;
+      }
+    } catch { /* fallback below */ }
+    const a = document.createElement('a');
+    a.href = entry.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('Image opened — use your browser to save it.');
+  }
+
+  function applyHbvModeChrome(p, hbvMode) {
+    const versionWrap = document.getElementById(p + '-version')?.closest('.control-group, .mob-field');
+    if (versionWrap) versionWrap.style.display = hbvMode ? 'none' : '';
+    const sizeWrap = document.getElementById(p + '-size-slider')?.closest('.control-group, .mob-field');
+    if (sizeWrap) sizeWrap.style.display = hbvMode ? 'none' : '';
+    const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
+    if (genBtn) genBtn.textContent = hbvMode ? 'Generate' : (getUiStrings(getTranslationLang(document.getElementById(p + '-version')?.value)).generate || '✦ Reveal a Verse ✦');
   }
 
   let _readSyncLock = false;
@@ -8596,6 +8890,10 @@ function applyTranslationRtl(version) {
   }
 
   function showGeneratorPlaceholder(p) {
+    if (isHbvMode(p)) {
+      showHbvPlaceholder(p);
+      return;
+    }
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (display) {
@@ -8665,6 +8963,7 @@ function applyTranslationRtl(version) {
   function syncModeWrappersForAllPanels(testament) {
     const showBooks = testament === 'custom';
     const readMode = testament === 'read';
+    const hbvMode = testament === 'hbv';
     ['d', 'm'].forEach(pl => {
       const readWrap = document.getElementById(pl + '-readBibleWrapper');
       const wrapper = document.getElementById(pl + '-bookWrapper');
@@ -8674,6 +8973,13 @@ function applyTranslationRtl(version) {
       if (customSearchWrap) customSearchWrap.style.display = showBooks ? '' : 'none';
       if (wrapper) wrapper.style.display = showBooks ? '' : 'none';
       if (genBtn) genBtn.style.display = readMode ? 'none' : '';
+      applyHbvModeChrome(pl, hbvMode);
+      if (hbvMode) {
+        setHbvActionsVisible(pl, current[pl]?.type === 'hbv');
+      } else {
+        const hbvActions = document.getElementById(pl + '-hbv-actions');
+        if (hbvActions) hbvActions.style.display = 'none';
+      }
     });
   }
 
@@ -9069,6 +9375,7 @@ function applyTranslationRtl(version) {
     if (!display) return;
     const p = display.id === 'm-verseDisplay' ? 'm' : 'd';
     if (isReadBibleMode(p)) return;
+    if (isHbvMode(p)) return;
     const entry = current[p];
     if (!entry || entry.readVerses?.length) return;
     const version = document.getElementById(p + '-version')?.value || entry.version;
@@ -9642,7 +9949,7 @@ function applyTranslationRtl(version) {
 
     if (options.skipButton) return;
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-    if (!genBtn || testament === 'read') return;
+    if (!genBtn || testament === 'read' || testament === 'hbv') return;
     const hasQuery = searchInput && searchInput.value.trim().length > 0;
     const intent = _customGenIntent[p] || 'random';
     if (intent === 'verses' && hasQuery) {
@@ -10040,8 +10347,42 @@ function applyTranslationRtl(version) {
     const wrapper   = document.getElementById(p+'-bookWrapper');
     const showBooks = testament === 'custom';
     const readMode  = testament === 'read';
+    const hbvMode   = testament === 'hbv';
     let _bookLoadOk = false;
     try {
+      if (hbvMode) {
+        if (wrapper) wrapper.style.display = 'none';
+        if (!options.silent) setBookLabelState(p, 'loaded');
+        syncModeWrappersForAllPanels(testament);
+        const customSearchWrap = document.getElementById(p + '-customSearchWrapper');
+        if (customSearchWrap) customSearchWrap.style.display = 'none';
+        applyHbvModeChrome(p, true);
+        const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
+        if (genBtn) {
+          genBtn.style.display = '';
+          genBtn.textContent = 'Generate';
+        }
+        const opts = testamentSel.options;
+        for (let i = 0; i < opts.length; i++) {
+          if (opts[i].value === 'custom') opts[i].text = ui.custom;
+          if (opts[i].value === 'read') opts[i].text = ui.readBible || 'Read Bible';
+          if (opts[i].value === 'hbv') opts[i].text = 'Hardest Bible Verse Generator';
+        }
+        const testLabel = document.getElementById(p + '-testament-label');
+        if (testLabel) testLabel.textContent = ui.testament;
+        if (prevTest === 'read' && !options.skipGeneratorRestore) {
+          _preReadGeneratorState = null;
+        }
+        if (prevTest !== 'hbv') {
+          current[p] = null;
+          history[p] = [];
+          future[p] = [];
+          showHbvPlaceholder(p);
+        }
+        void loadHbvImageUrls();
+        updateScrollToModeButtons();
+        return;
+      }
       if (!options.silent) setBookLabelState(p, 'loading');
     applyInstantBookIdsFromMeta(version);
     let langBooks = getInstantBooksForVersion(version);
@@ -10157,6 +10498,7 @@ function applyTranslationRtl(version) {
     for (let i = 0; i < opts.length; i++) {
       if (opts[i].value === 'custom') opts[i].text = ui.custom;
       if (opts[i].value === 'read')   opts[i].text = ui.readBible || 'Read Bible';
+      if (opts[i].value === 'hbv')    opts[i].text = 'Hardest Bible Verse Generator';
     }
 
     const testLabel = document.getElementById(p+'-testament-label');
@@ -10175,7 +10517,11 @@ function applyTranslationRtl(version) {
     if (readSearchLabel) readSearchLabel.textContent = ui.search || 'Search';
 
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
-    if (genBtn) genBtn.style.display = readMode ? 'none' : '';
+    if (genBtn) {
+      genBtn.style.display = readMode ? 'none' : '';
+      if (!hbvMode) genBtn.textContent = ui.generate;
+    }
+    applyHbvModeChrome(p, hbvMode);
     updateCustomSearchUI(p);
 
     if (readMode) {
@@ -10199,6 +10545,9 @@ function applyTranslationRtl(version) {
       setReadModeActions(p, false);
       if (prevTest === 'read' && !options.skipGeneratorRestore) {
         await restoreGeneratorViewFromRead();
+      } else if (prevTest === 'hbv' && testament === 'custom') {
+        current[p] = null;
+        showGeneratorPlaceholder(p);
       }
     }
     updateScrollToModeButtons();
@@ -10242,6 +10591,10 @@ function applyTranslationRtl(version) {
      RENDER VERSE
   ══════════════════════════════════════ */
   async function renderCurrentEntry(p, entry) {
+    if (entry?.type === 'hbv') {
+      await renderHbvImage(p, entry);
+      return;
+    }
     if (entry && !entry.readVerses?.length) ensureGeneratorEntryMeta(entry);
     if (entry?.readVerses?.length) {
       renderSearchedPassage(p, {
@@ -10564,6 +10917,11 @@ function applyTranslationRtl(version) {
   async function generate(p, retryCount = 0, pinnedScope = null) {
     if (isReadBibleMode(p)) return;
 
+    if (isHbvMode(p)) {
+      if (retryCount === 0) await generateHbv(p, 0);
+      return;
+    }
+
     const testament = document.getElementById(p + '-testament').value;
     if (isCustomRevealVersesMode(p) && retryCount === 0) {
       const searchQuery = document.getElementById(p + '-custom-search')?.value?.trim();
@@ -10627,6 +10985,15 @@ function applyTranslationRtl(version) {
       navigateReadChapter(p, -1);
       return;
     }
+    if (isHbvMode(p)) {
+      if (history[p].length === 0) return;
+      future[p].push(current[p]);
+      const prev = history[p].pop();
+      current[p] = prev;
+      renderHbvImage(p, prev);
+      updateHbvNav(p);
+      return;
+    }
     if (history[p].length === 0) return;
     future[p].push(current[p]);
     const prev = history[p].pop();
@@ -10636,6 +11003,15 @@ function applyTranslationRtl(version) {
   function showNext(p) {
     if (isReadBibleMode(p)) {
       navigateReadChapter(p, 1);
+      return;
+    }
+    if (isHbvMode(p)) {
+      if (future[p].length === 0) return;
+      history[p].push(current[p]);
+      const next = future[p].pop();
+      current[p] = next;
+      renderHbvImage(p, next);
+      updateHbvNav(p);
       return;
     }
     if (future[p].length === 0) return;
