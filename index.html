@@ -2817,8 +2817,6 @@
       <div id="d-fav-list"></div>
     </div>
 
-    <button class="btn-generate" id="d-generate-btn-bottom" onclick="generate('d')" style="display:none;">Generate</button>
-
     <div class="card-ornament-bottom">°. ⋆༺♱༻⋆ .°</div>
   </div>
 
@@ -8801,16 +8799,6 @@ function applyTranslationRtl(version) {
     if (sizeWrap) sizeWrap.style.display = hbvMode ? 'none' : '';
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
     if (genBtn) genBtn.textContent = hbvMode ? 'Generate' : (getUiStrings(getTranslationLang(document.getElementById(p + '-version')?.value)).generate || '✦ Reveal a Verse ✦');
-    // Desktop HBV mode: move generate button below the display panel
-    if (p === 'd') {
-      const topBtn = document.getElementById('d-generate-btn');
-      const bottomBtn = document.getElementById('d-generate-btn-bottom');
-      if (topBtn) topBtn.style.display = hbvMode ? 'none' : '';
-      if (bottomBtn) {
-        bottomBtn.style.display = hbvMode ? '' : 'none';
-        bottomBtn.textContent = hbvMode ? 'Generate' : '✦ Reveal a Verse ✦';
-      }
-    }
   }
 
   let _readSyncLock = false;
