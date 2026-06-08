@@ -918,9 +918,25 @@
     .hbv-actions {
       display: none;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 0;
       justify-content: center;
       flex-wrap: wrap;
+    }
+    .hbv-generate-slot {
+      width: 100%;
+    }
+    .hbv-generate-slot .btn-generate {
+      margin-top: 16px;
+      margin-bottom: 12px;
+    }
+    #d-mode-panel.hbv-desktop-mode {
+      grid-template-columns: 1fr;
+    }
+    #d-mode-panel.hbv-desktop-mode > .control-group:first-child {
+      grid-column: 1 / -1;
+    }
+    #d-mode-panel.hbv-desktop-mode > .control-group:first-child select {
+      width: 100%;
     }
     .mob-hbv-actions {
       display: none;
@@ -2783,10 +2799,16 @@
       </div>
     </div>
 
-    <button class="btn-generate" id="d-generate-btn" onclick="generate('d')">✦ Reveal a Verse ✦</button>
+    <div id="d-generate-slot-top">
+      <button class="btn-generate" id="d-generate-btn" onclick="generate('d')">✦ Reveal a Verse ✦</button>
+    </div>
 
     <div id="d-verseDisplay">
       <p class="verse-placeholder">Click above to receive the Word…</p>
+    </div>
+
+    <div id="d-generate-slot-below" class="hbv-generate-slot" style="display:none;">
+      <!-- Generate button moves here in Hardest Bible Verse Generator mode (desktop) -->
     </div>
 
     <div class="hbv-actions" id="d-hbv-actions">
@@ -8719,9 +8741,25 @@ function applyTranslationRtl(version) {
     const imgWrap = document.getElementById(p + '-imageWrap');
     if (imgWrap) imgWrap.style.display = 'none';
     if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
-    // Smooth scroll to the image after it renders
-    requestAnimationFrame(function() {
-      display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scheduleScrollToHbvImage(p);
+  }
+
+  function scheduleScrollToHbvImage(p) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const display = document.getElementById(p + '-verseDisplay');
+        const img = display?.querySelector('.hbv-image');
+        if (img) {
+          const rect = img.getBoundingClientRect();
+          const elCenter = rect.top + rect.height / 2;
+          const viewCenter = window.innerHeight / 2;
+          const top = window.scrollY + elCenter - viewCenter;
+          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          smoothScrollToY(Math.min(maxScroll, Math.max(0, top)), 1000);
+        } else if (display) {
+          scrollToCenterVerseDisplay(p);
+        }
+      });
     });
   }
 
@@ -8792,6 +8830,27 @@ function applyTranslationRtl(version) {
     showToast('Image opened — use your browser to save it.');
   }
 
+  function applyHbvDesktopLayout(hbvMode) {
+    const isDesk = !document.body.classList.contains('layout-mobile');
+    const panel = document.getElementById('d-mode-panel');
+    const btn = document.getElementById('d-generate-btn');
+    const slotTop = document.getElementById('d-generate-slot-top');
+    const slotBelow = document.getElementById('d-generate-slot-below');
+    if (panel) panel.classList.toggle('hbv-desktop-mode', isDesk && hbvMode);
+    if (!btn || !slotTop || !slotBelow) return;
+    if (isDesk && hbvMode) {
+      if (btn.parentElement !== slotBelow) slotBelow.appendChild(btn);
+      slotBelow.style.display = 'block';
+      slotTop.style.display = 'none';
+      btn.style.display = '';
+    } else {
+      if (btn.parentElement !== slotTop) slotTop.appendChild(btn);
+      slotTop.style.display = 'block';
+      slotBelow.style.display = 'none';
+      btn.style.display = '';
+    }
+  }
+
   function applyHbvModeChrome(p, hbvMode) {
     const versionWrap = document.getElementById(p + '-version')?.closest('.control-group, .mob-field');
     if (versionWrap) versionWrap.style.display = hbvMode ? 'none' : '';
@@ -8799,6 +8858,7 @@ function applyTranslationRtl(version) {
     if (sizeWrap) sizeWrap.style.display = hbvMode ? 'none' : '';
     const genBtn = document.getElementById(p === 'd' ? 'd-generate-btn' : 'm-generate-btn');
     if (genBtn) genBtn.textContent = hbvMode ? 'Generate' : (getUiStrings(getTranslationLang(document.getElementById(p + '-version')?.value)).generate || '✦ Reveal a Verse ✦');
+    if (p === 'd') applyHbvDesktopLayout(hbvMode);
   }
 
   let _readSyncLock = false;
