@@ -133,9 +133,11 @@
     .verse-reveal-instant { animation: fadeUp 0.22s ease both; }
     @media (prefers-reduced-motion: reduce) {
       .verse-reveal, .verse-reveal-instant,
+      .hbv-stage.hbv-reveal, .hbv-stage.hbv-reveal-instant,
       .header, .votd-panel, .weekly-banner, .scroll-card, .mob-topbar, .mob-card {
         animation: none !important;
       }
+      .hbv-stage { transition: none !important; }
       .votd-panel .votd-verse-wrap { transition: none !important; }
       .cross-icon, .mob-cross { animation: none !important; }
       html.theme-switching body,
@@ -914,6 +916,23 @@
       height: auto;
       border-radius: 2px;
       border: 1px solid rgba(139,104,32,0.35);
+    }
+    @keyframes hbvFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .hbv-stage {
+      opacity: 1;
+      transition: opacity 0.42s ease;
+    }
+    .hbv-stage.hbv-fade-out {
+      opacity: 0;
+    }
+    .hbv-stage.hbv-reveal {
+      animation: hbvFadeIn 0.55s ease both;
+    }
+    .hbv-stage.hbv-reveal-instant {
+      animation: hbvFadeIn 0.15s ease both;
     }
     .hbv-actions {
       display: none;
@@ -8723,26 +8742,55 @@ function applyTranslationRtl(version) {
     if (hbvActions) hbvActions.style.display = visible ? 'flex' : 'none';
   }
 
-  async function renderHbvImage(p, entry) {
+  const HBV_FADE_MS = 420;
+
+  function hbvRevealClass() {
+    return prefersReducedMotion() ? 'hbv-reveal-instant' : 'hbv-reveal';
+  }
+
+  function hbvStageHtml(url) {
+    const safeUrl = escapeHtml(url);
+    return `<div class="hbv-stage ${hbvRevealClass()}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+  }
+
+  function waitMs(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function fadeOutHbvStage(display) {
+    const stage = display?.querySelector('.hbv-stage');
+    if (!stage) return;
+    if (prefersReducedMotion()) {
+      stage.remove();
+      return;
+    }
+    stage.classList.add('hbv-fade-out');
+    await waitMs(HBV_FADE_MS);
+    stage.remove();
+  }
+
+  async function renderHbvImage(p, entry, options) {
+    options = options || {};
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (!entry?.url) {
       showHbvPlaceholder(p);
       return;
     }
-    display.classList.add('loading');
-    display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+    const hasStage = !!display.querySelector('.hbv-stage');
+    if (options.transition && hasStage) {
+      await fadeOutHbvStage(display);
+    } else if (!hasStage) {
+      display.classList.add('loading');
+      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+    }
     try {
       await preloadHbvImage(entry.url);
     } catch {
       throw new Error('image load failed');
     }
-    const reveal = verseRevealClass();
-    const safeUrl = escapeHtml(entry.url);
     display.classList.remove('loading');
-    display.innerHTML = isDesk
-      ? `<div class="${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`
-      : `<div class="${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+    display.innerHTML = hbvStageHtml(entry.url);
     setHbvActionsVisible(p, true);
     updateHbvNav(p);
     const counter = document.getElementById(p + '-counter');
@@ -8753,34 +8801,64 @@ function applyTranslationRtl(version) {
     scheduleScrollToHbvImage(p);
   }
 
+  function scrollToHbvMobileLayout() {
+    const hbvActions = document.getElementById('m-hbv-actions');
+    const mobBottom = document.querySelector('.mob-bottom');
+    if (!hbvActions || hbvActions.style.display === 'none' || !mobBottom) return;
+    const gap = 10;
+    const bottomBarTop = mobBottom.getBoundingClientRect().top;
+    const actionsRect = hbvActions.getBoundingClientRect();
+    const targetActionsBottom = bottomBarTop - gap;
+    const delta = actionsRect.bottom - targetActionsBottom;
+    if (Math.abs(delta) < 4) return;
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const top = Math.min(maxScroll, Math.max(0, window.scrollY + delta));
+    smoothScrollToY(top, 1000);
+  }
+
+  function runHbvScroll(p) {
+    const isMobile = document.body.classList.contains('layout-mobile');
+    if (isMobile && p === 'm') {
+      scrollToHbvMobileLayout();
+      return;
+    }
+    const display = document.getElementById(p + '-verseDisplay');
+    const img = display?.querySelector('.hbv-image');
+    if (img) {
+      const rect = img.getBoundingClientRect();
+      const elCenter = rect.top + rect.height / 2;
+      const viewCenter = window.innerHeight / 2;
+      const top = window.scrollY + elCenter - viewCenter;
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      smoothScrollToY(Math.min(maxScroll, Math.max(0, top)), 1000);
+    } else if (display) {
+      scrollToCenterVerseDisplay(p);
+    }
+  }
+
   function scheduleScrollToHbvImage(p) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const display = document.getElementById(p + '-verseDisplay');
-        const img = display?.querySelector('.hbv-image');
-        if (img) {
-          const rect = img.getBoundingClientRect();
-          const elCenter = rect.top + rect.height / 2;
-          const viewCenter = window.innerHeight / 2;
-          const top = window.scrollY + elCenter - viewCenter;
-          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-          smoothScrollToY(Math.min(maxScroll, Math.max(0, top)), 1000);
-        } else if (display) {
-          scrollToCenterVerseDisplay(p);
-        }
-      });
-    });
+    const isMobile = document.body.classList.contains('layout-mobile');
+    const fadeDelay = prefersReducedMotion() ? 0 : 80;
+    const scroll = () => requestAnimationFrame(() => requestAnimationFrame(() => runHbvScroll(p)));
+    setTimeout(scroll, fadeDelay);
+    if (isMobile && p === 'm' && !prefersReducedMotion()) {
+      setTimeout(scroll, 580);
+    }
   }
 
   async function generateHbv(p, attempt) {
     attempt = attempt || 0;
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
+    let hadImage = false;
     if (attempt === 0) {
-      if (current[p]?.type === 'hbv') history[p].push(current[p]);
+      hadImage = current[p]?.type === 'hbv';
+      if (hadImage) history[p].push(current[p]);
       future[p] = [];
-      display.classList.add('loading');
-      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+      if (!hadImage) {
+        display.classList.add('loading');
+        display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
+      }
     }
     const urls = await loadHbvImageUrls();
     if (!urls.length) {
@@ -8792,7 +8870,7 @@ function applyTranslationRtl(version) {
     const url = pickRandomHbvUrl(urls);
     const entry = { type: 'hbv', url };
     try {
-      await renderHbvImage(p, entry);
+      await renderHbvImage(p, entry, { transition: hadImage });
       current[p] = entry;
       updateHbvNav(p);
     } catch {
@@ -11058,7 +11136,7 @@ function applyTranslationRtl(version) {
   /* ══════════════════════════════════════
      NAVIGATION
   ══════════════════════════════════════ */
-  function showPrev(p) {
+  async function showPrev(p) {
     if (isReadBibleMode(p)) {
       navigateReadChapter(p, -1);
       return;
@@ -11068,7 +11146,7 @@ function applyTranslationRtl(version) {
       future[p].push(current[p]);
       const prev = history[p].pop();
       current[p] = prev;
-      renderHbvImage(p, prev);
+      await renderHbvImage(p, prev, { transition: true });
       updateHbvNav(p);
       return;
     }
@@ -11078,7 +11156,7 @@ function applyTranslationRtl(version) {
     current[p] = prev;
     renderCurrentEntry(p, prev);
   }
-  function showNext(p) {
+  async function showNext(p) {
     if (isReadBibleMode(p)) {
       navigateReadChapter(p, 1);
       return;
@@ -11088,7 +11166,7 @@ function applyTranslationRtl(version) {
       history[p].push(current[p]);
       const next = future[p].pop();
       current[p] = next;
-      renderHbvImage(p, next);
+      await renderHbvImage(p, next, { transition: true });
       updateHbvNav(p);
       return;
     }
