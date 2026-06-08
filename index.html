@@ -3915,6 +3915,18 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
+      "id": "Apocrypha",
+      "language": "English",
+      "languageCode": "en",
+      "voiceLang": "en-US",
+      "translationName": "Apocrypha",
+      "abbreviation": "Apocrypha",
+      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Apocrypha.json",
+      "testament": "apocrypha",
+      "isRTL": false,
+      "hasApocrypha": false
+    },
+    {
       "id": "ABPE",
       "language": "English",
       "languageCode": "en",
@@ -4191,7 +4203,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
-      "id": "KJV_Apocrypha",
+      "id": "Apocrypha KJV",
       "language": "English",
       "languageCode": "en",
       "voiceLang": "en-GB",
@@ -4419,18 +4431,6 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
-      "id": "PHBT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Phillips New Testament",
-      "abbreviation": "PHBT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/PHBT.json",
-      "testament": "old",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
       "id": "SLT",
       "language": "English",
       "languageCode": "en",
@@ -4467,7 +4467,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
-      "id": "WEB_Apocrypha",
+      "id": "Apocrypha WEB",
       "language": "English",
       "languageCode": "en",
       "voiceLang": "en-US",
@@ -5458,6 +5458,8 @@ const APOCRYPHA_BOOKS_BY_MODULE = {
     'Prayer of Azariah', 'Susanna', 'Bel and the Dragon'
   ]
 };
+APOCRYPHA_BOOKS_BY_MODULE['Apocrypha KJV'] = APOCRYPHA_BOOKS_BY_MODULE.KJV_Apocrypha;
+APOCRYPHA_BOOKS_BY_MODULE['Apocrypha WEB'] = APOCRYPHA_BOOKS_BY_MODULE.WEB_Apocrypha;
 
 const BOOK_NAME_ALIASES = {
   'ecclesiasticus (sira)': 'Sirach', 'ecclesiasticus': 'Sirach',
@@ -5469,8 +5471,104 @@ const GH_LEGACY_ID_MAP = {
   net: 'NET', nasb: 'NASB', niv: 'NIV', nlt: 'NLT', segond_1910: 'segond_1910',
   kjva: 'KJV_Apocrypha', weba: 'WEB_Apocrypha',
   kjvapocrypha: 'KJV_Apocrypha', webapocrypha: 'WEB_Apocrypha',
-  'kjv apocrypha': 'KJV_Apocrypha', 'web apocrypha': 'WEB_Apocrypha'
+  'kjv apocrypha': 'KJV_Apocrypha', 'web apocrypha': 'WEB_Apocrypha',
+  apocrypha: 'Apocrypha'
 };
+
+const APOCRYPHA_STANDALONE_MODULE = 'Apocrypha';
+const APOCRYPHA_STANDALONE_BOOK_KJV = 'apocrypha-kjv';
+const APOCRYPHA_STANDALONE_BOOK_WEB = 'apocrypha-web';
+const APOCRYPHA_STANDALONE_ID_START = 10001;
+
+function isApocryphaStandaloneTranslation(module) {
+  return normalizeGhModuleId(module) === APOCRYPHA_STANDALONE_MODULE;
+}
+
+function isApocryphaStandaloneScope(scope) {
+  return scope?.randomScope === 'ApocryphaKJV' || scope?.randomScope === 'ApocryphaWEB' || scope?.randomScope === 'ApocryphaWhole';
+}
+
+function apocryphaStandaloneSourceFromScope(scope) {
+  if (scope?.randomScope === 'ApocryphaKJV' || scope?.book === APOCRYPHA_STANDALONE_BOOK_KJV) return 'kjv';
+  if (scope?.randomScope === 'ApocryphaWEB' || scope?.book === APOCRYPHA_STANDALONE_BOOK_WEB) return 'web';
+  return null;
+}
+
+function stripApocryphaStandaloneSourceSuffix(name) {
+  if (!name) return name;
+  return String(name).replace(/\s*\(\s*(KJV|WEB)\s*\)\s*$/i, '').trim();
+}
+
+function apocryphaStandaloneSourceFromBookKey(bookKey) {
+  if (!bookKey) return null;
+  if (/\(\s*KJV\s*\)/i.test(bookKey)) return 'kjv';
+  if (/\(\s*WEB\s*\)/i.test(bookKey)) return 'web';
+  return null;
+}
+
+function getApocryphaStandaloneTranslationLabel(source) {
+  if (source === 'kjv') return 'Apocrypha (KJV)';
+  if (source === 'web') return 'Apocrypha (WEB)';
+  return 'Apocrypha';
+}
+
+function getApocryphaStandaloneBookKeyForLabel(module, bookKey) {
+  if (!bookKey || !isApocryphaStandaloneTranslation(module)) return bookKey;
+  const data = GH_MEMORY_CACHE[normalizeGhModuleId(module)];
+  if (data?.booksByEn?.[bookKey]) return bookKey;
+  const match = Object.keys(data?.booksByEn || {}).find(k =>
+    stripApocryphaStandaloneSourceSuffix(k) === stripApocryphaStandaloneSourceSuffix(bookKey)
+  );
+  return match || bookKey;
+}
+
+function appendApocryphaStandaloneBookOptions(frag, version) {
+  const data = GH_MEMORY_CACHE[normalizeGhModuleId(version)];
+  if (!data?.booksByEn) return;
+  const addGroup = (label, source) => {
+    const g = document.createElement('optgroup');
+    g.label = label;
+    Object.keys(data.booksByEn)
+      .filter(k => data.booksByEn[k]?.apocryphaSource === source)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = data.booksByEn[k].localizedName || k;
+        g.appendChild(o);
+      });
+    if (g.children.length) frag.appendChild(g);
+  };
+  addGroup('Apocrypha (KJV)', 'kjv');
+  addGroup('Apocrypha (WEB)', 'web');
+}
+
+function isBookAvailableInVersion(version, bookEn) {
+  version = normalizeGhModuleId(version);
+  if (!bookEn) return false;
+  if (isApocryphaStandaloneTranslation(version)) {
+    return !!GH_MEMORY_CACHE[version]?.booksByEn?.[bookEn];
+  }
+  const bookId = BOOK_NUM[bookEn];
+  return !!bookId && getAvailableBookIds(version).includes(bookId);
+}
+
+function getReadNavBookList(version) {
+  version = normalizeGhModuleId(version);
+  if (isApocryphaStandaloneTranslation(version)) {
+    const data = GH_MEMORY_CACHE[version];
+    if (!data?.booksByEn) return [];
+    const list = [];
+    ['kjv', 'web'].forEach(source => {
+      Object.keys(data.booksByEn)
+        .filter(k => data.booksByEn[k]?.apocryphaSource === source)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach(k => list.push(k));
+    });
+    return list;
+  }
+  return getAvailableBookIds(version).map(id => bookEnFromId(id)).filter(Boolean);
+}
 
 let GH_BIBLES = {};
 let GH_TRANSLATIONS_INDEX = null;
@@ -5544,8 +5642,32 @@ function buildGhBiblesFromIndex(indexData) {
   return out;
 }
 
+const APOCRYPHA_STANDALONE_INDEX_ENTRY = {
+  id: APOCRYPHA_STANDALONE_MODULE,
+  language: 'English',
+  languageCode: 'en',
+  voiceLang: 'en-US',
+  translationName: 'Apocrypha',
+  abbreviation: 'Apocrypha',
+  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Apocrypha.json',
+  testament: 'apocrypha',
+  isRTL: false,
+  hasApocrypha: false
+};
+
+function ensureApocryphaStandaloneInIndex(indexData) {
+  if (!indexData?.translations?.length) return indexData;
+  const translations = [...indexData.translations];
+  const existingIdx = translations.findIndex(t => t.id === APOCRYPHA_STANDALONE_MODULE);
+  const entry = existingIdx >= 0 ? translations.splice(existingIdx, 1)[0] : { ...APOCRYPHA_STANDALONE_INDEX_ENTRY };
+  const enIdx = translations.findIndex(t => String(t.language || '').toLowerCase() === 'english');
+  translations.splice(enIdx >= 0 ? enIdx : 0, 0, entry);
+  return { ...indexData, translations };
+}
+
 function initGhBiblesFromIndex(indexData) {
   if (!indexData) return;
+  indexData = ensureApocryphaStandaloneInIndex(indexData);
   GH_TRANSLATIONS_INDEX = indexData;
   GH_BIBLES = buildGhBiblesFromIndex(indexData);
 }
@@ -5733,6 +5855,7 @@ async function apiGetJson(url, timeoutMs) {
 function normalizeBookNameForMatch(s) {
   return String(s || '').toLowerCase().trim()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/_/g, ' ')
     .replace(/\s+/g, ' ');
 }
 
@@ -5806,13 +5929,14 @@ function parseReferenceLoose(query, langHint) {
 
 function attachGeneratorPassageMeta(entry, bookEn, chapter, verseNum, bookId) {
   if (!entry) return entry;
-  const enFromId = bookEnFromId(bookId ?? entry.bssBookId);
+  const bid = bookId ?? entry.bssBookId;
+  const standaloneBook = bid != null && bid >= APOCRYPHA_STANDALONE_ID_START ? bookEn : null;
+  const enFromId = standaloneBook ? null : bookEnFromId(bid);
   const langHint = entry.version ? getTranslationLang(entry.version) : null;
-  bookEn = enFromId || bookEn ||
+  bookEn = standaloneBook || enFromId || bookEn ||
     (entry.bookName ? resolveBookEnFromRaw(entry.bookName, langHint) : null);
   if (!bookEn || chapter == null || verseNum == null) return entry;
   const verseStart = parseInt(verseNum, 10);
-  const bid = bookId ?? entry.bssBookId;
   if (bid != null) entry.bssBookId = parseInt(bid, 10);
   entry.passageParsed = {
     book: bookEn,
@@ -5893,12 +6017,15 @@ function translationHasApocryphaBooks(version) {
 }
 
 function isApocryphaRandomScope(scope) {
-  return scope?.randomScope === 'Apocrypha';
+  return scope?.randomScope === 'Apocrypha' || isApocryphaStandaloneScope(scope);
 }
 
 function getVerseGenerateTimeoutMs(scope, version) {
   const base = apiFetchTimeoutMs() + (isRestrictedMobileBrowser() ? 2000 : 6000);
   version = normalizeGhModuleId(version);
+  if (isApocryphaStandaloneTranslation(version) || isApocryphaStandaloneScope(scope)) {
+    return Math.max(base, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+  }
   if (isApocryphaBookEn(scope?.book) || isApocryphaRandomScope(scope)) {
     return Math.max(base, GH_TRANSLATION_LOAD_TIMEOUT_MS);
   }
@@ -5910,6 +6037,10 @@ function getVerseGenerateTimeoutMs(scope, version) {
 
 async function ensureTranslationLoadedForScope(version, scope) {
   version = normalizeGhModuleId(version);
+  if (isApocryphaStandaloneTranslation(version)) {
+    await loadGhTranslationData(version);
+    return;
+  }
   const needsApo = isApocryphaBookEn(scope?.book) || isApocryphaRandomScope(scope);
   if (!needsApo && !getGhMeta(version)?.hasApocrypha) return;
   await loadGhTranslationData(version);
@@ -6077,6 +6208,15 @@ function needsApocryphaMergeRefresh(module, data) {
   return apoIds.some(id => !cached.has(id));
 }
 
+function needsStoredBookIdsRefresh(module, data) {
+  if (!data?.bookIds?.length) return false;
+  const meta = getGhMeta(module);
+  const testament = meta?.testament || 'both';
+  const expected = getBookIdsFromTestament(testament, { includeApocrypha: false });
+  const cached = new Set((data.bookIds || []).filter(id => id >= 1 && id <= 66));
+  return cached.size < expected.length;
+}
+
 function mergeGhTranslationData(baseData, supplementData) {
   if (!baseData?.booksByEn) return supplementData;
   if (!supplementData?.booksByEn) return baseData;
@@ -6111,8 +6251,19 @@ async function applyApocryphaMergeIfNeeded(module, normalized) {
 
 function applyInstantBookIdsFromMeta(module) {
   module = normalizeGhModuleId(module);
+  if (isApocryphaStandaloneTranslation(module)) {
+    if (GH_MEMORY_CACHE[module]?.bookIds?.length) {
+      GH_BOOK_IDS_BY_MODULE[module] = GH_MEMORY_CACHE[module].bookIds;
+      VERSION_BOOK_IDS_CACHE[module] = [...GH_MEMORY_CACHE[module].bookIds];
+      return GH_BOOK_IDS_BY_MODULE[module];
+    }
+    GH_BOOK_IDS_BY_MODULE[module] = [];
+    VERSION_BOOK_IDS_CACHE[module] = [];
+    return [];
+  }
   if (applyGhBookMetaFromStorage(module)) {
-    if (!needsApocryphaMergeRefresh(module, { bookIds: GH_BOOK_IDS_BY_MODULE[module] })) {
+    if (!needsApocryphaMergeRefresh(module, { bookIds: GH_BOOK_IDS_BY_MODULE[module] }) &&
+        !needsStoredBookIdsRefresh(module, { bookIds: GH_BOOK_IDS_BY_MODULE[module] })) {
       return GH_BOOK_IDS_BY_MODULE[module];
     }
     delete GH_BOOK_IDS_BY_MODULE[module];
@@ -6139,6 +6290,59 @@ function bookEnFromId(bookId) {
   if (id >= 1 && id <= 66) return ALL[id - 1];
   if (id >= 67) return APOCRYPHA[id - 67] || null;
   return null;
+}
+
+function normalizeApocryphaStandaloneJson(raw, meta) {
+  const booksByEn = {};
+  const localizedNames = {};
+  const chapterCounts = {};
+  const maxVerses = {};
+  const bookIdByKey = {};
+  let nextId = APOCRYPHA_STANDALONE_ID_START;
+  const root = raw?.data || raw?.bible || raw?.translation || raw;
+  if (!root || typeof root !== 'object') {
+    return {
+      module: meta.module, rawUrl: meta.rawUrl, testament: 'apocrypha', isRTL: false,
+      booksByEn, bookIds: [], localizedNames, chapterCounts, maxVerses,
+      apocryphaStandalone: true, cachedAt: Date.now()
+    };
+  }
+  Object.keys(root).forEach(bookKey => {
+    if (['metadata', '_meta', 'verses', 'version', 'translation', 'language'].includes(bookKey)) return;
+    const chapters = root[bookKey];
+    if (!chapters || typeof chapters !== 'object') return;
+    const source = /\(\s*KJV\s*\)/i.test(bookKey) ? 'kjv' : (/\(\s*WEB\s*\)/i.test(bookKey) ? 'web' : null);
+    if (!source) return;
+    const bookId = nextId++;
+    bookIdByKey[bookKey] = bookId;
+    booksByEn[bookKey] = { bookId, localizedName: bookKey, apocryphaSource: source, chapters: {} };
+    localizedNames[bookId] = bookKey;
+    Object.keys(chapters).forEach(ch => {
+      const verses = chapters[ch];
+      const chNum = parseInt(ch, 10);
+      if (!Number.isFinite(chNum)) return;
+      const chKey = String(chNum);
+      if (!booksByEn[bookKey].chapters[chKey]) booksByEn[bookKey].chapters[chKey] = {};
+      if (verses && typeof verses === 'object') {
+        Object.keys(verses).forEach(v => {
+          const clean = cleanGhText(verses[v]);
+          if (!clean) return;
+          const vNum = parseInt(v, 10);
+          if (!Number.isFinite(vNum)) return;
+          booksByEn[bookKey].chapters[chKey][String(vNum)] = clean;
+          chapterCounts[bookKey] = Math.max(chapterCounts[bookKey] || 0, chNum);
+          if (!maxVerses[bookKey]) maxVerses[bookKey] = {};
+          maxVerses[bookKey][chKey] = Math.max(maxVerses[bookKey][chKey] || 0, vNum);
+        });
+      }
+    });
+  });
+  const bookIds = Object.values(booksByEn).map(b => b.bookId).filter(Boolean).sort((a, b) => a - b);
+  return {
+    module: meta.module, rawUrl: meta.rawUrl, testament: 'apocrypha', isRTL: false,
+    booksByEn, bookIds, localizedNames, chapterCounts, maxVerses,
+    apocryphaStandalone: true, bookIdByKey, cachedAt: Date.now()
+  };
 }
 
 function normalizeGhBibleJson(raw, meta) {
@@ -6299,7 +6503,9 @@ async function loadGhTranslationData(module) {
 
     try {
       const idbCached = await idbGetBible(cacheKey);
-      if (idbCached?.booksByEn && idbCached.bookIds?.length && !needsApocryphaMergeRefresh(module, idbCached)) {
+      if (idbCached?.booksByEn && idbCached.bookIds?.length &&
+          !needsApocryphaMergeRefresh(module, idbCached) &&
+          !needsStoredBookIdsRefresh(module, idbCached)) {
         return storeGhTranslationData(module, idbCached, null);
       }
     } catch { /* ignore */ }
@@ -6316,8 +6522,10 @@ async function loadGhTranslationData(module) {
       return null;
     }
 
-    let normalized = normalizeGhBibleJson(raw, meta);
-    if (!normalized.bookIds.length) {
+    let normalized = isApocryphaStandaloneTranslation(module)
+      ? normalizeApocryphaStandaloneJson(raw, meta)
+      : normalizeGhBibleJson(raw, meta);
+    if (!normalized.bookIds.length && !isApocryphaStandaloneTranslation(module)) {
       const fallbackIds = getBookIdsFromTestament(meta?.testament || 'both', { includeApocrypha: !!meta?.hasApocrypha });
       normalized.bookIds = fallbackIds;
       normalized.localizedNames = normalized.localizedNames || {};
@@ -6370,6 +6578,11 @@ async function ensureGhBooksDiscovered(module) {
 
 function getAvailableBookIds(version) {
   version = normalizeGhModuleId(version);
+  if (isApocryphaStandaloneTranslation(version)) {
+    return GH_MEMORY_CACHE[version]?.bookIds?.length
+      ? [...GH_MEMORY_CACHE[version].bookIds]
+      : (GH_BOOK_IDS_BY_MODULE[version]?.length ? [...GH_BOOK_IDS_BY_MODULE[version]] : []);
+  }
   let ids;
   if (VERSION_BOOK_IDS_CACHE[version]?.length) ids = [...VERSION_BOOK_IDS_CACHE[version]];
   else if (GH_BOOK_IDS_BY_MODULE[version]?.length) {
@@ -6387,13 +6600,28 @@ function getAvailableBooks(version) {
 }
 
 function getFirstAvailableBook(version) {
+  version = normalizeGhModuleId(version);
+  if (isApocryphaStandaloneTranslation(version)) {
+    const data = GH_MEMORY_CACHE[version];
+    const keys = data?.booksByEn ? Object.keys(data.booksByEn) : [];
+    return keys[0] || '';
+  }
   return getAvailableBooks(version)[0] || 'Genesis';
 }
 
 function getChapterCountForBook(version, bookEn) {
   version = normalizeGhModuleId(version);
   const data = GH_MEMORY_CACHE[version];
+  if (isApocryphaStandaloneTranslation(version) && data?.booksByEn?.[bookEn]) {
+    if (data.chapterCounts?.[bookEn]) return data.chapterCounts[bookEn];
+    const chKeys = Object.keys(data.booksByEn[bookEn].chapters || {}).map(k => parseInt(k, 10)).filter(Number.isFinite);
+    return chKeys.length ? Math.max(...chKeys) : 1;
+  }
   if (data?.chapterCounts?.[bookEn]) return data.chapterCounts[bookEn];
+  if (data?.booksByEn?.[bookEn]?.chapters) {
+    const chKeys = Object.keys(data.booksByEn[bookEn].chapters).map(k => parseInt(k, 10)).filter(Number.isFinite);
+    if (chKeys.length) return Math.max(...chKeys);
+  }
   const idx = ALL.indexOf(bookEn);
   return idx >= 0 ? CHAPTER_COUNTS[idx] : 1;
 }
@@ -6410,9 +6638,12 @@ function getGhLocalizedBookName(version, bookEn) {
   version = normalizeGhModuleId(version);
   const data = GH_MEMORY_CACHE[version];
   const bookId = BOOK_NUM[bookEn];
-  if (data?.localizedNames?.[bookId]) return data.localizedNames[bookId];
-  if (data?.booksByEn?.[bookEn]?.localizedName) return data.booksByEn[bookEn].localizedName;
-  return bookEn;
+  let name;
+  if (data?.localizedNames?.[bookId]) name = data.localizedNames[bookId];
+  else if (data?.booksByEn?.[bookEn]?.localizedName) name = data.booksByEn[bookEn].localizedName;
+  else name = bookEn;
+  if (isApocryphaStandaloneTranslation(version)) return stripApocryphaStandaloneSourceSuffix(name);
+  return name;
 }
 
 async function fetchGhPassageVerses(module, bookEn, chapter, verseStart, verseEnd) {
@@ -6435,7 +6666,8 @@ async function fetchGhPassageVerses(module, bookEn, chapter, verseStart, verseEn
   const start = verses[0].num;
   const end = verses[verses.length - 1].num;
   const ref = start === end ? `${bookName} ${chapter}:${start}` : `${bookName} ${chapter}:${start}-${end}`;
-  return { verses, ref, bookName, chapter, bookId: BOOK_NUM[bookEn], version: module };
+  const bookId = book.bookId ?? BOOK_NUM[bookEn];
+  return { verses, ref, bookName, chapter, bookId, version: module };
 }
 
 async function fetchGhReference(module, reference) {
@@ -6447,9 +6679,53 @@ async function fetchGhReference(module, reference) {
   return { text: v.text, ref: result.ref, version: module, bookName: result.bookName, bssBookId: result.bookId, chapter: result.chapter, verse: v.num };
 }
 
+async function fetchRandomApocryphaStandaloneVerse(module, scope, attempt = 0) {
+  module = normalizeGhModuleId(module);
+  const data = await loadGhTranslationData(module);
+  if (!data?.booksByEn) return null;
+  const pinnedBook = scope?.book || null;
+  let bookKeys;
+  if (pinnedBook && data.booksByEn[pinnedBook]) {
+    bookKeys = [pinnedBook];
+  } else {
+    const source = apocryphaStandaloneSourceFromScope(scope);
+    bookKeys = source
+      ? Object.keys(data.booksByEn).filter(k => data.booksByEn[k]?.apocryphaSource === source)
+      : Object.keys(data.booksByEn);
+  }
+  if (!bookKeys.length) return null;
+  const bookKey = bookKeys[Math.floor(Math.random() * bookKeys.length)];
+  const bookData = data.booksByEn[bookKey];
+  const chKeys = Object.keys(bookData.chapters || {});
+  if (!chKeys.length) {
+    if (pinnedBook) return null;
+    if (attempt > 8) return null;
+    return fetchRandomApocryphaStandaloneVerse(module, scope, attempt + 1);
+  }
+  const chKey = chKeys[Math.floor(Math.random() * chKeys.length)];
+  const chapter = parseInt(chKey, 10);
+  const vKeys = Object.keys(bookData.chapters[chKey] || {});
+  if (!vKeys.length) {
+    if (pinnedBook) return null;
+    if (attempt > 8) return null;
+    return fetchRandomApocryphaStandaloneVerse(module, scope, attempt + 1);
+  }
+  const vKey = vKeys[Math.floor(Math.random() * vKeys.length)];
+  const verse = parseInt(vKey, 10);
+  const text = bookData.chapters[chKey][vKey];
+  const bookName = getGhLocalizedBookName(module, bookKey);
+  const ref = `${bookName} ${chapter}:${verse}`;
+  return attachGeneratorPassageMeta({
+    text, ref, version: module, bookName, bssBookId: bookData.bookId, chapter, verse
+  }, bookKey, chapter, verse, bookData.bookId);
+}
+
 async function fetchRandomGhVerse(module, scope, attempt = 0) {
   module = normalizeGhModuleId(module);
   if (apiCircuitOpen() || attempt > 8) return null;
+  if (isApocryphaStandaloneTranslation(module)) {
+    return fetchRandomApocryphaStandaloneVerse(module, scope, attempt);
+  }
   const data = await loadGhTranslationData(module);
   if (!data?.bookIds?.length) return null;
   const pinnedBook = scope.book || null;
@@ -6510,8 +6786,15 @@ function isSegondMode(module) {
   return getTranslationLang(module) === 'fr';
 }
 
-function getTranslationLabel(module) {
-  const b = GH_BIBLES[normalizeGhModuleId(module)];
+function getTranslationLabel(module, bookKey) {
+  const mod = normalizeGhModuleId(module);
+  if (isApocryphaStandaloneTranslation(mod) && bookKey) {
+    const resolvedKey = getApocryphaStandaloneBookKeyForLabel(mod, bookKey);
+    const data = GH_MEMORY_CACHE[mod];
+    const source = data?.booksByEn?.[resolvedKey]?.apocryphaSource || apocryphaStandaloneSourceFromBookKey(resolvedKey);
+    if (source) return getApocryphaStandaloneTranslationLabel(source);
+  }
+  const b = GH_BIBLES[mod];
   return b ? (b.shortname || module) : module;
 }
 
@@ -8227,7 +8510,7 @@ function applyTranslationRtl(version) {
     if (!bookSel || !bookEn) return;
     if (optionValueExists(bookSel, bookEn)) bookSel.value = bookEn;
     const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value);
-    if (!getAvailableBookIds(version).includes(BOOK_NUM[bookEn])) return;
+    if (!isBookAvailableInVersion(version, bookEn)) return;
     populateReadChapterSelect(p, bookEn, version);
     const chSel = document.getElementById(p + '-read-chapter');
     if (!chSel) return;
@@ -8349,8 +8632,18 @@ function applyTranslationRtl(version) {
   }
 
   function getReadDisplayRef(data) {
-    if (data.verses.length > 1 && data.bookName != null && data.chapter != null) {
-      return `${data.bookName} ${data.chapter}`;
+    const version = data.version;
+    let bookName = data.bookName;
+    if (isApocryphaStandaloneTranslation(version) && bookName) {
+      bookName = stripApocryphaStandaloneSourceSuffix(bookName);
+    }
+    if (data.verses.length > 1 && bookName != null && data.chapter != null) {
+      return `${bookName} ${data.chapter}`;
+    }
+    if (isApocryphaStandaloneTranslation(version) && data.ref) {
+      return data.ref.replace(/^(.+?)\s+(\d+(?::\d+(?:-\d+)?)?)$/, (_, book, rest) =>
+        `${stripApocryphaStandaloneSourceSuffix(book)} ${rest}`
+      );
     }
     return data.ref;
   }
@@ -8358,27 +8651,26 @@ function applyTranslationRtl(version) {
   function getReadNavPosition(p) {
     const bookEn = document.getElementById(p + '-read-book').value;
     const chapter = parseInt(document.getElementById(p + '-read-chapter').value, 10) || 1;
-    const bookIdx = ALL.indexOf(bookEn);
-    return { bookEn, bookIdx, chapter };
+    return { bookEn, chapter };
   }
 
   function canReadPrev(p) {
-    const { bookIdx, chapter } = getReadNavPosition(p);
-    const version = document.getElementById(p + '-version').value;
-    const allowed = getAvailableBookIds(version);
-    const pos = allowed.indexOf(bookIdx + 1);
-    return (pos > 0) || chapter > 1;
+    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+    const { bookEn, chapter } = getReadNavPosition(p);
+    const list = getReadNavBookList(version);
+    const pos = list.indexOf(bookEn);
+    return pos > 0 || chapter > 1;
   }
 
   function canReadNext(p) {
-    const { bookIdx, chapter } = getReadNavPosition(p);
-    if (bookIdx < 0) return false;
-    const version = document.getElementById(p + '-version').value;
-    const allowed = getAvailableBookIds(version);
-    const pos = allowed.indexOf(bookIdx + 1);
+    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+    const { bookEn, chapter } = getReadNavPosition(p);
+    const list = getReadNavBookList(version);
+    const pos = list.indexOf(bookEn);
     if (pos < 0) return false;
-    if (chapter < CHAPTER_COUNTS[bookIdx]) return true;
-    return pos < allowed.length - 1;
+    const maxCh = getChapterCountForBook(version, bookEn);
+    if (chapter < maxCh) return true;
+    return pos < list.length - 1;
   }
 
   function updateReadChapterNav(p) {
@@ -8390,13 +8682,14 @@ function applyTranslationRtl(version) {
   }
 
   async function navigateReadChapter(p, delta) {
-    let { bookIdx, chapter } = getReadNavPosition(p);
-    if (bookIdx < 0) return;
-    const version = document.getElementById(p + '-version').value;
-    const allowed = getAvailableBookIds(version);
-    const idxToPos = new Map(allowed.map((id, i) => [id - 1, i]));
-    let pos = idxToPos.get(bookIdx);
-    if (pos == null) {
+    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+    if (isApocryphaStandaloneTranslation(version) || getGhMeta(version)?.hasApocrypha) {
+      await loadGhTranslationData(version);
+    }
+    let { bookEn, chapter } = getReadNavPosition(p);
+    const list = getReadNavBookList(version);
+    let pos = list.indexOf(bookEn);
+    if (pos < 0) {
       const fallbackBook = getFirstAvailableBook(version);
       await loadReadChapterAt(p, fallbackBook, 1, { scrollToTop: true });
       return;
@@ -8406,19 +8699,20 @@ function applyTranslationRtl(version) {
       if (chapter > 1) chapter--;
       else if (pos > 0) {
         pos--;
-        bookIdx = allowed[pos] - 1;
-        chapter = CHAPTER_COUNTS[bookIdx] || 1;
+        bookEn = list[pos];
+        chapter = getChapterCountForBook(version, bookEn);
       } else return;
     } else {
-      if (chapter < CHAPTER_COUNTS[bookIdx]) chapter++;
-      else if (pos < allowed.length - 1) {
+      const maxCh = getChapterCountForBook(version, bookEn);
+      if (chapter < maxCh) chapter++;
+      else if (pos < list.length - 1) {
         pos++;
-        bookIdx = allowed[pos] - 1;
+        bookEn = list[pos];
         chapter = 1;
       } else return;
     }
 
-    await loadReadChapterAt(p, ALL[bookIdx], chapter, { scrollToTop: true });
+    await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true });
   }
 
   function readChapterCacheKey(version, bookEn, chapter) {
@@ -8640,11 +8934,15 @@ function applyTranslationRtl(version) {
 
     const end = verseEnd ?? verse;
     // Allow passage DOM to settle after async load before smooth scroll.
-    requestAnimationFrame(() => {
+    const scrollDelay = options.slowScroll ? 120 : 0;
+    const runScroll = () => scrollToReadVerses(p, verse, end, options);
+    if (scrollDelay) {
+      setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(runScroll)), scrollDelay);
+    } else {
       requestAnimationFrame(() => {
-        scrollToReadVerses(p, verse, end, options);
+        requestAnimationFrame(runScroll);
       });
-    });
+    }
   }
 
   let _readOpenTarget = null;
@@ -8670,7 +8968,10 @@ function applyTranslationRtl(version) {
     const p = target.p;
     let parsed = { ...target.parsed };
     const genVersion = document.getElementById(p + '-version')?.value;
-    if (genVersion) await ensureBooksForVersion(genVersion);
+    if (genVersion) {
+      if (isApocryphaStandaloneTranslation(genVersion)) await loadGhTranslationData(genVersion);
+      else await ensureBooksForVersion(genVersion);
+    }
     if (genVersion) {
       ['d', 'm'].forEach(pl => {
         const vsel = document.getElementById(pl + '-version');
@@ -8683,8 +8984,13 @@ function applyTranslationRtl(version) {
     });
     const active = activePanel();
     await updateBooks(active, { forceReadInit: true });
-    const version = document.getElementById(p + '-version')?.value;
-    if (version) {
+    const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value);
+    if (isApocryphaStandaloneTranslation(version)) {
+      if (!GH_MEMORY_CACHE[version]?.booksByEn?.[parsed.book]) {
+        showToast('Could not open this reference in Read Bible.');
+        return;
+      }
+    } else if (version) {
       const avail = getAvailableBookIds(version);
       const bookId = BOOK_NUM[parsed.book];
       if (bookId && !avail.includes(bookId)) {
@@ -8770,9 +9076,10 @@ function applyTranslationRtl(version) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    const avail = getAvailableBookIds(version);
-    const bookId = BOOK_NUM[bookEn];
-    if (!bookId || !avail.includes(bookId)) {
+    if (isApocryphaStandaloneTranslation(version)) {
+      await loadGhTranslationData(version);
+    }
+    if (!isBookAvailableInVersion(version, bookEn)) {
       bookEn = getFirstAvailableBook(version);
       chapter = 1;
     }
@@ -8789,6 +9096,7 @@ function applyTranslationRtl(version) {
     if (cached) {
       applyReadChapterData(p, bookEn, chapter, cached);
       if (scrollToTop) scrollReadAreaToTop(p);
+      updateReadChapterNav(p);
       return;
     }
 
@@ -8814,13 +9122,14 @@ function applyTranslationRtl(version) {
       await loadReadPassage(p, buildReadReference(bookEn, chapter, 1, 1, version));
     }
     if (scrollToTop) scrollReadAreaToTop(p);
+    updateReadChapterNav(p);
   }
 
   function getReadPassageCopyText(p) {
     const entry = current[p];
     if (entry?.readVerses?.length) {
       const body = entry.readVerses.map(v => `${v.num} ${v.text}`).join('\n\n');
-      const label = getTranslationLabel(entry.version);
+      const label = getTranslationLabel(entry.version, entry.readBook);
       return `${body}\n\n— ${entry.ref} · ${label}`;
     }
     const display = document.getElementById(p + '-verseDisplay');
@@ -8877,8 +9186,31 @@ function applyTranslationRtl(version) {
     if (!sel) return;
     const saved = sel.value;
     const langCode = getTranslationLang(version);
-    const allowed = new Set(getAvailableBookIds(version));
+    version = normalizeGhModuleId(version);
     const frag = document.createDocumentFragment();
+    if (isApocryphaStandaloneTranslation(version)) {
+      const data = GH_MEMORY_CACHE[version];
+      const addGroup = (label, source) => {
+        const g = document.createElement('optgroup');
+        g.label = label;
+        Object.keys(data?.booksByEn || {})
+          .filter(k => data.booksByEn[k]?.apocryphaSource === source)
+          .forEach(k => {
+            const o = document.createElement('option');
+            o.value = k;
+            o.textContent = data.booksByEn[k].localizedName || k;
+            g.appendChild(o);
+          });
+        if (g.children.length) frag.appendChild(g);
+      };
+      addGroup('Apocrypha (KJV)', 'kjv');
+      addGroup('Apocrypha (WEB)', 'web');
+      sel.replaceChildren(frag);
+      if (optionValueExists(sel, saved)) sel.value = saved;
+      else sel.value = getFirstAvailableBook(version);
+      return;
+    }
+    const allowed = new Set(getAvailableBookIds(version));
     const otG = document.createElement('optgroup');
     otG.label = ui.ot;
     OT.forEach(b => {
@@ -9120,7 +9452,7 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
-    const label = getTranslationLabel(data.version);
+    const label = getTranslationLabel(data.version, passageParsed?.book);
     const uiRef = data.ref;
     const reveal = verseRevealClass();
     clearReadDisplayLoading(p);
@@ -9278,7 +9610,8 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
-    const label = getTranslationLabel(data.version);
+    const bookEn = document.getElementById(p + '-read-book')?.value;
+    const label = getTranslationLabel(data.version, bookEn);
     const displayRef = getReadDisplayRef(data);
     const reveal = verseRevealClass(animate === false);
     clearReadDisplayLoading(p);
@@ -9287,7 +9620,6 @@ function applyTranslationRtl(version) {
       : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
-    const bookEn = document.getElementById(p + '-read-book')?.value;
     const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
     const verseStart = data.verses[0]?.num;
     const verseEnd = data.verses[data.verses.length - 1]?.num;
@@ -9685,10 +10017,32 @@ function applyTranslationRtl(version) {
     }
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
-    _bookLoadOk = !!langBooks.length && !!availableIds.length;
+    _bookLoadOk = isApocryphaStandaloneTranslation(version) || (!!langBooks.length && !!availableIds.length);
 
     if (showBooks) {
       const frag = document.createDocumentFragment();
+      if (isApocryphaStandaloneTranslation(version)) {
+        if (!GH_MEMORY_CACHE[version]?.booksByEn && !options.skipFetch) {
+          try { await loadGhTranslationData(version); } catch { /* show scope options */ }
+        }
+        const wholeOpt = document.createElement('option');
+        wholeOpt.value = 'whole';
+        wholeOpt.textContent = '— Whole Translation (random) —';
+        frag.appendChild(wholeOpt);
+        const kjvOpt = document.createElement('option');
+        kjvOpt.value = APOCRYPHA_STANDALONE_BOOK_KJV;
+        kjvOpt.textContent = '— Apocrypha (KJV) —';
+        frag.appendChild(kjvOpt);
+        const webOpt = document.createElement('option');
+        webOpt.value = APOCRYPHA_STANDALONE_BOOK_WEB;
+        webOpt.textContent = '— Apocrypha (WEB) —';
+        frag.appendChild(webOpt);
+        appendApocryphaStandaloneBookOptions(frag, version);
+        sel.replaceChildren(frag);
+        if (optionValueExists(sel, savedBook)) sel.value = savedBook;
+        else sel.value = 'whole';
+        wrapper.style.display = '';
+      } else {
       const whole = document.createElement('option');
       whole.value = 'whole';
       whole.textContent = ui.whole;
@@ -9738,6 +10092,7 @@ function applyTranslationRtl(version) {
         sel.value = GH_DEFAULT_BOOK;
       }
       wrapper.style.display = '';
+      }
     } else {
       sel.replaceChildren();
       wrapper.style.display = 'none';
@@ -9871,7 +10226,7 @@ function applyTranslationRtl(version) {
     }
     const cleanText = entry.text.replace(/\s+"/g, '"').replace(/\s+'/g, "'");
     const safeText = escapeHtml(cleanText);
-    const label = escapeHtml(getTranslationLabel(entry.version));
+    const label = escapeHtml(getTranslationLabel(entry.version, entry.genBook || entry.passageParsed?.book));
     const safeRef = escapeHtml(entry.ref);
     const reveal = verseRevealClass();
     display.classList.remove('loading');
@@ -9996,7 +10351,14 @@ function applyTranslationRtl(version) {
   function resolveBookScope(p) {
     const testament = document.getElementById(p + '-testament').value;
     const bookSel   = document.getElementById(p + '-book');
+    const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value);
     if (testament === 'custom') {
+      if (isApocryphaStandaloneTranslation(version)) {
+        if (bookSel.value === APOCRYPHA_STANDALONE_BOOK_WEB) return { book: null, randomScope: 'ApocryphaWEB' };
+        if (bookSel.value === APOCRYPHA_STANDALONE_BOOK_KJV) return { book: null, randomScope: 'ApocryphaKJV' };
+        if (bookSel.value === 'whole') return { book: null, randomScope: 'ApocryphaWhole' };
+        return { book: bookSel.value, randomScope: null };
+      }
       if (bookSel.value === 'old') return { book: null, randomScope: 'OT' };
       if (bookSel.value === 'new') return { book: null, randomScope: 'NT' };
       if (bookSel.value === 'apocrypha') return { book: null, randomScope: 'Apocrypha' };
@@ -10184,7 +10546,7 @@ function applyTranslationRtl(version) {
       await ensureTranslationLoadedForScope(version, scope);
       const verseTimeout = getVerseGenerateTimeoutMs(scope, version);
       let entry = await withTimeout(fetchRandomBssVerse(version, scope), verseTimeout, null);
-      if (!entry && !isApocryphaBookEn(scope.book) && !isApocryphaRandomScope(scope)) {
+      if (!entry && !isApocryphaStandaloneTranslation(version) && !isApocryphaBookEn(scope.book) && !isApocryphaRandomScope(scope)) {
         entry = getLocalVerse(scope.book, version);
       }
       if (entry) ensureGeneratorEntryMeta(entry);
@@ -10196,7 +10558,7 @@ function applyTranslationRtl(version) {
         return;
       }
       let entry = null;
-      if (!isApocryphaBookEn(scope.book) && !isApocryphaRandomScope(scope)) {
+      if (!isApocryphaStandaloneTranslation(version) && !isApocryphaBookEn(scope.book) && !isApocryphaRandomScope(scope)) {
         entry = getLocalVerse(scope.book, version);
       }
       if (entry) ensureGeneratorEntryMeta(entry);
@@ -10259,7 +10621,8 @@ function applyTranslationRtl(version) {
     }
 
     if (!current[p]) return;
-    const text = `"${current[p].text}" — ${current[p].ref} (${getTranslationLabel(current[p].version)})`;
+    const bookKey = current[p].readBook || current[p].genBook || current[p].passageParsed?.book;
+    const text = `"${current[p].text}" — ${current[p].ref} (${getTranslationLabel(current[p].version, bookKey)})`;
     copyTextToClipboard(text, 'Verse copied to clipboard!');
   }
 
@@ -10268,7 +10631,8 @@ function applyTranslationRtl(version) {
   ══════════════════════════════════════ */
   function openShare(p) {
     if (!current[p]) { showToast('Generate a verse first!'); return; }
-    const text = `"${current[p].text}" — ${current[p].ref} (${getTranslationLabel(current[p].version)})`;
+    const bookKey = current[p].readBook || current[p].genBook || current[p].passageParsed?.book;
+    const text = `"${current[p].text}" — ${current[p].ref} (${getTranslationLabel(current[p].version, bookKey)})`;
     const enc  = encodeURIComponent(text);
     const url  = encodeURIComponent('https://sarhveshracktoo.github.io/versegenerator/');
     document.getElementById('share-wa').href = `https://wa.me/?text=${enc}`;
@@ -10694,7 +11058,7 @@ function applyTranslationRtl(version) {
     }
     ctx.fillStyle = '#c9a84c';
     ctx.font = '600 28px Georgia, serif';
-    const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version)})`;
+    const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version, entry.genBook || entry.passageParsed?.book)})`;
     ctx.fillText(refLine, S / 2, refY + 8);
 
     const refOrnament = '──── ❤︎ ────';
