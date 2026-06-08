@@ -8748,9 +8748,10 @@ function applyTranslationRtl(version) {
     return prefersReducedMotion() ? 'hbv-reveal-instant' : 'hbv-reveal';
   }
 
-  function hbvStageHtml(url) {
+  function hbvStageHtml(url, animate) {
     const safeUrl = escapeHtml(url);
-    return `<div class="hbv-stage ${hbvRevealClass()}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+    const reveal = animate !== false ? hbvRevealClass() : '';
+    return `<div class="hbv-stage${reveal ? ' ' + reveal : ''}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
   }
 
   function waitMs(ms) {
@@ -8790,7 +8791,7 @@ function applyTranslationRtl(version) {
       throw new Error('image load failed');
     }
     display.classList.remove('loading');
-    display.innerHTML = hbvStageHtml(entry.url);
+    display.innerHTML = hbvStageHtml(entry.url, options.animate);
     setHbvActionsVisible(p, true);
     updateHbvNav(p);
     const counter = document.getElementById(p + '-counter');
@@ -8798,7 +8799,7 @@ function applyTranslationRtl(version) {
     const imgWrap = document.getElementById(p + '-imageWrap');
     if (imgWrap) imgWrap.style.display = 'none';
     if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
-    scheduleScrollToHbvImage(p);
+    scheduleScrollToHbvImage(p, { instant: options.animate === false });
   }
 
   function scrollToHbvMobileLayout() {
@@ -8836,12 +8837,14 @@ function applyTranslationRtl(version) {
     }
   }
 
-  function scheduleScrollToHbvImage(p) {
+  function scheduleScrollToHbvImage(p, options) {
+    options = options || {};
     const isMobile = document.body.classList.contains('layout-mobile');
-    const fadeDelay = prefersReducedMotion() ? 0 : 80;
+    const instant = options.instant || prefersReducedMotion();
+    const fadeDelay = instant ? 0 : 80;
     const scroll = () => requestAnimationFrame(() => requestAnimationFrame(() => runHbvScroll(p)));
     setTimeout(scroll, fadeDelay);
-    if (isMobile && p === 'm' && !prefersReducedMotion()) {
+    if (isMobile && p === 'm' && !instant) {
       setTimeout(scroll, 580);
     }
   }
@@ -8850,15 +8853,11 @@ function applyTranslationRtl(version) {
     attempt = attempt || 0;
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
-    let hadImage = false;
     if (attempt === 0) {
-      hadImage = current[p]?.type === 'hbv';
-      if (hadImage) history[p].push(current[p]);
+      if (current[p]?.type === 'hbv') history[p].push(current[p]);
       future[p] = [];
-      if (!hadImage) {
-        display.classList.add('loading');
-        display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
-      }
+      display.classList.add('loading');
+      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading image…</p>`;
     }
     const urls = await loadHbvImageUrls();
     if (!urls.length) {
@@ -8870,7 +8869,7 @@ function applyTranslationRtl(version) {
     const url = pickRandomHbvUrl(urls);
     const entry = { type: 'hbv', url };
     try {
-      await renderHbvImage(p, entry, { transition: hadImage });
+      await renderHbvImage(p, entry, { transition: false, animate: false });
       current[p] = entry;
       updateHbvNav(p);
     } catch {
@@ -11146,7 +11145,7 @@ function applyTranslationRtl(version) {
       future[p].push(current[p]);
       const prev = history[p].pop();
       current[p] = prev;
-      await renderHbvImage(p, prev, { transition: true });
+      await renderHbvImage(p, prev, { transition: true, animate: true });
       updateHbvNav(p);
       return;
     }
@@ -11166,7 +11165,7 @@ function applyTranslationRtl(version) {
       history[p].push(current[p]);
       const next = future[p].pop();
       current[p] = next;
-      await renderHbvImage(p, next, { transition: true });
+      await renderHbvImage(p, next, { transition: true, animate: true });
       updateHbvNav(p);
       return;
     }
