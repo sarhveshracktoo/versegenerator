@@ -8719,6 +8719,10 @@ function applyTranslationRtl(version) {
     const imgWrap = document.getElementById(p + '-imageWrap');
     if (imgWrap) imgWrap.style.display = 'none';
     if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
+    // Smooth scroll to the image after it renders
+    requestAnimationFrame(function() {
+      display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   async function generateHbv(p, attempt) {
