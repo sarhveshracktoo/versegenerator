@@ -5588,7 +5588,9 @@ The website owner respects legitimate copyright claims and aims to resolve such 
 
 /* GitHub Bible Translations — replaces BSS / HAO / Bolls */
 const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Translations_api.json';
-const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v2';
+const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v4';
+const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt']);
+const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
 const GH_TX_CACHE_PREFIX = 'bible_tx_';
 const GH_BOOK_META_PREFIX = 'bible_tx_meta_';
 const GH_DEFAULT_TRANSLATION = 'NIV';
@@ -5752,6 +5754,39 @@ function normalizeGhModuleId(id) {
   return id;
 }
 
+function getSavedDefaultTranslation() {
+  try {
+    const saved = localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY);
+    if (!saved) return null;
+    const normalized = normalizeGhModuleId(saved);
+    return normalized && GH_BIBLES[normalized] ? normalized : null;
+  } catch { /* private mode */ }
+  return null;
+}
+
+function applySavedDefaultTranslation(options) {
+  options = options || {};
+  const trans = getSavedDefaultTranslation();
+  if (!trans) return null;
+  let applied = false;
+  ['d', 'm'].forEach(p => {
+    const sel = document.getElementById(p + '-version');
+    if (sel && optionValueExists(sel, trans)) {
+      sel.value = trans;
+      applied = true;
+    }
+  });
+  if (applied) {
+    if (options.applyRtl !== false) applyTranslationRtl(trans);
+    if (options.syncPrefs !== false) {
+      document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+        if (optionValueExists(sel, trans)) sel.value = trans;
+      });
+    }
+  }
+  return applied ? trans : null;
+}
+
 function readEmbeddedTranslationsIndex() {
   try {
     const el = document.getElementById('translations-api-index');
@@ -5776,10 +5811,27 @@ function writeGhIndexCache(indexData) {
   try { localStorage.setItem(GH_INDEX_CACHE_KEY, JSON.stringify(indexData)); } catch { /* quota */ }
 }
 
+function isExcludedTranslationEntry(t) {
+  if (!t) return true;
+  const id = String(t.id || '');
+  const abbr = String(t.abbreviation || '').toUpperCase();
+  if (EXCLUDED_TRANSLATION_IDS.has(id) || EXCLUDED_TRANSLATION_IDS.has(abbr)) return true;
+  return false;
+}
+
+function filterTranslationsIndex(indexData) {
+  if (!indexData?.translations?.length) return indexData;
+  return {
+    ...indexData,
+    translations: indexData.translations.filter(t => !isExcludedTranslationEntry(t))
+  };
+}
+
 function buildGhBiblesFromIndex(indexData) {
   const out = {};
   const seen = new Set();
   (indexData.translations || []).forEach((t, i) => {
+    if (isExcludedTranslationEntry(t)) return;
     const abbr = (t.abbreviation || t.id || '').toUpperCase();
     if (!t.id || !t.rawUrl || seen.has(abbr)) return;
     seen.add(abbr);
@@ -5826,7 +5878,7 @@ function ensureApocryphaStandaloneInIndex(indexData) {
 
 function initGhBiblesFromIndex(indexData) {
   if (!indexData) return;
-  indexData = ensureApocryphaStandaloneInIndex(indexData);
+  indexData = ensureApocryphaStandaloneInIndex(filterTranslationsIndex(indexData));
   GH_TRANSLATIONS_INDEX = indexData;
   GH_BIBLES = buildGhBiblesFromIndex(indexData);
 }
@@ -7091,8 +7143,16 @@ function populateTranslationSelects() {
       frag.appendChild(og);
     });
     sel.replaceChildren(frag);
-    sel.value = optionValueExists(sel, prev) ? prev : (GH_BIBLES[GH_DEFAULT_TRANSLATION] ? GH_DEFAULT_TRANSLATION : sel.options[0]?.value || GH_DEFAULT_TRANSLATION);
+    const savedTrans = getSavedDefaultTranslation();
+    if (savedTrans && optionValueExists(sel, savedTrans)) {
+      sel.value = savedTrans;
+    } else if (optionValueExists(sel, prev)) {
+      sel.value = prev;
+    } else {
+      sel.value = GH_BIBLES[GH_DEFAULT_TRANSLATION] ? GH_DEFAULT_TRANSLATION : (sel.options[0]?.value || GH_DEFAULT_TRANSLATION);
+    }
   });
+  applySavedDefaultTranslation();
   populateDefaultTranslationSelects();
 }
 
@@ -7103,6 +7163,11 @@ async function backgroundRefreshBibleList() {
       initGhBiblesFromIndex(remote);
       writeGhIndexCache(remote);
       populateTranslationSelects();
+      const restored = applySavedDefaultTranslation({ syncPrefs: true });
+      if (restored) {
+        applyInstantBookIdsFromMeta(restored);
+        try { await updateBooks(activePanel()); } catch { /* ignore */ }
+      }
     }
   } catch { /* ignore */ }
   const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
@@ -8528,7 +8593,6 @@ function applyTranslationRtl(version) {
      CONTROL PANEL — DEFAULT MODE & TRANSLATION
   ══════════════════════════════════════ */
   const DEFAULT_MODE_STORAGE_KEY = 'vg-default-mode';
-  const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
   const DEFAULT_MODES = [
     { id: 'custom', label: 'Verse Generator' },
     { id: 'read', label: 'Read Bible' },
@@ -8539,14 +8603,6 @@ function applyTranslationRtl(version) {
     try {
       const saved = localStorage.getItem(DEFAULT_MODE_STORAGE_KEY);
       if (saved && DEFAULT_MODES.some(m => m.id === saved)) return saved;
-    } catch { /* ignore */ }
-    return null;
-  }
-
-  function getSavedDefaultTranslation() {
-    try {
-      const saved = localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY);
-      if (saved) return saved;
     } catch { /* ignore */ }
     return null;
   }
@@ -8587,13 +8643,7 @@ function applyTranslationRtl(version) {
   }
 
   function applySavedDefaultsOnLoad() {
-    const trans = getSavedDefaultTranslation();
-    if (trans) {
-      ['d', 'm'].forEach(p => {
-        const sel = document.getElementById(p + '-version');
-        if (sel && optionValueExists(sel, trans)) sel.value = trans;
-      });
-    }
+    applySavedDefaultTranslation();
     const mode = getSavedDefaultMode();
     if (mode) {
       ['d', 'm'].forEach(p => {
@@ -8625,10 +8675,12 @@ function applyTranslationRtl(version) {
 
   async function applyDefaultTranslation(version, options) {
     options = options || {};
-    if (!isValidTranslationModule(version)) return;
+    version = normalizeGhModuleId(version);
+    if (!version) return;
     if (options.save !== false) {
       try { localStorage.setItem(DEFAULT_TRANSLATION_STORAGE_KEY, version); } catch { /* private mode */ }
     }
+    if (!isValidTranslationModule(version)) return;
     syncDefaultPrefSelects(null, version);
     const active = activePanel();
     const vSel = document.getElementById(active + '-version');
@@ -11906,6 +11958,11 @@ function applyTranslationRtl(version) {
     }
     void loadWeeklyVersesCatalog();
 
+    applySavedDefaultTranslation();
+    const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    applyInstantBookIdsFromMeta(version);
+    applyTranslationRtl(version);
+
     // loadBibleList no longer blocks — dropdown was populated by instantInit().
     // It now loads books for the current panel and kicks off background API refresh.
     try {
@@ -11924,9 +11981,6 @@ function applyTranslationRtl(version) {
     initScrollToModeButtons();
     clearAllVersePanelLoading();
 
-    const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
-    applyInstantBookIdsFromMeta(version);
-    applyTranslationRtl(version);
     prefetchGhTranslation(version);
 
     void preloadBannerVerses(version, { silent: true });
@@ -11971,7 +12025,8 @@ function applyTranslationRtl(version) {
       const sel = document.getElementById(p + '-version');
       if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
     });
-    const defaultVer = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    const defaultVer = applySavedDefaultTranslation({ syncPrefs: false })
+      || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
     applyInstantBookIdsFromMeta(defaultVer);
     initVerseSize();
     ['d', 'm'].forEach(p => { void updateBooks(p, { skipFetch: true }); });
