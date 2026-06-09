@@ -6233,6 +6233,11 @@ function normalizeBookNameForMatch(s) {
     .replace(/\s+/g, ' ');
 }
 
+function formatGhBookDisplayName(name) {
+  if (name == null || name === '') return name;
+  return String(name).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function matchBookNameInLangMap(lower, langCode) {
   const map = LANG_BOOK_NAME_MAP[langCode];
   if (!map) return null;
@@ -6691,6 +6696,7 @@ function applyInstantBookIdsFromMeta(module) {
   }
   const meta = GH_BIBLES[module];
   if (meta?.partialCanon) {
+    if (syncBookCachesFromMemory(module)) return GH_BOOK_IDS_BY_MODULE[module];
     GH_BOOK_IDS_BY_MODULE[module] = [];
     VERSION_BOOK_IDS_CACHE[module] = [];
     return [];
@@ -6777,9 +6783,10 @@ function normalizeGhBibleJson(raw, meta) {
   const maxVerses = {};
 
   function ensureBook(bookEn, localizedName) {
+    const displayName = formatGhBookDisplayName(localizedName || bookEn) || bookEn;
     if (!booksByEn[bookEn]) {
-      booksByEn[bookEn] = { bookId: BOOK_NUM[bookEn], localizedName: localizedName || bookEn, chapters: {} };
-      if (BOOK_NUM[bookEn]) localizedNames[BOOK_NUM[bookEn]] = localizedName || bookEn;
+      booksByEn[bookEn] = { bookId: BOOK_NUM[bookEn], localizedName: displayName, chapters: {} };
+      if (BOOK_NUM[bookEn]) localizedNames[BOOK_NUM[bookEn]] = displayName;
     }
     return booksByEn[bookEn];
   }
@@ -6886,12 +6893,35 @@ function buildBooksListFromGhData(data) {
   if (!data?.bookIds?.length) return null;
   return data.bookIds.map(id => ({
     id,
-    name: data.localizedNames?.[id] || bookEnFromId(id) || String(id),
-    shortname: data.localizedNames?.[id] || bookEnFromId(id) || String(id)
+    name: formatGhBookDisplayName(data.localizedNames?.[id]) || bookEnFromId(id) || String(id),
+    shortname: formatGhBookDisplayName(data.localizedNames?.[id]) || bookEnFromId(id) || String(id)
   }));
 }
 
+function syncBookCachesFromMemory(module) {
+  module = normalizeGhModuleId(module);
+  const data = GH_MEMORY_CACHE[module];
+  if (!data?.bookIds?.length || !data?.booksByEn) return false;
+  const hasVerses = Object.values(data.booksByEn).some(b => b?.chapters && Object.keys(b.chapters).length > 0);
+  if (!hasVerses) return false;
+  GH_BOOK_IDS_BY_MODULE[module] = [...data.bookIds];
+  VERSION_BOOK_IDS_CACHE[module] = [...data.bookIds];
+  const versionBooks = buildBooksListFromGhData(data);
+  if (versionBooks?.length) VERSION_BOOKS_CACHE[module] = versionBooks;
+  return true;
+}
+
 function storeGhTranslationData(module, normalized, cacheKey) {
+  if (normalized?.localizedNames) {
+    Object.keys(normalized.localizedNames).forEach(id => {
+      normalized.localizedNames[id] = formatGhBookDisplayName(normalized.localizedNames[id]);
+    });
+  }
+  if (normalized?.booksByEn) {
+    Object.values(normalized.booksByEn).forEach(book => {
+      if (book?.localizedName) book.localizedName = formatGhBookDisplayName(book.localizedName);
+    });
+  }
   GH_MEMORY_CACHE[module] = normalized;
   GH_BOOK_IDS_BY_MODULE[module] = normalized.bookIds;
   VERSION_BOOK_IDS_CACHE[module] = [...normalized.bookIds];
@@ -6911,9 +6941,9 @@ function storeGhTranslationData(module, normalized, cacheKey) {
 async function loadGhTranslationData(module) {
   module = normalizeGhModuleId(module);
   if (GH_MEMORY_CACHE[module]?.booksByEn) {
-    if (!needsApocryphaMergeRefresh(module, GH_MEMORY_CACHE[module])) {
-      const memBooks = buildBooksListFromGhData(GH_MEMORY_CACHE[module]);
-      if (memBooks?.length) VERSION_BOOKS_CACHE[module] = memBooks;
+    if (!needsApocryphaMergeRefresh(module, GH_MEMORY_CACHE[module]) &&
+        !needsStoredBookIdsRefresh(module, GH_MEMORY_CACHE[module])) {
+      syncBookCachesFromMemory(module);
       return GH_MEMORY_CACHE[module];
     }
     delete GH_MEMORY_CACHE[module];
@@ -7352,9 +7382,9 @@ function getTranslatedBookName(enBookName, langBooks, langCode) {
   const bookId = BOOK_NUM[enBookName];
   if (!bookId) return enBookName;
   const map = LANG_BOOK_NAME_MAP[langCode || 'en'];
-  if (map && map[bookId]) return map[bookId];
+  if (map && map[bookId]) return formatGhBookDisplayName(map[bookId]);
   const entry = langBooks?.find(b => Number(b.id) === bookId);
-  return entry?.name || enBookName;
+  return formatGhBookDisplayName(entry?.name) || enBookName;
 }
 
 function collectTranslationLangCodes() {
@@ -9281,6 +9311,15 @@ function applyTranslationRtl(version) {
   let _preReadGeneratorState = null;
   const PASSAGE_ERROR_REFRESH_RESTORE_KEY = 'vg-passage-error-refresh-restore';
   let _versionChangeTimer = null;
+  let _versionChangeGeneration = 0;
+
+  function isVersionChangeStale(changeGen) {
+    return changeGen != null && changeGen !== _versionChangeGeneration;
+  }
+
+  function panelVersionIs(p, version) {
+    return normalizeGhModuleId(document.getElementById(p + '-version')?.value) === normalizeGhModuleId(version);
+  }
 
   function activePanel() {
     return getLayoutMode() === 'mobile' ? 'm' : 'd';
@@ -10021,7 +10060,7 @@ function applyTranslationRtl(version) {
           .forEach(k => {
             const o = document.createElement('option');
             o.value = k;
-            o.textContent = data.booksByEn[k].localizedName || k;
+            o.textContent = formatGhBookDisplayName(data.booksByEn[k].localizedName) || k;
             g.appendChild(o);
           });
         if (g.children.length) frag.appendChild(g);
@@ -10792,7 +10831,9 @@ function applyTranslationRtl(version) {
 
   async function updateBooks(p, options) {
     options = options || {};
+    const changeGen = options.changeGen;
     const version = normalizeGhModuleId(document.getElementById(p+'-version').value);
+    const stillCurrent = () => panelVersionIs(p, version) && !isVersionChangeStale(changeGen);
     const langCode  = getTranslationLang(version);
     const ui        = getUiStrings(langCode);
     const testamentSel = document.getElementById(p + '-testament');
@@ -10864,14 +10905,15 @@ function applyTranslationRtl(version) {
         // Do not keep the Book section stuck on “Loading Books…”.
         // Show the instant/canonical list now, then refresh from the raw GitHub JSON link in the background.
         void loadBooksForVersion(version, { awaitFetch: true }).then(() => {
-          const currentVersion = normalizeGhModuleId(document.getElementById(p+'-version')?.value);
+          if (!panelVersionIs(p, version)) return;
           const currentMode = document.getElementById(p+'-testament')?.value;
-          if (currentVersion === version && currentMode === 'custom') {
-            void updateBooks(p, { silent: true, skipFetch: true, skipReadInit: true });
+          if (currentMode === 'custom') {
+            void updateBooks(p, { silent: true, skipFetch: true, skipReadInit: true, changeGen });
           }
         }).catch(() => {});
       }
     }
+    if (!stillCurrent()) return;
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
     _bookLoadOk = isApocryphaStandaloneTranslation(version) || (!!langBooks.length && !!availableIds.length);
@@ -10999,13 +11041,16 @@ function applyTranslationRtl(version) {
       setReadModeActions(p, true);
       initReadSwipe();
       try {
+        if (!stillCurrent()) return;
         await ensureGhBooksDiscovered(version);
+        if (!stillCurrent()) return;
         if (prevTest !== 'read' || options.forceReadInit) {
           await initReadBiblePanel(p, true);
         } else if (options.refreshReadLabels) {
           await refreshReadBibleLabels(p);
         }
       } catch {
+        if (!stillCurrent()) return;
         const display = document.getElementById(p + '-verseDisplay');
         if (display) display.innerHTML = passageLoadErrorHtml(p);
       }
@@ -11276,13 +11321,18 @@ function applyTranslationRtl(version) {
   }
 
   async function onVersionChangeImpl(p) {
+    const changeGen = ++_versionChangeGeneration;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+    const isStale = () => isVersionChangeStale(changeGen);
+
     void ensureBooksForVersion(version);
     readChapterCache = {};
-    delete GH_BOOK_IDS_BY_MODULE[version];
-    delete VERSION_BOOK_IDS_CACHE[version];
-    delete VERSION_BOOKS_CACHE[version];
-    applyInstantBookIdsFromMeta(version);
+    if (!syncBookCachesFromMemory(version)) {
+      delete GH_BOOK_IDS_BY_MODULE[version];
+      delete VERSION_BOOK_IDS_CACHE[version];
+      delete VERSION_BOOKS_CACHE[version];
+      applyInstantBookIdsFromMeta(version);
+    }
     applyTranslationRtl(version);
     syncVersionSelects(version);
 
@@ -11292,9 +11342,12 @@ function applyTranslationRtl(version) {
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead });
+    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead, changeGen });
+    if (isStale()) return;
     await loadVotdAndWeekly(version);
+    if (isStale()) return;
     await refreshDevotionalScripture(version);
+    if (isStale()) return;
 
     const other = active === 'd' ? 'm' : 'd';
     const tActive = document.getElementById(active + '-testament');
@@ -11302,8 +11355,8 @@ function applyTranslationRtl(version) {
     if (tActive && tOther) tOther.value = tActive.value;
 
     if (inRead) {
-      // Always load the first available book when switching translation in Read Bible mode
-      const firstBook = getFirstAvailableBook(version);
+      const currentVersion = normalizeGhModuleId(document.getElementById(active + '-version').value);
+      const firstBook = getFirstAvailableBook(currentVersion);
       await loadReadChapterAt(active, firstBook, 1, { scrollToTop: false });
     } else if (current[active]) {
       await retranslateCurrentVerse(active, version);
