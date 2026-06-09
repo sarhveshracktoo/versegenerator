@@ -856,10 +856,10 @@
       -webkit-box-decoration-break: clone;
     }
     .read-verse-segment.verse-phrase-flash {
-      animation: versePhraseFlash 2.4s ease-out;
+      animation: versePhraseFlash 0.75s ease-in-out;
     }
     .read-verse-segment.verse-phrase-flash.verse-flash-x3 {
-      animation: versePhraseFlash 0.65s ease-out 3;
+      animation: versePhraseFlash 0.7s ease-in-out 3;
     }
     .verse-gen-tappable {
       cursor: pointer;
@@ -876,12 +876,12 @@
     }
     @keyframes versePhraseFlash {
       0% {
-        background: rgba(var(--accent-rgb), 0.42);
-        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.32);
+        background: rgba(var(--accent-rgb), 0.4);
+        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.28);
       }
-      70% {
-        background: rgba(var(--accent-rgb), 0.12);
-        box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.14);
+      40% {
+        background: rgba(var(--accent-rgb), 0.14);
+        box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.12);
       }
       100% {
         background: transparent;
@@ -9718,15 +9718,17 @@ function applyTranslationRtl(version) {
     updateScrollToModeButtons();
   }
 
+  const READ_VERSE_SCROLL_FLASH_TIMES = 3;
+
   function flashReadVerseRange(p, verseStart, verseEnd, flashTimes) {
     const display = document.getElementById(p + '-verseDisplay');
     const passage = display?.querySelector('.read-passage-text');
     if (!passage) return;
     const start = Math.min(verseStart, verseEnd);
     const end = Math.max(verseStart, verseEnd);
-    const times = flashTimes || 3;
+    const times = flashTimes || READ_VERSE_SCROLL_FLASH_TIMES;
     const flashClass = times >= 3 ? 'verse-phrase-flash verse-flash-x3' : 'verse-phrase-flash';
-    const clearMs = times >= 3 ? 2200 : 2400;
+    const clearMs = times >= 3 ? 2300 : 900;
     passage.querySelectorAll('.read-verse-segment').forEach(el => {
       const n = parseInt(el.getAttribute('data-verse-num'), 10);
       if (Number.isNaN(n) || n < start || n > end) return;
@@ -9755,17 +9757,21 @@ function applyTranslationRtl(version) {
       scrollReadAreaToTop(p);
       return;
     }
-    if (!options.flashTimes) {
+    const flashTimes = options.flashTimes || 0;
+    if (!flashTimes) {
       flashReadVerseRange(p, start, end, 1);
     }
     requestAnimationFrame(() => {
-      const offset = p === 'm' ? 88 : 32;
-      const top = window.scrollY + firstTarget.getBoundingClientRect().top - offset;
+      const rect = firstTarget.getBoundingClientRect();
+      const viewMid = window.innerHeight * 0.42;
+      const chromeOffset = p === 'm' ? 72 : 24;
+      const top = window.scrollY + rect.top - viewMid + (rect.height / 2) - chromeOffset;
       if (options.slowScroll) smoothScrollToY(top, 1000);
       else window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     });
-    if (options.flashTimes) {
-      setTimeout(() => flashReadVerseRange(p, start, end, options.flashTimes), options.slowScroll ? 1050 : 450);
+    if (flashTimes) {
+      const flashDelay = options.slowScroll ? 1100 : (prefersReducedMotion() ? 80 : 520);
+      setTimeout(() => flashReadVerseRange(p, start, end, flashTimes), flashDelay);
     }
   }
 
@@ -9776,6 +9782,10 @@ function applyTranslationRtl(version) {
   }
 
   async function showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verseEnd, options) {
+    options = options || {};
+    if (verse != null && verse !== READ_VERSE_WHOLE && !options.flashTimes) {
+      options.flashTimes = READ_VERSE_SCROLL_FLASH_TIMES;
+    }
     const version = document.getElementById(p + '-version').value;
     const key = readChapterCacheKey(version, bookEn, chapter);
     let chapterData = readChapterCache[key];
@@ -10602,7 +10612,7 @@ function applyTranslationRtl(version) {
       await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
       return;
     }
-    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse);
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, { flashTimes: READ_VERSE_SCROLL_FLASH_TIMES });
   }
 
   async function applyPassageErrorRefreshRestore(state) {
@@ -10726,7 +10736,7 @@ function applyTranslationRtl(version) {
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
-    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse);
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, { flashTimes: READ_VERSE_SCROLL_FLASH_TIMES });
   }
 
   async function onReadSearch(p) {
@@ -10755,7 +10765,9 @@ function applyTranslationRtl(version) {
     _readSyncLock = false;
 
     const verseEnd = parsed.verseEnd ?? parsed.verseStart;
-    await showReadChapterAndScrollToVerse(p, parsed.book, parsed.chapter, parsed.verseStart, verseEnd);
+    await showReadChapterAndScrollToVerse(p, parsed.book, parsed.chapter, parsed.verseStart, verseEnd, {
+      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES
+    });
   }
 
   async function refreshReadBibleLabels(p) {
