@@ -133,11 +133,11 @@
     .verse-reveal-instant { animation: fadeUp 0.22s ease both; }
     @media (prefers-reduced-motion: reduce) {
       .verse-reveal, .verse-reveal-instant,
-      .hbv-stage.hbv-reveal, .hbv-stage.hbv-reveal-instant,
+      .hbv-stage.hbv-reveal, .hbv-stage.hbv-reveal-instant, .hbv-stage.hbv-nav-reveal,
       .header, .votd-panel, .weekly-banner, .scroll-card, .mob-topbar, .mob-card {
         animation: none !important;
       }
-      .hbv-stage { transition: none !important; }
+      .hbv-stage, .hbv-viewport.is-hbv-loading .hbv-stage { transition: none !important; }
       .votd-panel .votd-verse-wrap { transition: none !important; }
       .cross-icon, .mob-cross { animation: none !important; }
       html.theme-switching body,
@@ -934,7 +934,7 @@
     }
     .hbv-stage {
       opacity: 1;
-      transition: opacity 0.42s ease;
+      transition: opacity 0.5s ease;
     }
     .hbv-stage.hbv-fade-out {
       opacity: 0;
@@ -945,6 +945,9 @@
     .hbv-stage.hbv-reveal-instant {
       animation: hbvFadeIn 0.15s ease both;
     }
+    .hbv-stage.hbv-nav-reveal {
+      animation: hbvFadeIn 0.5s ease both;
+    }
     .hbv-actions {
       display: none;
       gap: 8px;
@@ -952,13 +955,12 @@
       justify-content: center;
       flex-wrap: wrap;
     }
-    #d-verseDisplay.is-hbv-loading,
-    .mob-verse-box.is-hbv-loading {
+    .hbv-viewport {
       position: relative;
-      min-height: 110px;
+      width: 100%;
+      min-height: 80px;
     }
-    #d-verseDisplay.is-hbv-loading .hbv-stage,
-    .mob-verse-box.is-hbv-loading .hbv-stage {
+    .hbv-viewport.is-hbv-loading .hbv-stage {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.35s ease;
@@ -971,9 +973,12 @@
       justify-content: center;
       gap: 8px;
       z-index: 2;
+      background: rgba(42, 26, 10, 0.22);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 3px;
     }
-    #d-verseDisplay.is-hbv-loading .hbv-loader,
-    .mob-verse-box.is-hbv-loading .hbv-loader {
+    .hbv-viewport.is-hbv-loading .hbv-loader {
       display: flex;
     }
     .hbv-loader span {
@@ -9049,8 +9054,9 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (display) {
-      display.classList.remove('loading', 'read-updating', 'is-hbv-loading');
-      display.style.minHeight = '';
+      display.classList.remove('loading', 'read-updating');
+      display.querySelector('.hbv-viewport')?.classList.remove('is-hbv-loading');
+      display.querySelectorAll('.hbv-viewport').forEach(vp => { vp.style.minHeight = ''; });
       display.innerHTML = isDesk
         ? '<p class="verse-placeholder">Generate a Hardest Bible Image.</p>'
         : '<p class="mob-placeholder">Generate a Hardest Bible Image.</p>';
@@ -9081,14 +9087,35 @@ function applyTranslationRtl(version) {
 
   const HBV_FADE_MS = 420;
   const HBV_MIN_LOAD_MS = 2000;
+  const HBV_NAV_FADE_OUT_MS = 500;
+  const HBV_NAV_LOAD_MS = 1000;
+  const HBV_NAV_FADE_IN_MS = 500;
+  let _hbvNavInFlight = false;
+
+  function getOrCreateHbvViewport(display) {
+    if (!display) return null;
+    let vp = display.querySelector('.hbv-viewport');
+    if (vp) return vp;
+    const stage = display.querySelector('.hbv-stage');
+    vp = document.createElement('div');
+    vp.className = 'hbv-viewport';
+    if (stage) {
+      stage.parentNode.insertBefore(vp, stage);
+      vp.appendChild(stage);
+    } else {
+      display.appendChild(vp);
+    }
+    return vp;
+  }
 
   function ensureHbvLoader(display) {
-    if (!display || display.querySelector('.hbv-loader')) return;
+    const vp = getOrCreateHbvViewport(display);
+    if (!vp || vp.querySelector('.hbv-loader')) return;
     const loader = document.createElement('div');
     loader.className = 'hbv-loader';
     loader.setAttribute('aria-hidden', 'true');
     loader.innerHTML = '<span></span><span></span><span></span>';
-    display.appendChild(loader);
+    vp.appendChild(loader);
   }
 
   function setHbvGenerateButtonsDisabled(disabled) {
@@ -9098,17 +9125,33 @@ function applyTranslationRtl(version) {
     });
   }
 
+  function setHbvNavButtonsDisabled(p, disabled) {
+    ['prev', 'next', 'save'].forEach(suffix => {
+      const btn = document.getElementById(p + '-hbv-' + suffix + '-btn');
+      if (btn) btn.disabled = !!disabled;
+    });
+    if (!disabled) updateHbvNav(p);
+  }
+
+  function prefetchHbvNeighbors(p) {
+    const prev = history[p]?.[history[p].length - 1];
+    const next = future[p]?.[future[p].length - 1];
+    if (prev?.url) void preloadHbvImage(prev.url).catch(() => {});
+    if (next?.url) void preloadHbvImage(next.url).catch(() => {});
+  }
+
   function setHbvDisplayLoading(p, loading) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
+    const vp = getOrCreateHbvViewport(display);
+    if (!vp) return;
     ensureHbvLoader(display);
     if (loading) {
-      const h = display.offsetHeight;
-      if (h > 110) display.style.minHeight = h + 'px';
-      display.classList.add('is-hbv-loading');
+      const h = Math.max(vp.offsetHeight, 80);
+      vp.style.minHeight = h + 'px';
+      vp.classList.add('is-hbv-loading');
     } else {
-      display.classList.remove('is-hbv-loading');
-      display.style.minHeight = '';
+      vp.classList.remove('is-hbv-loading');
     }
     if (isHbvMode(p)) setHbvGenerateButtonsDisabled(loading);
   }
@@ -9125,61 +9168,114 @@ function applyTranslationRtl(version) {
     return prefersReducedMotion() ? 'hbv-reveal-instant' : 'hbv-reveal';
   }
 
-  function hbvStageHtml(url, animate) {
+  function hbvStageHtml(url, revealMode) {
     const safeUrl = escapeHtml(url);
-    const reveal = animate !== false ? hbvRevealClass() : '';
-    return `<div class="hbv-stage${reveal ? ' ' + reveal : ''}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+    let reveal = '';
+    if (revealMode === 'nav') reveal = ' hbv-nav-reveal';
+    else if (revealMode === 'instant') reveal = ' hbv-reveal-instant';
+    else if (revealMode !== false) reveal = ' ' + hbvRevealClass();
+    return `<div class="hbv-viewport"><div class="hbv-stage${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div></div>`;
   }
 
   function waitMs(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  async function fadeOutHbvStage(display) {
+  async function fadeOutHbvStage(display, ms) {
+    const fadeMs = ms ?? HBV_FADE_MS;
     const stage = display?.querySelector('.hbv-stage');
     if (!stage) return;
     if (prefersReducedMotion()) {
       stage.remove();
       return;
     }
+    stage.style.transition = `opacity ${fadeMs}ms ease`;
     stage.classList.add('hbv-fade-out');
-    await waitMs(HBV_FADE_MS);
+    await waitMs(fadeMs);
     stage.remove();
+  }
+
+  async function renderHbvNavTransition(p, display, entry) {
+    const fadeOutMs = prefersReducedMotion() ? 0 : HBV_NAV_FADE_OUT_MS;
+    const loadMs = prefersReducedMotion() ? 150 : HBV_NAV_LOAD_MS;
+    const fadeInMs = prefersReducedMotion() ? 0 : HBV_NAV_FADE_IN_MS;
+
+    const vp = getOrCreateHbvViewport(display);
+    const holdH = Math.max(vp?.offsetHeight || 0, display.offsetHeight || 0, 140);
+    if (vp) vp.style.minHeight = holdH + 'px';
+
+    if (fadeOutMs) {
+      await fadeOutHbvStage(display, fadeOutMs);
+    } else {
+      display.querySelector('.hbv-stage')?.remove();
+    }
+
+    ensureHbvLoader(display);
+    setHbvDisplayLoading(p, true);
+
+    try {
+      await Promise.all([
+        preloadHbvImage(entry.url),
+        waitMs(loadMs)
+      ]);
+    } catch (err) {
+      setHbvDisplayLoading(p, false);
+      if (vp) vp.style.minHeight = '';
+      throw err;
+    }
+
+    setHbvDisplayLoading(p, false);
+    display.classList.remove('loading');
+    display.innerHTML = hbvStageHtml(entry.url, prefersReducedMotion() ? 'instant' : 'nav');
+    const newVp = display.querySelector('.hbv-viewport');
+    if (newVp) newVp.style.minHeight = holdH + 'px';
+    if (fadeInMs) await waitMs(fadeInMs);
+    if (newVp) newVp.style.minHeight = '';
   }
 
   async function renderHbvImage(p, entry, options) {
     options = options || {};
     const display = document.getElementById(p + '-verseDisplay');
-    const isDesk = p === 'd';
     if (!entry?.url) {
       showHbvPlaceholder(p);
       return;
     }
     const hasStage = !!display.querySelector('.hbv-stage');
     const overlayLoad = !!options.overlayLoad;
+
     if (options.transition && hasStage) {
-      await fadeOutHbvStage(display);
-    } else if (overlayLoad && hasStage) {
-      setHbvDisplayLoading(p, true);
-    } else if (!hasStage) {
-      setHbvDisplayLoading(p, true);
-      display.innerHTML = '';
-      ensureHbvLoader(display);
-    }
-    try {
-      if (options.minLoadMs != null || overlayLoad) {
-        await preloadHbvImageWithMinDelay(entry.url, options.minLoadMs ?? HBV_MIN_LOAD_MS);
-      } else {
-        await preloadHbvImage(entry.url);
+      try {
+        await renderHbvNavTransition(p, display, entry);
+      } catch {
+        setHbvDisplayLoading(p, false);
+        display.querySelectorAll('.hbv-viewport').forEach(vp => { vp.style.minHeight = ''; });
+        throw new Error('image load failed');
       }
-    } catch {
+    } else {
+      if (overlayLoad && hasStage) {
+        setHbvDisplayLoading(p, true);
+      } else if (!hasStage) {
+        display.innerHTML = '<div class="hbv-viewport"></div>';
+        setHbvDisplayLoading(p, true);
+        ensureHbvLoader(display);
+      }
+      try {
+        if (options.minLoadMs != null || overlayLoad) {
+          await preloadHbvImageWithMinDelay(entry.url, options.minLoadMs ?? HBV_MIN_LOAD_MS);
+        } else {
+          await preloadHbvImage(entry.url);
+        }
+      } catch {
+        setHbvDisplayLoading(p, false);
+        display.classList.remove('loading');
+        throw new Error('image load failed');
+      }
       setHbvDisplayLoading(p, false);
       display.classList.remove('loading');
-      throw new Error('image load failed');
+      const reveal = options.animate === false ? false : true;
+      display.innerHTML = hbvStageHtml(entry.url, reveal);
     }
-    setHbvDisplayLoading(p, false);
-    display.classList.remove('loading');
-    display.innerHTML = hbvStageHtml(entry.url, options.animate);
+
     setHbvActionsVisible(p, true);
     updateHbvNav(p);
     const counter = document.getElementById(p + '-counter');
@@ -9187,7 +9283,10 @@ function applyTranslationRtl(version) {
     const imgWrap = document.getElementById(p + '-imageWrap');
     if (imgWrap) imgWrap.style.display = 'none';
     if (speaking) { if (currentAudio) { currentAudio.pause(); currentAudio = null; } speaking = false; }
-    scheduleScrollToHbvImage(p, { instant: options.animate === false });
+    prefetchHbvNeighbors(p);
+    if (!options.transition) {
+      scheduleScrollToHbvImage(p, { instant: options.animate === false });
+    }
   }
 
   function scrollToHbvMobileLayout() {
@@ -11617,12 +11716,26 @@ function applyTranslationRtl(version) {
       return;
     }
     if (isHbvMode(p)) {
-      if (history[p].length === 0) return;
-      future[p].push(current[p]);
+      if (_hbvNavInFlight || history[p].length === 0) return;
+      setHbvNavButtonsDisabled(p, true);
+      _hbvNavInFlight = true;
+      const savedCurrent = current[p];
+      future[p].push(savedCurrent);
       const prev = history[p].pop();
       current[p] = prev;
-      await renderHbvImage(p, prev, { transition: true, animate: true });
-      updateHbvNav(p);
+      try {
+        await renderHbvImage(p, prev, { transition: true, animate: true });
+      } catch {
+        history[p].push(prev);
+        current[p] = future[p].pop();
+        if (current[p]?.url) {
+          try { await renderHbvImage(p, current[p], { animate: false }); } catch { showHbvPlaceholder(p); }
+        }
+        showToast('Could not load this image.');
+      } finally {
+        _hbvNavInFlight = false;
+        setHbvNavButtonsDisabled(p, false);
+      }
       return;
     }
     if (history[p].length === 0) return;
@@ -11637,12 +11750,26 @@ function applyTranslationRtl(version) {
       return;
     }
     if (isHbvMode(p)) {
-      if (future[p].length === 0) return;
-      history[p].push(current[p]);
+      if (_hbvNavInFlight || future[p].length === 0) return;
+      setHbvNavButtonsDisabled(p, true);
+      _hbvNavInFlight = true;
+      const savedCurrent = current[p];
+      history[p].push(savedCurrent);
       const next = future[p].pop();
       current[p] = next;
-      await renderHbvImage(p, next, { transition: true, animate: true });
-      updateHbvNav(p);
+      try {
+        await renderHbvImage(p, next, { transition: true, animate: true });
+      } catch {
+        future[p].push(next);
+        current[p] = history[p].pop();
+        if (current[p]?.url) {
+          try { await renderHbvImage(p, current[p], { animate: false }); } catch { showHbvPlaceholder(p); }
+        }
+        showToast('Could not load this image.');
+      } finally {
+        _hbvNavInFlight = false;
+        setHbvNavButtonsDisabled(p, false);
+      }
       return;
     }
     if (future[p].length === 0) return;
