@@ -863,6 +863,8 @@
     }
     .verse-gen-tappable {
       cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(var(--accent-rgb), 0.15);
       border-radius: 6px;
       transition: background 0.2s ease, box-shadow 0.2s ease;
     }
@@ -5749,8 +5751,56 @@ function isBookAvailableInVersion(version, bookEn) {
   if (isApocryphaStandaloneTranslation(version)) {
     return !!GH_MEMORY_CACHE[version]?.booksByEn?.[bookEn];
   }
+  const meta = getGhMeta(version);
+  if (meta?.partialCanon) {
+    const data = GH_MEMORY_CACHE[version];
+    if (data?.booksByEn) {
+      const book = getGhBookData(data, bookEn);
+      return !!(book?.chapters && Object.keys(book.chapters).length);
+    }
+  }
   const bookId = BOOK_NUM[bookEn];
   return !!bookId && getAvailableBookIds(version).includes(bookId);
+}
+
+function isPartialCanonTranslation(module) {
+  return !!getGhMeta(normalizeGhModuleId(module))?.partialCanon;
+}
+
+function translationShowsOtBookScope(version) {
+  version = normalizeGhModuleId(version);
+  const meta = getGhMeta(version);
+  if (!meta) return true;
+  if (meta.testament === 'new') return false;
+  if (meta.testament === 'old') return true;
+  if (meta.partialCanon) {
+    return getAvailableBookIds(version).some(id => id >= 1 && id <= 39);
+  }
+  return true;
+}
+
+function translationShowsNtBookScope(version) {
+  version = normalizeGhModuleId(version);
+  const meta = getGhMeta(version);
+  if (!meta) return true;
+  if (meta.testament === 'old') return false;
+  if (meta.testament === 'new') return true;
+  if (meta.partialCanon) {
+    return getAvailableBookIds(version).some(id => id >= 40 && id <= 66);
+  }
+  return true;
+}
+
+function booksReadyForVersion(version, langBooks, availableIds) {
+  if (isApocryphaStandaloneTranslation(version)) return true;
+  if (availableIds.length) {
+    if (langBooks.length) return true;
+    if (isPartialCanonTranslation(version)) {
+      const cached = GH_MEMORY_CACHE[version];
+      return !!(cached?.bookIds?.length || cached?.booksByEn);
+    }
+  }
+  return false;
 }
 
 function getReadNavBookList(version) {
@@ -7134,8 +7184,19 @@ async function fetchGhReference(module, reference) {
   if (!parsed || parsed.wholeChapter) return null;
   const result = await fetchGhPassageVerses(module, parsed.book, parsed.chapter, parsed.verseStart, parsed.verseEnd);
   if (!result?.verses?.length) return null;
-  const v = result.verses[0];
-  return { text: v.text, ref: result.ref, version: module, bookName: result.bookName, bssBookId: result.bookId, chapter: result.chapter, verse: v.num };
+  const start = result.verses[0].num;
+  const end = result.verses[result.verses.length - 1].num;
+  const entry = {
+    text: result.verses.length === 1 ? result.verses[0].text : result.verses.map(v => v.text).join(' '),
+    ref: result.ref,
+    version: module,
+    bookName: result.bookName,
+    bssBookId: result.bookId,
+    chapter: result.chapter,
+    verse: start,
+    genVerses: result.verses.length > 1 ? result.verses : undefined
+  };
+  return attachGeneratorPassageMeta(entry, parsed.book, result.chapter, start, result.bookId, end);
 }
 
 async function fetchRandomApocryphaStandaloneVerse(module, scope, attempt = 0) {
@@ -9838,10 +9899,9 @@ function applyTranslationRtl(version) {
     if (!target?.parsed) return;
     const p = target.p;
     let parsed = { ...target.parsed };
-    const genVersion = document.getElementById(p + '-version')?.value;
+    const genVersion = normalizeGhModuleId(document.getElementById(p + '-version')?.value);
     if (genVersion) {
-      if (isApocryphaStandaloneTranslation(genVersion)) await loadGhTranslationData(genVersion);
-      else await ensureBooksForVersion(genVersion);
+      await loadGhTranslationData(genVersion);
     }
     if (genVersion) {
       ['d', 'm'].forEach(pl => {
@@ -9862,19 +9922,25 @@ function applyTranslationRtl(version) {
         return;
       }
     } else if (version) {
-      const avail = getAvailableBookIds(version);
-      const bookId = BOOK_NUM[parsed.book];
-      if (bookId && !avail.includes(bookId)) {
-        const isOt = bookId <= 39;
-        const isNt = bookId >= 40 && bookId <= 66;
-        const isApo = bookId >= 67;
-        const fallbackId = avail.find(id => {
-          if (isOt) return id <= 39;
-          if (isNt) return id >= 40 && id <= 66;
-          if (isApo) return id >= 67;
-          return false;
-        }) || avail[0];
-        if (fallbackId) parsed = { ...parsed, book: bookEnFromId(fallbackId) };
+      if (!isBookAvailableInVersion(version, parsed.book)) {
+        if (getGhMeta(version)?.partialCanon) {
+          showToast('This book is not available in the selected translation.');
+          return;
+        }
+        const avail = getAvailableBookIds(version);
+        const bookId = BOOK_NUM[parsed.book];
+        if (bookId && !avail.includes(bookId)) {
+          const isOt = bookId <= 39;
+          const isNt = bookId >= 40 && bookId <= 66;
+          const isApo = bookId >= 67;
+          const fallbackId = avail.find(id => {
+            if (isOt) return id <= 39;
+            if (isNt) return id >= 40 && id <= 66;
+            if (isApo) return id >= 67;
+            return false;
+          }) || avail[0];
+          if (fallbackId) parsed = { ...parsed, book: bookEnFromId(fallbackId) };
+        }
       }
     }
     const verse = parsed.verseStart || 1;
@@ -9885,7 +9951,10 @@ function applyTranslationRtl(version) {
     });
   }
 
+  let _verseTapSuppressClickUntil = 0;
+
   async function onVerseDisplayTap(e) {
+    if (e?.type === 'click' && Date.now() < _verseTapSuppressClickUntil) return;
     const sel = window.getSelection();
     if (sel && sel.toString().trim()) return;
     const block = e.target.closest('.verse-gen-tappable');
@@ -9896,14 +9965,19 @@ function applyTranslationRtl(version) {
     if (isReadBibleMode(p)) return;
     if (isHbvMode(p)) return;
     const entry = current[p];
-    if (!entry || entry.readVerses?.length) return;
-    const version = document.getElementById(p + '-version')?.value || entry.version;
-    if (version) await ensureBooksForVersion(version);
+    if (!entry) return;
+    if (entry.readVerses?.length && !entry.passageParsed?.book && !entry.genBook && entry.bssBookId == null) return;
+    const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value || entry.version);
+    await loadGhTranslationData(version);
     ensureGeneratorEntryMeta(entry);
     const parsed = getPassageParsedFromEntry(entry);
     const refText = getCanonicalReference(entry) || entry.ref;
     if (!parsed?.book || parsed.chapter == null) {
       showToast('Could not open this reference in Read Bible.');
+      return;
+    }
+    if (!isBookAvailableInVersion(version, parsed.book)) {
+      showToast('This book is not available in the selected translation.');
       return;
     }
     if (!parsed.verseStart) {
@@ -9913,12 +9987,24 @@ function applyTranslationRtl(version) {
     openReadBibleConfirmModal(p, refText, parsed);
   }
 
+  function onVerseDisplayTouchEnd(e) {
+    const block = e.target.closest('.verse-gen-tappable');
+    if (!block) return;
+    const display = block.closest('#d-verseDisplay, #m-verseDisplay');
+    if (!display) return;
+    const p = display.id === 'm-verseDisplay' ? 'm' : 'd';
+    if (isReadBibleMode(p) || isHbvMode(p)) return;
+    _verseTapSuppressClickUntil = Date.now() + 450;
+    void onVerseDisplayTap(e);
+  }
+
   function bindVerseDisplayOpenReadHandlers() {
     ['d', 'm'].forEach(pl => {
       const el = document.getElementById(pl + '-verseDisplay');
       if (!el || el.dataset.readOpenBound === '1') return;
       el.dataset.readOpenBound = '1';
       el.addEventListener('click', onVerseDisplayTap);
+      el.addEventListener('touchend', onVerseDisplayTouchEnd, { passive: true });
       el.addEventListener('keydown', (e) => {
         const block = e.target.closest('.verse-gen-tappable');
         if (!block) return;
@@ -10324,16 +10410,17 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
-    const label = getTranslationLabel(data.version, passageParsed?.book);
+    const parsed = passageParsed || parsedFromPassageData(data);
+    const label = getTranslationLabel(data.version, parsed?.book);
     const uiRef = data.ref;
+    const openRef = escapeHtml(buildRefFromParsed(parsed) || uiRef);
     const reveal = verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
-      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(uiRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
-      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(uiRef)} · ${escapeHtml(label)}</p></div>`;
+      ? `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${openRef} in Read Bible"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(uiRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
+      : `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${openRef} in Read Bible"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(uiRef)} · ${escapeHtml(label)}</p></div>`;
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
-    const parsed = passageParsed || parsedFromPassageData(data);
     const canonicalRef = buildRefFromParsed(parsed) || getCanonicalReference({ ref: uiRef, passageParsed: parsed });
     current[p] = {
       ref: uiRef,
@@ -10909,8 +10996,9 @@ function applyTranslationRtl(version) {
       if (!options.silent) setBookLabelState(p, 'loading');
     applyInstantBookIdsFromMeta(version);
     let langBooks = getInstantBooksForVersion(version);
+    const needsAwaitBooks = readMode || options.awaitFetch || isPartialCanonTranslation(version);
     if (!options.skipFetch) {
-      if (readMode || options.awaitFetch) {
+      if (needsAwaitBooks) {
         try { langBooks = await loadBooksForVersion(version, { awaitFetch: true }); }
         catch { langBooks = getInstantBooksForVersion(version); }
       } else {
@@ -10928,10 +11016,12 @@ function applyTranslationRtl(version) {
     if (!stillCurrent()) return;
     const availableIds = getAvailableBookIds(version);
     const availableSet = new Set(availableIds);
-    _bookLoadOk = isApocryphaStandaloneTranslation(version) || (!!langBooks.length && !!availableIds.length);
+    _bookLoadOk = booksReadyForVersion(version, langBooks, availableIds);
 
     if (showBooks) {
       const frag = document.createDocumentFragment();
+      const showOtScope = translationShowsOtBookScope(version);
+      const showNtScope = translationShowsNtBookScope(version);
       if (isApocryphaStandaloneTranslation(version)) {
         if (!GH_MEMORY_CACHE[version]?.booksByEn && !options.skipFetch) {
           try { await loadGhTranslationData(version); } catch { /* show scope options */ }
@@ -10958,40 +11048,48 @@ function applyTranslationRtl(version) {
       whole.value = 'whole';
       whole.textContent = ui.whole;
       frag.appendChild(whole);
-      const oldOpt = document.createElement('option');
-      oldOpt.value = 'old';
-      oldOpt.textContent = ui.old;
-      frag.appendChild(oldOpt);
-      const newOpt = document.createElement('option');
-      newOpt.value = 'new';
-      newOpt.textContent = ui.new;
-      frag.appendChild(newOpt);
+      if (showOtScope) {
+        const oldOpt = document.createElement('option');
+        oldOpt.value = 'old';
+        oldOpt.textContent = ui.old;
+        frag.appendChild(oldOpt);
+      }
+      if (showNtScope) {
+        const newOpt = document.createElement('option');
+        newOpt.value = 'new';
+        newOpt.textContent = ui.new;
+        frag.appendChild(newOpt);
+      }
       if (translationHasApocryphaBooks(version)) {
         const apoScopeOpt = document.createElement('option');
         apoScopeOpt.value = 'apocrypha';
         apoScopeOpt.textContent = ui.apocryphaScope || '— Apocrypha —';
         frag.appendChild(apoScopeOpt);
       }
-      const otG = document.createElement('optgroup');
-      otG.label = ui.ot;
-      OT.forEach(b => {
-        if (!availableSet.has(BOOK_NUM[b])) return;
-        const o = document.createElement('option');
-        o.value = b;
-        o.textContent = getTranslatedBookName(b, langBooks, langCode);
-        otG.appendChild(o);
-      });
-      if (otG.children.length) frag.appendChild(otG);
-      const ntG = document.createElement('optgroup');
-      ntG.label = ui.nt;
-      NT.forEach(b => {
-        if (!availableSet.has(BOOK_NUM[b])) return;
-        const o = document.createElement('option');
-        o.value = b;
-        o.textContent = getTranslatedBookName(b, langBooks, langCode);
-        ntG.appendChild(o);
-      });
-      if (ntG.children.length) frag.appendChild(ntG);
+      if (showOtScope) {
+        const otG = document.createElement('optgroup');
+        otG.label = ui.ot;
+        OT.forEach(b => {
+          if (!availableSet.has(BOOK_NUM[b])) return;
+          const o = document.createElement('option');
+          o.value = b;
+          o.textContent = getTranslatedBookName(b, langBooks, langCode);
+          otG.appendChild(o);
+        });
+        if (otG.children.length) frag.appendChild(otG);
+      }
+      if (showNtScope) {
+        const ntG = document.createElement('optgroup');
+        ntG.label = ui.nt;
+        NT.forEach(b => {
+          if (!availableSet.has(BOOK_NUM[b])) return;
+          const o = document.createElement('option');
+          o.value = b;
+          o.textContent = getTranslatedBookName(b, langBooks, langCode);
+          ntG.appendChild(o);
+        });
+        if (ntG.children.length) frag.appendChild(ntG);
+      }
       appendApocryphaBookOptions(frag, availableSet, langBooks, langCode, ui, version);
       sel.replaceChildren(frag);
       if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
