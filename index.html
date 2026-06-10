@@ -1309,6 +1309,17 @@
     }
     /* ══ MOBILE LAYOUT ══ */
     #mobile-view { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
+    /* Show the correct shell before JS runs — keeps Generate + social icons visible on phones */
+    @media (max-width: 768px) {
+      #desktop-view { display: none !important; }
+      #mobile-view {
+        display: flex !important;
+        flex-direction: column;
+        min-height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
+    }
 
     .mob-topbar {
       background:linear-gradient(180deg,#0d0700 0%,rgba(13,7,0,0.88) 100%);
@@ -1502,6 +1513,8 @@
       left: 0;
       right: 0;
       z-index: 10;
+      content-visibility: visible;
+      contain-intrinsic-size: auto 120px;
 
       background: linear-gradient(
         0deg,
@@ -2711,6 +2724,16 @@
   </style>
 </head>
 <body>
+<script>
+(function () {
+  try {
+    var w = window.innerWidth;
+    var mode = w <= 768 ? 'mobile' : (w <= 1100 ? 'tablet' : 'desktop');
+    document.documentElement.setAttribute('data-layout', mode);
+    document.body.classList.add('layout-' + mode);
+  } catch (e) { /* ignore */ }
+})();
+</script>
 
 <!-- Facebook In-App Browser Banner -->
 <div id="fb-iab-banner">
@@ -7355,7 +7378,8 @@ function appendApocryphaBookOptions(frag, allowedSet, langBooks, langCode, ui, v
   if (apG.children.length) frag.appendChild(apG);
 }
 
-function populateTranslationSelects() {
+function populateTranslationSelects(panels) {
+  panels = panels || ['d', 'm'];
   const byLang = {};
   Object.values(GH_BIBLES).forEach(b => {
     const lang = b.lang || 'Other';
@@ -7371,7 +7395,7 @@ function populateTranslationSelects() {
     if (pa !== pb) return pa - pb;
     return a.localeCompare(b);
   });
-  ['d', 'm'].forEach(p => {
+  panels.forEach(p => {
     const sel = document.getElementById(p + '-version');
     const prev = normalizeGhModuleId(sel.value);
     sel.innerHTML = '';
@@ -7612,7 +7636,7 @@ function applyTranslationRtl(version) {
         await onLayoutModeChange(prevMode, mode);
       } else {
         restoreTestamentOptions(activePanel());
-        await updateBooks(activePanel());
+        void updateBooks(activePanel());
       }
     }
     updateScrollToModeButtons();
@@ -12381,6 +12405,15 @@ function applyTranslationRtl(version) {
     }
 
     const pendingGeneratorRestore = consumePassageErrorRefreshRestore();
+
+    // Layout first — never block the UI shell on network or book-list work.
+    await initLayout();
+    initVerseSize();
+    initReadSwipe();
+    bindVerseDisplayOpenReadHandlers();
+    initScrollToModeButtons();
+    clearAllVersePanelLoading();
+
     if (pendingGeneratorRestore) {
       ['d', 'm'].forEach(pl => {
         const sel = document.getElementById(pl + '-testament');
@@ -12389,6 +12422,7 @@ function applyTranslationRtl(version) {
           sel.dataset.prevValue = 'custom';
         }
       });
+      await applyPassageErrorRefreshRestore(pendingGeneratorRestore);
     }
 
     hydrateWeeklyCatalogFromCache();
@@ -12396,35 +12430,12 @@ function applyTranslationRtl(version) {
       _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
       indexWeeklyVersesCatalog();
     }
-    void loadWeeklyVersesCatalog();
 
     applySavedDefaultTranslation();
     const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
     applyInstantBookIdsFromMeta(version);
     applyTranslationRtl(version);
 
-    // loadBibleList no longer blocks — dropdown was populated by instantInit().
-    // It now loads books for the current panel and kicks off background API refresh.
-    try {
-      await loadBibleList();
-    } catch {
-      // Dropdown already populated by instantInit; nothing to do here.
-    }
-
-    await initLayout();
-    if (pendingGeneratorRestore) {
-      await applyPassageErrorRefreshRestore(pendingGeneratorRestore);
-    }
-    initVerseSize();
-    initReadSwipe();
-    bindVerseDisplayOpenReadHandlers();
-    initScrollToModeButtons();
-    clearAllVersePanelLoading();
-
-    prefetchGhTranslation(version);
-
-    void preloadBannerVerses(version, { silent: true });
-    void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
     initDevotionalTextSize();
     initThemeSystem();
     initReadMePanel();
@@ -12432,6 +12443,13 @@ function applyTranslationRtl(version) {
     initLegalPanel();
     initLegalTextSize();
     initDefaultPreferencesUI();
+
+    // Background work — must not block taps on Generate or social links.
+    void loadWeeklyVersesCatalog();
+    void loadBibleList();
+    prefetchGhTranslation(version);
+    void preloadBannerVerses(version, { silent: true });
+    void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
   }
 
   document.addEventListener('visibilitychange', () => {
@@ -12447,35 +12465,73 @@ function applyTranslationRtl(version) {
   });
 
   // ══ INSTANT INITIALIZATION ══
-  // Populate translation dropdowns SYNCHRONOUSLY before any async work.
-  // This runs during script parsing — before the browser paints anything —
-  // so the user sees the full Translation list instantly on page load.
-  // Priority: localStorage cache → comprehensive built-in fallback.
-  (function instantInit() {
-    hydrateBssBooksLangFromStorage();
-    const embedded = readEmbeddedTranslationsIndex();
-    const cached = readGhIndexCache();
-    // Prefer the embedded index generated from TRANSLATION.txt so old localStorage cannot keep broken/stale fetch links.
-    initGhBiblesFromIndex(embedded || cached);
-    if (embedded) writeGhIndexCache(embedded);
-    populateTranslationSelects();
+  // Defer heavy JSON parse + dropdown build until after the first paint so mobile
+  // stays interactive (Generate + social bar visible immediately).
+  function finishInstantInit() {
+    const activePanels = window.innerWidth <= 768 ? ['m'] : ['d'];
+    const otherPanels = activePanels[0] === 'm' ? ['d'] : ['m'];
+    populateTranslationSelects(activePanels);
     applySavedDefaultsOnLoad();
-    // Ensure a valid translation if saved default is missing or stale
-    ['d', 'm'].forEach(p => {
+    activePanels.forEach(p => {
       const sel = document.getElementById(p + '-version');
       if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
     });
     const defaultVer = applySavedDefaultTranslation({ syncPrefs: false })
       || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
     applyInstantBookIdsFromMeta(defaultVer);
-    initVerseSize();
-    ['d', 'm'].forEach(p => { void updateBooks(p, { skipFetch: true }); });
+    activePanels.forEach(p => { void updateBooks(p, { skipFetch: true }); });
     prefetchGhTranslation(defaultVer, () => {
-      ['d', 'm'].forEach(p => { void updateBooks(p, { silent: true }); });
+      activePanels.forEach(p => { void updateBooks(p, { silent: true }); });
     });
-  })();
+    const fillOther = () => {
+      populateTranslationSelects(otherPanels);
+      otherPanels.forEach(p => {
+        const sel = document.getElementById(p + '-version');
+        if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
+      });
+      void updateBooks(otherPanels[0], { skipFetch: true, silent: true });
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(fillOther, { timeout: 2500 });
+    else setTimeout(fillOther, 50);
+  }
 
-  window.addEventListener('load', () => { void bootstrapApp(); });
+  function runInstantInit() {
+    hydrateBssBooksLangFromStorage();
+    const cached = readGhIndexCache();
+    if (cached) initGhBiblesFromIndex(cached);
+    const embedded = readEmbeddedTranslationsIndex();
+    if (embedded) {
+      initGhBiblesFromIndex(embedded);
+      writeGhIndexCache(embedded);
+    } else if (!cached) return;
+    finishInstantInit();
+  }
+
+  function scheduleInstantInit() {
+    const run = () => {
+      try { runInstantInit(); } catch { /* non-fatal */ }
+    };
+    const defer = () => {
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(run, { timeout: 1200 });
+      } else {
+        setTimeout(run, 0);
+      }
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => requestAnimationFrame(defer));
+    } else {
+      defer();
+    }
+  }
+
+  scheduleInstantInit();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { void bootstrapApp(); });
+  } else {
+    void bootstrapApp();
+  }
   let _resizeTimer;
   function scheduleLayoutRefresh() {
     clearTimeout(_resizeTimer);
@@ -12808,14 +12864,32 @@ function applyTranslationRtl(version) {
       createPlayer();
     };
 
-    if (window.YT && window.YT.Player) {
-      createPlayer();
-    } else {
+    function injectYouTubeApi() {
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+        return;
+      }
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       tag.async = true;
       const first = document.getElementsByTagName('script')[0];
       first.parentNode.insertBefore(tag, first);
+    }
+
+    function scheduleYouTubeApi() {
+      const run = () => injectYouTubeApi();
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(run, { timeout: 8000 });
+      } else {
+        setTimeout(run, 2500);
+      }
+    }
+
+    // Defer YouTube on phones — it competes with first interaction on slow CPUs.
+    if (window.innerWidth <= 768 || (typeof isRestrictedMobileBrowser === 'function' && isRestrictedMobileBrowser())) {
+      scheduleYouTubeApi();
+    } else {
+      injectYouTubeApi();
     }
   })();
 </script>
