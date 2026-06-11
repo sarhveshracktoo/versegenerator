@@ -4740,6 +4740,30 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
+      "id": "ASD",
+      "language": "Filipino (Tagalog)",
+      "languageCode": "tl",
+      "voiceLang": "fil-PH",
+      "translationName": "Ang Salita ng Diyos",
+      "abbreviation": "ASD",
+      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/ASD.json",
+      "testament": "both",
+      "isRTL": false,
+      "hasApocrypha": false
+    },
+    {
+      "id": "TLAB",
+      "language": "Filipino (Tagalog)",
+      "languageCode": "tl",
+      "voiceLang": "fil-PH",
+      "translationName": "Ang Biblia",
+      "abbreviation": "TLAB",
+      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/TLAB.json",
+      "testament": "both",
+      "isRTL": false,
+      "hasApocrypha": false
+    },
+    {
       "id": "epee",
       "language": "French",
       "languageCode": "fr",
@@ -6173,9 +6197,54 @@ function ensureMauritianTranslationsInIndex(indexData) {
   return { ...indexData, translations };
 }
 
+const FILIPINO_TRANSLATION_INDEX_ENTRIES = [
+  {
+    id: 'ASD',
+    language: 'Filipino (Tagalog)',
+    languageCode: 'tl',
+    voiceLang: 'fil-PH',
+    translationName: 'Ang Salita ng Diyos',
+    abbreviation: 'ASD',
+    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/ASD.json',
+    testament: 'both',
+    isRTL: false,
+    hasApocrypha: false
+  },
+  {
+    id: 'TLAB',
+    language: 'Filipino (Tagalog)',
+    languageCode: 'tl',
+    voiceLang: 'fil-PH',
+    translationName: 'Ang Biblia',
+    abbreviation: 'TLAB',
+    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/TLAB.json',
+    testament: 'both',
+    isRTL: false,
+    hasApocrypha: false
+  }
+];
+
+function ensureFilipinoTranslationsInIndex(indexData) {
+  if (!indexData?.translations?.length) return indexData;
+  const translations = [...indexData.translations];
+  const byId = new Map(translations.map((t, i) => [String(t.id || '').toUpperCase(), i]));
+  FILIPINO_TRANSLATION_INDEX_ENTRIES.forEach(entry => {
+    const key = String(entry.id).toUpperCase();
+    const idx = byId.get(key);
+    if (idx == null) {
+      const frIdx = translations.findIndex(t => String(t.language || '').toLowerCase() === 'french');
+      translations.splice(frIdx >= 0 ? frIdx : translations.length, 0, entry);
+      byId.set(key, translations.length - 1);
+    } else {
+      translations[idx] = { ...translations[idx], ...entry };
+    }
+  });
+  return { ...indexData, translations };
+}
+
 function initGhBiblesFromIndex(indexData) {
   if (!indexData) return;
-  indexData = ensureMauritianTranslationsInIndex(ensureApocryphaStandaloneInIndex(filterTranslationsIndex(indexData)));
+  indexData = ensureFilipinoTranslationsInIndex(ensureMauritianTranslationsInIndex(ensureApocryphaStandaloneInIndex(filterTranslationsIndex(indexData))));
   GH_TRANSLATIONS_INDEX = indexData;
   GH_BIBLES = buildGhBiblesFromIndex(indexData);
 }
