@@ -863,7 +863,7 @@
     }
     .verse-gen-tappable {
       cursor: pointer;
-      touch-action: manipulation;
+      touch-action: pan-y;
       -webkit-tap-highlight-color: rgba(var(--accent-rgb), 0.15);
       border-radius: 6px;
       transition: background 0.2s ease, box-shadow 0.2s ease;
@@ -2840,7 +2840,7 @@
         </select>
       </div>
       <div class="control-group">
-        <label for="d-version">Translation</label>
+        <label for="d-version">Bible Versions</label>
         <select id="d-version" onchange="onVersionChange('d')">
           <option value="NIV" selected>NIV</option>
         </select>
@@ -2967,7 +2967,7 @@
               </select>
             </div>
             <div class="control-pref-field">
-              <label class="control-pref-label" for="d-default-translation">Default Translation</label>
+              <label class="control-pref-label" for="d-default-translation">Default Bible Versions</label>
               <select id="d-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
             </div>
           </div>
@@ -3156,7 +3156,7 @@
           </select>
         </div>
         <div class="mob-field">
-          <span class="mob-label">Translation</span>
+          <span class="mob-label">Bible Versions</span>
           <select class="mob-select" id="m-version" onchange="onVersionChange('m')">
             <option value="NIV" selected>NIV</option>
           </select>
@@ -3272,7 +3272,7 @@
                 </select>
               </div>
               <div class="control-pref-field">
-                <label class="control-pref-label" for="m-default-translation">Default Translation</label>
+                <label class="control-pref-label" for="m-default-translation">Default Bible Versions</label>
                 <select id="m-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
               </div>
             </div>
@@ -10075,6 +10075,45 @@ function applyTranslationRtl(version) {
   }
 
   let _verseTapSuppressClickUntil = 0;
+  const VERSE_TAP_MOVE_PX = 10;
+  const VERSE_TAP_MAX_MS = 400;
+  const _verseTouch = { active: false, x: 0, y: 0, t: 0, moved: false };
+
+  function resetVerseTouchState() {
+    _verseTouch.active = false;
+    _verseTouch.moved = false;
+  }
+
+  function verseTouchMovedBeyondThreshold(clientX, clientY) {
+    const dx = clientX - _verseTouch.x;
+    const dy = clientY - _verseTouch.y;
+    return Math.abs(dx) > VERSE_TAP_MOVE_PX || Math.abs(dy) > VERSE_TAP_MOVE_PX;
+  }
+
+  function onVerseDisplayTouchStart(e) {
+    if (e.touches.length !== 1) {
+      resetVerseTouchState();
+      return;
+    }
+    const touch = e.touches[0];
+    _verseTouch.active = true;
+    _verseTouch.moved = false;
+    _verseTouch.x = touch.clientX;
+    _verseTouch.y = touch.clientY;
+    _verseTouch.t = Date.now();
+  }
+
+  function onVerseDisplayTouchMove(e) {
+    if (!_verseTouch.active || e.touches.length !== 1) return;
+    if (verseTouchMovedBeyondThreshold(e.touches[0].clientX, e.touches[0].clientY)) {
+      _verseTouch.moved = true;
+    }
+  }
+
+  function onVerseDisplayTouchCancel() {
+    resetVerseTouchState();
+    _verseTouch.moved = true;
+  }
 
   async function onVerseDisplayTap(e) {
     if (e?.type === 'click' && Date.now() < _verseTapSuppressClickUntil) return;
@@ -10111,6 +10150,18 @@ function applyTranslationRtl(version) {
   }
 
   function onVerseDisplayTouchEnd(e) {
+    if (!_verseTouch.active) return;
+    const wasMoved = _verseTouch.moved;
+    const touchDuration = Date.now() - _verseTouch.t;
+    const touch = e.changedTouches[0];
+    const movedAtEnd = touch && verseTouchMovedBeyondThreshold(touch.clientX, touch.clientY);
+    resetVerseTouchState();
+
+    if (wasMoved || movedAtEnd || touchDuration > VERSE_TAP_MAX_MS) {
+      _verseTapSuppressClickUntil = Date.now() + 450;
+      return;
+    }
+
     const block = e.target.closest('.verse-gen-tappable');
     if (!block) return;
     const display = block.closest('#d-verseDisplay, #m-verseDisplay');
@@ -10127,7 +10178,10 @@ function applyTranslationRtl(version) {
       if (!el || el.dataset.readOpenBound === '1') return;
       el.dataset.readOpenBound = '1';
       el.addEventListener('click', onVerseDisplayTap);
+      el.addEventListener('touchstart', onVerseDisplayTouchStart, { passive: true });
+      el.addEventListener('touchmove', onVerseDisplayTouchMove, { passive: true });
       el.addEventListener('touchend', onVerseDisplayTouchEnd, { passive: true });
+      el.addEventListener('touchcancel', onVerseDisplayTouchCancel, { passive: true });
       el.addEventListener('keydown', (e) => {
         const block = e.target.closest('.verse-gen-tappable');
         if (!block) return;
