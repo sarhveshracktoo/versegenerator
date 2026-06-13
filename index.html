@@ -6196,6 +6196,41 @@ const GH_BOOK_META_PREFIX = 'bible_tx_meta_';
 const GH_DEFAULT_TRANSLATION = 'NIV';
 const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
+const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
+const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-13-github-json-fresh';
+
+function isGithubRawUrl(url) {
+  return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
+}
+
+function addFreshGithubParam(url) {
+  if (!isGithubRawUrl(url)) return url;
+  const sep = String(url).includes('?') ? '&' : '?';
+  return `${url}${sep}v=${Date.now()}`;
+}
+
+function isGithubRawBibleUrl(url) {
+  const u = String(url || '');
+  return isGithubRawUrl(u) && /\/TRANSLATION\//i.test(u) && /\.json(?:$|[?#])/i.test(u);
+}
+
+function getGhDataAgeMs(data) {
+  return Date.now() - Number(data?.cachedAt || data?.fetchedAt || 0);
+}
+
+async function resetStaleBibleJsonCachesOnce() {
+  try {
+    if (localStorage.getItem(GH_CACHE_SCHEMA_KEY) === GH_CACHE_SCHEMA_VERSION) return;
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(GH_TX_CACHE_PREFIX)) localStorage.removeItem(key);
+    });
+    localStorage.setItem(GH_CACHE_SCHEMA_KEY, GH_CACHE_SCHEMA_VERSION);
+  } catch { /* ignore */ }
+  try {
+    if (window.indexedDB?.deleteDatabase) indexedDB.deleteDatabase('vg-bible-cache-v1');
+  } catch { /* ignore */ }
+}
 
 const APOCRYPHA = [
   '1 Esdras', '2 Esdras', 'Tobit', 'Judith', 'Esther (Greek)',
@@ -6747,7 +6782,7 @@ function initGhBiblesFromIndex(indexData) {
 function openBibleIdb() {
   return new Promise(resolve => {
     if (!window.indexedDB) return resolve(null);
-    const req = indexedDB.open('vg-bible-cache-v1', 1);
+    const req = indexedDB.open('vg-bible-cache-v2', 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains('translations')) db.createObjectStore('translations');
@@ -6917,7 +6952,7 @@ function xhrGet(url, timeoutMs, asJson) {
 }
 
 function fetchWithTimeout(url, timeoutMs) {
-  const opts = { credentials: 'omit', mode: 'cors', cache: 'default' };
+  const opts = { credentials: 'omit', mode: 'cors', cache: isGithubRawUrl(url) ? 'no-store' : 'default' };
   if (typeof AbortController !== 'undefined') {
     const controller = new AbortController();
     const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
@@ -6928,11 +6963,12 @@ function fetchWithTimeout(url, timeoutMs) {
 }
 
 async function apiGetJson(url, timeoutMs) {
-  if (apiCircuitOpen()) return null;
+  if (apiCircuitOpen() && !isGithubRawUrl(url)) return null;
   timeoutMs = timeoutMs || apiFetchTimeoutMs();
+  const requestUrl = addFreshGithubParam(url);
 
   async function tryFetch() {
-    const res = await fetchWithTimeout(url, timeoutMs);
+    const res = await fetchWithTimeout(requestUrl, timeoutMs);
     if (!res || !res.ok) throw new Error('http');
     try { return await res.json(); }
     catch {
@@ -6944,8 +6980,8 @@ async function apiGetJson(url, timeoutMs) {
   }
 
   const attempts = isRestrictedMobileBrowser()
-    ? [() => xhrGet(url, timeoutMs, true), tryFetch]
-    : [tryFetch, () => xhrGet(url, timeoutMs, true)];
+    ? [() => xhrGet(requestUrl, timeoutMs, true), tryFetch]
+    : [tryFetch, () => xhrGet(requestUrl, timeoutMs, true)];
 
   for (const run of attempts) {
     try {
@@ -6961,18 +6997,19 @@ async function apiGetJson(url, timeoutMs) {
 }
 
 async function apiGetText(url, timeoutMs) {
-  if (apiCircuitOpen()) return null;
+  if (apiCircuitOpen() && !isGithubRawUrl(url)) return null;
   timeoutMs = timeoutMs || apiFetchTimeoutMs();
+  const requestUrl = addFreshGithubParam(url);
 
   async function tryFetch() {
-    const res = await fetchWithTimeout(url, timeoutMs);
+    const res = await fetchWithTimeout(requestUrl, timeoutMs);
     if (!res || !res.ok) throw new Error('http');
     return await res.text();
   }
 
   const attempts = isRestrictedMobileBrowser()
-    ? [() => xhrGet(url, timeoutMs, false), tryFetch]
-    : [tryFetch, () => xhrGet(url, timeoutMs, false)];
+    ? [() => xhrGet(requestUrl, timeoutMs, false), tryFetch]
+    : [tryFetch, () => xhrGet(requestUrl, timeoutMs, false)];
 
   for (const run of attempts) {
     try {
@@ -7746,6 +7783,9 @@ function storeGhTranslationData(module, normalized, cacheKey) {
       if (book?.localizedName) book.localizedName = formatGhBookDisplayName(book.localizedName);
     });
   }
+  normalized.cachedAt = Date.now();
+  normalized.fetchedAt = Date.now();
+  normalized.cachePolicy = 'github-raw-refresh-first';
   GH_MEMORY_CACHE[module] = normalized;
   GH_BOOK_IDS_BY_MODULE[module] = normalized.bookIds;
   VERSION_BOOK_IDS_CACHE[module] = [...normalized.bookIds];
@@ -7764,15 +7804,6 @@ function storeGhTranslationData(module, normalized, cacheKey) {
 
 async function loadGhTranslationData(module) {
   module = normalizeGhModuleId(module);
-  if (GH_MEMORY_CACHE[module]?.booksByEn) {
-    if (!needsApocryphaMergeRefresh(module, GH_MEMORY_CACHE[module]) &&
-        !needsStoredBookIdsRefresh(module, GH_MEMORY_CACHE[module]) &&
-        !needsAllApocryphaCatalogRefresh(module, GH_MEMORY_CACHE[module])) {
-      syncBookCachesFromMemory(module);
-      return GH_MEMORY_CACHE[module];
-    }
-    delete GH_MEMORY_CACHE[module];
-  }
   if (GH_LOADING_PROMISES[module]) return GH_LOADING_PROMISES[module];
 
   GH_LOADING_PROMISES[module] = (async () => {
@@ -7781,20 +7812,33 @@ async function loadGhTranslationData(module) {
     const cacheKey = GH_TX_CACHE_PREFIX + (meta.shortname || module);
     applyGhBookMetaFromStorage(module);
 
+    let idbCached = null;
     try {
-      const idbCached = await idbGetBible(cacheKey);
-      if (idbCached?.booksByEn && idbCached.bookIds?.length &&
-          !needsApocryphaMergeRefresh(module, idbCached) &&
-          !needsStoredBookIdsRefresh(module, idbCached) &&
-          !needsAllApocryphaCatalogRefresh(module, idbCached)) {
-        return storeGhTranslationData(module, idbCached, null);
-      }
-    } catch { /* ignore */ }
+      idbCached = await idbGetBible(cacheKey);
+    } catch { idbCached = null; }
+
+    const memoryCached = GH_MEMORY_CACHE[module]?.booksByEn ? GH_MEMORY_CACHE[module] : null;
+    const reusableMemory = memoryCached &&
+      !needsApocryphaMergeRefresh(module, memoryCached) &&
+      !needsStoredBookIdsRefresh(module, memoryCached) &&
+      !needsAllApocryphaCatalogRefresh(module, memoryCached) &&
+      GH_RAW_JSON_CACHE_TTL_MS > 0 && getGhDataAgeMs(memoryCached) < GH_RAW_JSON_CACHE_TTL_MS;
+    if (reusableMemory) {
+      syncBookCachesFromMemory(module);
+      return memoryCached;
+    }
 
     let raw = null;
     try { raw = await apiGetJson(meta.rawUrl, GH_TRANSLATION_LOAD_TIMEOUT_MS); }
     catch { raw = null; }
     if (!raw) {
+      if (idbCached?.booksByEn && idbCached.bookIds?.length &&
+          !needsApocryphaMergeRefresh(module, idbCached) &&
+          !needsStoredBookIdsRefresh(module, idbCached) &&
+          !needsAllApocryphaCatalogRefresh(module, idbCached)) {
+        // Offline fallback only: never prefer stored JSON over a successful GitHub refresh.
+        return storeGhTranslationData(module, idbCached, null);
+      }
       const mergeBase = getApocryphaMergeBaseModule(module);
       if (mergeBase) {
         const baseOnly = await loadGhTranslationData(mergeBase);
@@ -8186,6 +8230,7 @@ function populateTranslationSelects(panels) {
 }
 
 async function backgroundRefreshBibleList() {
+  await resetStaleBibleJsonCachesOnce();
   try {
     const remote = await apiGetJson(GH_TRANSLATIONS_INDEX_URL, GH_TRANSLATION_LOAD_TIMEOUT_MS);
     if (remote?.translations?.length) {
@@ -8204,6 +8249,7 @@ async function backgroundRefreshBibleList() {
 }
 
 async function loadBibleList() {
+  await resetStaleBibleJsonCachesOnce();
   void backgroundRefreshBibleList();
   const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
   applyInstantBookIdsFromMeta(version);
@@ -10888,6 +10934,19 @@ function applyTranslationRtl(version) {
     requestAnimationFrame(() => {
       const rect = firstTarget.getBoundingClientRect();
       if (p === 'd') {
+        const compactDesktop = typeof isDesktopCompactDisplayMode === 'function' && isDesktopCompactDisplayMode();
+        if (compactDesktop) {
+          // Compact Page desktop has no internal scroll panel, so scroll the whole page
+          // directly to the selected verse and keep the verse comfortably in view.
+          const stickyOffset = 120;
+          const viewAnchor = window.innerHeight * 0.34;
+          const targetTop = window.scrollY + rect.top - Math.max(stickyOffset, viewAnchor) + (rect.height / 2);
+          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          const clampedTop = Math.min(maxScroll, Math.max(0, targetTop));
+          if (options.slowScroll) smoothScrollToY(clampedTop, 1600);
+          else window.scrollTo({ top: clampedTop, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+          return;
+        }
         const displayRect = display.getBoundingClientRect();
         const targetTop = display.scrollTop + rect.top - displayRect.top - (display.clientHeight * 0.38) + (rect.height / 2);
         smoothScrollElementTo(display, targetTop, options.slowScroll ? 1600 : 900);
@@ -11979,7 +12038,10 @@ function applyTranslationRtl(version) {
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
-    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, { flashTimes: READ_VERSE_SCROLL_FLASH_TIMES });
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, {
+      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES,
+      slowScroll: p === 'd' && typeof isDesktopCompactDisplayMode === 'function' && isDesktopCompactDisplayMode()
+    });
   }
 
   async function onReadSearch(p) {
