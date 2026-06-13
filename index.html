@@ -8,6 +8,9 @@
       try {
         var t = localStorage.getItem('vg-theme') || 'normal';
         document.documentElement.setAttribute('data-theme', t);
+        var dm = localStorage.getItem('vg-display-mode') || 'full';
+        if (dm !== 'compact') dm = 'full';
+        document.documentElement.setAttribute('data-display-mode', dm);
       } catch (_) {
         document.documentElement.setAttribute('data-theme', 'normal');
       }
@@ -680,9 +683,142 @@
     #d-verseDisplay {
       min-height:110px; text-align:center; padding:20px 16px;
       background:rgba(255,255,255,0.3); border:1px solid rgba(139,104,32,0.3);
-      border-radius:3px; transition:opacity 0.3s;
+      border-radius:3px; transition: opacity 0.3s, background 0.42s ease, border-color 0.42s ease, box-shadow 0.42s ease, color 0.42s ease;
     }
     #d-verseDisplay.loading { opacity:0.5; }
+    #d-verseDisplay.read-display-active {
+      position: relative;
+      max-height: min(64vh, 720px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+    }
+    @media (min-width: 1025px) {
+      #d-verseDisplay.read-display-active::after {
+        content: '';
+        position: sticky;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        display: block;
+        width: 100%;
+        height: 92px;
+        margin-top: -92px;
+        pointer-events: none;
+        z-index: 4;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0) 0%,
+          color-mix(in srgb, var(--display-bg) 35%, transparent) 42%,
+          var(--display-bg) 100%
+        );
+      }
+    }
+    .read-display-scroll-btn {
+      display: none;
+      position: sticky;
+      top: 10px;
+      align-self: flex-end;
+      margin: -4px -4px 10px auto;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.32);
+      background: rgba(var(--accent-rgb), 0.08);
+      color: var(--verse-ref-color);
+      cursor: pointer;
+      z-index: 5;
+      opacity: 0.72;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease;
+    }
+    .read-display-scroll-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      margin: auto;
+      pointer-events: none;
+    }
+    #d-verseDisplay.read-display-active .read-display-scroll-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #d-verseDisplay .generator-display-scroll-btn {
+      display: none;
+      position: sticky;
+      top: 10px;
+      align-self: flex-end;
+      margin: -4px -4px 10px auto;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      background: rgba(var(--accent-rgb), 0.06);
+      color: var(--verse-ref-color);
+      cursor: pointer;
+      z-index: 6;
+      opacity: 0.68;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease, transform 0.2s ease;
+    }
+    #d-verseDisplay .generator-display-scroll-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      margin: auto;
+      pointer-events: none;
+    }
+    #d-verseDisplay.generator-image-overflow .generator-display-scroll-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #d-verseDisplay.generator-image-overflow .generator-display-scroll-btn:hover,
+    #d-verseDisplay.generator-image-overflow .generator-display-scroll-btn:focus-visible {
+      opacity: 1;
+      background: rgba(var(--accent-rgb), 0.14);
+      border-color: rgba(var(--accent-rgb), 0.52);
+      color: var(--gold-light);
+      outline: none;
+      transform: translateY(-1px);
+    }
+    .read-display-scroll-btn:hover,
+    .read-display-scroll-btn:focus-visible {
+      opacity: 1;
+      background: rgba(var(--accent-rgb), 0.16);
+      border-color: rgba(var(--accent-rgb), 0.55);
+      color: var(--gold-light);
+      outline: none;
+      transform: translateY(-1px);
+    }
+    .read-display-scroll-btn:active {
+      transform: translateY(0) scale(0.96);
+    }
+    @media (min-width: 1025px) {
+      html[data-display-mode="compact"] #d-verseDisplay.read-display-active {
+        max-height: none !important;
+        overflow: visible !important;
+        overscroll-behavior: auto !important;
+      }
+      html[data-display-mode="compact"] #d-verseDisplay.read-display-active::after {
+        display: none !important;
+        content: none !important;
+      }
+      html[data-display-mode="compact"] #d-verseDisplay.read-display-active .read-display-scroll-btn {
+        display: none !important;
+      }
+      html[data-display-mode="compact"] #d-verseDisplay.generator-image-overflow {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      html[data-display-mode="compact"] #d-verseDisplay.generator-image-overflow .generator-display-scroll-btn {
+        display: none !important;
+      }
+    }
     #d-verseDisplay.read-updating,
     .mob-verse-box.read-updating { opacity: 0.82; transition: opacity 0.2s ease; }
     #d-verseDisplay, .mob-verse-box { contain: layout style; }
@@ -831,10 +967,19 @@
       text-align: left;
       font-style: normal;
       font-weight: 600;
+      font-size: var(--verse-size);
       color: var(--verse-read-color);
       line-height: 1.75;
       user-select: text;
       -webkit-user-select: text;
+    }
+    .read-passage-ref-top {
+      display: block;
+      font-size: clamp(1.08rem, 1.55vw, 1.55rem);
+      line-height: 1.35;
+      margin: 0 0 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(var(--accent-rgb), 0.18);
     }
     .read-passage-text .verse-num {
       font-size: 0.62em;
@@ -859,7 +1004,7 @@
       animation: versePhraseFlash 0.75s ease-in-out;
     }
     .read-verse-segment.verse-phrase-flash.verse-flash-x3 {
-      animation: versePhraseFlash 0.7s ease-in-out 3;
+      animation: versePhraseFlash 1s ease-in-out 3;
     }
     .verse-gen-tappable {
       cursor: pointer;
@@ -1059,6 +1204,20 @@
       margin-top: 10px;
       flex-wrap: wrap;
     }
+    .verse-display-image-wrap {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(var(--accent-rgb), 0.18);
+      text-align: center;
+    }
+    .verse-display-image-wrap img {
+      width: min(100%, 500px);
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px var(--shadow);
+      display: block;
+      margin: 0 auto;
+    }
 
     /* Favourites panel */
     .fav-panel {
@@ -1138,13 +1297,12 @@
       position: fixed;
       left: -9999px;
       top: -9999px;
-      width: 1px;
-      height: 1px;
+      width: 2px;
+      height: 2px;
       overflow: hidden;
       opacity: 0;
       pointer-events: none;
-      z-index: -1;
-      visibility: hidden;
+      z-index: 0;
     }
     .bg-music-btn {
       position: relative;
@@ -2224,7 +2382,7 @@
     }
     #d-verseDisplay,
     .mob-verse-box {
-      background: var(--display-bg);
+      background: var(--card-bg);
       border-color: var(--display-border);
       color: var(--verse-read-color);
     }
@@ -2340,6 +2498,7 @@
     html.theme-switching .verse-ref,
     html.theme-switching .mob-verse-ref,
     html.theme-switching .read-passage-text,
+    html.theme-switching .read-display-scroll-btn,
     html.theme-switching .verse-placeholder,
     html.theme-switching .mob-placeholder,
     html.theme-switching .scroll-card label,
@@ -2721,6 +2880,339 @@
     @media (max-width: 768px) {
       .control-pref-grid { grid-template-columns: 1fr; gap: 10px; }
     }
+  
+
+
+
+    /* Desktop display mode setting + modal */
+    .display-mode-pref-grid {
+      grid-template-columns: 1fr;
+    }
+    .display-mode-pref-field {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+      align-items: center;
+      gap: 14px;
+    }
+    .display-mode-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.58);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      transition: opacity 0.28s ease;
+    }
+    .display-mode-modal.is-visible {
+      display: flex;
+    }
+    .display-mode-modal.is-open {
+      opacity: 1;
+    }
+    .display-mode-modal-card {
+      width: min(92vw, 430px);
+      position: relative;
+      padding: 28px 24px 24px;
+      border-radius: 22px;
+      text-align: center;
+      background: linear-gradient(145deg, rgba(31, 18, 7, 0.82), rgba(15, 8, 3, 0.72));
+      border: 1px solid rgba(var(--accent-rgb), 0.36);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+      color: var(--parchment);
+      transform: translateY(14px) scale(0.97);
+      transition: transform 0.28s ease;
+    }
+    .display-mode-modal.is-open .display-mode-modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .display-mode-modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(var(--accent-rgb), 0.30);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--gold-light);
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .display-mode-modal-card h3 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.08rem;
+      color: var(--gold-light);
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .display-mode-modal-card p {
+      font-size: 1.05rem;
+      line-height: 1.45;
+      color: rgba(245, 234, 214, 0.92);
+      margin-bottom: 20px;
+    }
+    .display-mode-modal-countdown {
+      display: none;
+      width: max-content;
+      min-width: 78px;
+      margin: 4px auto 0;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.30);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--gold-light);
+      font-family: 'Cinzel', serif;
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .display-mode-modal.is-counting .display-mode-modal-countdown {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .display-mode-modal-actions {
+      display: none !important;
+      gap: 12px;
+      justify-content: center;
+    }
+    .display-mode-modal-btn {
+      min-width: 112px;
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+    .display-mode-modal-btn:hover {
+      transform: translateY(-1px);
+    }
+    .display-mode-modal-no {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--parchment);
+    }
+    .display-mode-modal-yes {
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      color: var(--btn-accent-text);
+      border-color: rgba(var(--accent-rgb), 0.68);
+    }
+    .display-mode-modal-loader {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 3px solid rgba(var(--accent-rgb), 0.22);
+      border-top-color: var(--gold-light);
+      margin: 0 auto 14px;
+      display: none;
+      animation: displayModeSpin 0.82s linear infinite;
+    }
+    .display-mode-modal.is-loading .display-mode-modal-loader {
+      display: block;
+    }
+    .display-mode-modal.is-loading .display-mode-modal-actions {
+      display: none;
+    }
+    @keyframes displayModeSpin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 1024px) {
+      .display-mode-pref-grid,
+      .display-mode-modal {
+        display: none !important;
+      }
+    }
+
+    /* ══ DESKTOP ONLY TWO-COLUMN REDESIGN ══ */
+    @media (min-width: 1025px) {
+      #desktop-view.desktop-two-column-ready {
+        width: 100%;
+        max-width: none;
+        display: block;
+        padding: 24px clamp(18px, 2vw, 36px) 56px;
+        align-items: initial;
+      }
+
+      .desktop-two-column-shell {
+        width: 100%;
+        max-width: none;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: clamp(20px, 2.2vw, 34px);
+        align-items: start;
+      }
+
+      .desktop-left-column,
+      .desktop-right-column {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .desktop-left-column {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .desktop-left-column .header,
+      .desktop-left-column .votd-panel,
+      .desktop-left-column .weekly-banner,
+      .desktop-left-column .devotional-banner,
+      .desktop-left-column .scroll-card,
+      .desktop-left-column .social-icons {
+        width: 100%;
+        max-width: none;
+      }
+
+      .desktop-left-column .header {
+        margin-bottom: 18px;
+      }
+
+      .desktop-left-column .scroll-card {
+        padding: clamp(22px, 2.1vw, 34px);
+        margin-bottom: 12px;
+      }
+
+      .desktop-left-column .controls {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .desktop-left-column .social-icons {
+        margin-top: 16px;
+        margin-bottom: 0;
+        justify-content: center;
+        align-self: center;
+      }
+
+      .desktop-left-column .created-by-link {
+        display: block;
+        width: 100%;
+        text-align: center;
+      }
+
+      .desktop-right-column .social-icons {
+        margin-top: 0;
+        margin-bottom: 0;
+        width: 100%;
+        max-width: none;
+      }
+
+      .desktop-right-column .created-by-link {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-top: -4px !important;
+      }
+
+      .desktop-right-column {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        min-height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .desktop-right-column #d-verseDisplay {
+        width: 100%;
+        max-width: none;
+        min-height: calc(100vh - 150px);
+        height: auto;
+        padding: clamp(28px, 3vw, 56px);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        text-align: center;
+        background: var(--card-bg);
+        border: 1px solid var(--display-border);
+        border-radius: 14px;
+        box-shadow: var(--card-shadow);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        overflow: visible;
+      }
+
+      .desktop-right-column #d-verseDisplay.read-display-active {
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(var(--accent-rgb), 0.45) transparent;
+      }
+
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay.generator-image-overflow {
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+      }
+
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay.generator-image-overflow::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
+
+      .desktop-right-column #d-verseDisplay.read-display-active::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .desktop-right-column #d-verseDisplay.read-display-active::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .desktop-right-column #d-verseDisplay.read-display-active::-webkit-scrollbar-thumb {
+        background: rgba(var(--accent-rgb), 0.35);
+        border-radius: 999px;
+      }
+
+      .desktop-right-column #d-verseDisplay .verse-placeholder {
+        margin: auto 0;
+        font-size: clamp(1.05rem, 1.35vw, 1.35rem);
+      }
+
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay .verse-text,
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay .mob-verse-text {
+        font-size: var(--verse-size) !important;
+        line-height: 1.72;
+      }
+
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay .read-passage-text,
+      html[data-display-mode="full"] .desktop-right-column #d-verseDisplay .verse-text.read-passage-text {
+        font-size: var(--verse-size) !important;
+        text-align: left;
+        max-width: 100%;
+      }
+
+      .desktop-right-column #d-verseDisplay .verse-ref {
+        margin-top: 12px;
+      }
+
+      .desktop-right-column #d-verseDisplay .read-passage-ref-top {
+        margin-top: 0;
+        margin-bottom: 24px;
+        padding-bottom: 18px;
+        text-align: left;
+        font-size: clamp(1.18rem, 1.75vw, 1.75rem);
+      }
+
+      .desktop-left-column #d-verseDisplay-placeholder {
+        display: none !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2755,76 +3247,6 @@
       <span class="divider-line"></span>
     </div>
   </header>
-
-  <!-- Verse of the Day -->
-  <div class="votd-panel" id="d-votd-panel">
-    <button type="button" class="devotional-header" id="d-votd-toggle" aria-expanded="false" aria-controls="d-votd-collapse" aria-label="Expand verse of the day" onclick="toggleVotdPanel()">
-      <span class="banner-label">✦ Verse of the Day</span>
-      <span class="devotional-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </span>
-    </button>
-    <div class="devotional-collapse" id="d-votd-collapse">
-      <div class="devotional-inner">
-        <div class="devotional-panel-body" aria-live="polite">
-          <div class="votd-loader" id="d-votd-loader" aria-hidden="true"><span></span><span></span><span></span></div>
-          <div class="votd-verse-wrap" id="d-votd-wrap">
-            <p class="banner-verse votd-verse" id="d-votd-text"></p>
-            <span class="banner-ref" id="d-votd-ref"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Weekly Verse Banner -->
-  <div class="weekly-banner" id="d-weekly-banner">
-    <button type="button" class="devotional-header" id="d-weekly-toggle" aria-expanded="false" aria-controls="d-weekly-collapse" aria-label="Expand verse of the week" onclick="toggleWeeklyPanel()">
-      <span class="banner-label">📖 Verse of the Week</span>
-      <span class="devotional-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </span>
-    </button>
-    <div class="devotional-collapse" id="d-weekly-collapse">
-      <div class="devotional-inner">
-        <div class="devotional-panel-body" aria-live="polite">
-          <p class="banner-verse" id="d-weekly-text"></p>
-          <span class="banner-ref" id="d-weekly-ref"></span>
-          <p class="weekly-note" id="d-weekly-note"></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Daily Devotional -->
-  <div class="devotional-banner" id="d-devotional-banner">
-    <button type="button" class="devotional-header" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
-      <span class="banner-label">Daily Devotional</span>
-      <span class="devotional-chevron" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </span>
-    </button>
-    <div class="devotional-collapse" id="d-devotional-collapse">
-      <div class="devotional-inner">
-        <div class="devotional-panel-body">
-          <p class="devotional-date" id="d-devotional-date">Loading…</p>
-          <h2 class="devotional-heading" id="d-devotional-title"></h2>
-          <p class="devotional-scripture" id="d-devotional-scripture"></p>
-          <div class="devotional-slider-row">
-            <span class="devotional-slider-label">Text Size</span>
-            <input type="range" id="d-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
-          </div>
-          <div class="devotional-content" id="d-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="scroll-card">
     <div class="card-ornament">· · ✦ · ·</div>
@@ -2942,6 +3364,77 @@
     <div class="card-ornament-bottom">°. ⋆༺♱༻⋆ .°</div>
   </div>
 
+
+  <!-- Verse of the Day -->
+  <div class="votd-panel" id="d-votd-panel">
+    <button type="button" class="devotional-header" id="d-votd-toggle" aria-expanded="false" aria-controls="d-votd-collapse" aria-label="Expand verse of the day" onclick="toggleVotdPanel()">
+      <span class="banner-label">✦ Verse of the Day</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-votd-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body" aria-live="polite">
+          <div class="votd-loader" id="d-votd-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="votd-verse-wrap" id="d-votd-wrap">
+            <p class="banner-verse votd-verse" id="d-votd-text"></p>
+            <span class="banner-ref" id="d-votd-ref"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Verse Banner -->
+  <div class="weekly-banner" id="d-weekly-banner">
+    <button type="button" class="devotional-header" id="d-weekly-toggle" aria-expanded="false" aria-controls="d-weekly-collapse" aria-label="Expand verse of the week" onclick="toggleWeeklyPanel()">
+      <span class="banner-label">📖 Verse of the Week</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-weekly-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body" aria-live="polite">
+          <p class="banner-verse" id="d-weekly-text"></p>
+          <span class="banner-ref" id="d-weekly-ref"></span>
+          <p class="weekly-note" id="d-weekly-note"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Devotional -->
+  <div class="devotional-banner" id="d-devotional-banner">
+    <button type="button" class="devotional-header" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
+      <span class="banner-label">Daily Devotional</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-devotional-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body">
+          <p class="devotional-date" id="d-devotional-date">Loading…</p>
+          <h2 class="devotional-heading" id="d-devotional-title"></h2>
+          <p class="devotional-scripture" id="d-devotional-scripture"></p>
+          <div class="devotional-slider-row">
+            <span class="devotional-slider-label">Text Size</span>
+            <input type="range" id="d-devotional-size-slider" min="12" max="22" value="15" oninput="setDevotionalTextSize(this.value)" aria-label="Devotional reading text size">
+          </div>
+          <div class="devotional-content" id="d-devotional-content"><p class="devotional-loading">Loading devotional…</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Control Panel -->
   <div class="devotional-banner control-panel-banner" id="d-control-panel">
     <button type="button" class="devotional-header" id="d-control-toggle" aria-expanded="false" aria-controls="d-control-collapse" aria-label="Expand control panel" onclick="toggleControlPanel()">
@@ -2971,6 +3464,17 @@
               <select id="d-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
             </div>
           </div>
+          <h3 class="control-section-title" style="margin-top:18px;">Default Display Mode</h3>
+          <p class="control-section-hint">Choose the desktop layout style. Your selection is saved automatically.</p>
+          <div class="control-pref-grid display-mode-pref-grid" role="group" aria-label="Default display mode">
+            <div class="control-pref-field display-mode-pref-field">
+              <label class="control-pref-label" for="d-display-mode-select">Default Display Mode</label>
+              <select id="d-display-mode-select" class="control-pref-select" aria-label="Default display mode">
+                <option value="full">Full Page</option>
+                <option value="compact">Compact Page</option>
+              </select>
+            </div>
+          </div>
           <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
           <p class="control-section-hint">Choose an appearance. Your selection is saved automatically.</p>
           <div class="theme-grid" id="d-theme-grid" role="radiogroup" aria-label="Website themes"></div>
@@ -2987,6 +3491,21 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Display Mode Confirmation Modal -->
+  <div id="display-mode-modal" class="display-mode-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="display-mode-modal-title">
+    <div class="display-mode-modal-card" role="document">
+      <button type="button" class="display-mode-modal-close" id="display-mode-modal-close" aria-label="Close display mode popup">×</button>
+      <div class="display-mode-modal-loader" id="display-mode-modal-loader" aria-hidden="true"></div>
+      <h3 id="display-mode-modal-title">Display Mode</h3>
+      <p id="display-mode-modal-message">Display mode updated successfully.</p>
+      <div class="display-mode-modal-countdown" id="display-mode-modal-countdown" aria-live="polite">5 sec</div>
+      <div class="display-mode-modal-actions" id="display-mode-modal-actions">
+        <button type="button" class="display-mode-modal-btn display-mode-modal-no" id="display-mode-modal-no">No</button>
+        <button type="button" class="display-mode-modal-btn display-mode-modal-yes" id="display-mode-modal-yes">Yes</button>
       </div>
     </div>
   </div>
@@ -3054,7 +3573,7 @@
       <svg viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
   </div>
-  <span onclick="openCreatedByModal()" style="margin-top:14px;margin-bottom:4px;color:rgba(201,168,76,0.45);font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.14em;text-decoration:none;transition:color 0.2s;animation:fadeUp 1s ease 0.7s both;cursor:pointer;" onmouseover="this.style.color='rgba(201,168,76,0.8)'" onmouseout="this.style.color='rgba(201,168,76,0.45)'">Created using Claude &amp; Cursor</span>
+  <span id="d-created-by-link" class="created-by-link" onclick="openCreatedByModal()" style="margin-top:14px;margin-bottom:4px;color:rgba(201,168,76,0.45);font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.14em;text-decoration:none;transition:color 0.2s;animation:fadeUp 1s ease 0.7s both;cursor:pointer;" onmouseover="this.style.color='rgba(201,168,76,0.8)'" onmouseout="this.style.color='rgba(201,168,76,0.45)'">Created using Claude &amp; Cursor</span>
 </div>
 
 <!-- ══════════ MOBILE VIEW ══════════ -->
@@ -4009,7 +4528,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
     },
     {
       "id": "chinese_union_simp",
-      "language": "Chinese (Simplified)",
+      "language": "Chinese",
       "languageCode": "zh-Hans",
       "voiceLang": "zh-CN",
       "translationName": "Chinese Union Version (Simplified)",
@@ -4020,20 +4539,8 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
-      "id": "chinese_union_simp_s",
-      "language": "Chinese (Simplified, Shen Edition)",
-      "languageCode": "zh-Hans",
-      "voiceLang": "zh-CN",
-      "translationName": "Chinese Union Version Simplified (Shen)",
-      "abbreviation": "CUVSS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/chinese_union_simp_s.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
       "id": "chinese_union_trad",
-      "language": "Chinese (Traditional)",
+      "language": "Chinese",
       "languageCode": "zh-Hant",
       "voiceLang": "zh-TW",
       "translationName": "Chinese Union Version (Traditional)",
@@ -4044,20 +4551,8 @@ The website owner respects legitimate copyright claims and aims to resolve such 
       "hasApocrypha": false
     },
     {
-      "id": "chinese_union_trad_s",
-      "language": "Chinese (Traditional, Shen Edition)",
-      "languageCode": "zh-Hant",
-      "voiceLang": "zh-TW",
-      "translationName": "Chinese Union Version Traditional (Shen)",
-      "abbreviation": "CUVTS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/chinese_union_trad_s.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
       "id": "ckjv_sds",
-      "language": "Chinese (Simplified, KJV-style)",
+      "language": "Chinese",
       "languageCode": "zh-Hans",
       "voiceLang": "zh-CN",
       "translationName": "Chinese KJV Simplified (Shen)",
@@ -4069,7 +4564,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
     },
     {
       "id": "ckjv_sdt",
-      "language": "Chinese (Traditional, KJV-style)",
+      "language": "Chinese",
       "languageCode": "zh-Hant",
       "voiceLang": "zh-TW",
       "translationName": "Chinese KJV Traditional (Shen)",
@@ -9858,7 +10353,7 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (display) {
-      display.classList.remove('loading', 'read-updating');
+      display.classList.remove('loading', 'read-updating', 'read-display-active', 'generator-image-overflow');
       display.innerHTML = isDesk
         ? '<p class="verse-placeholder">Click above to receive the Word…</p>'
         : '<p class="mob-placeholder">Tap the button below to receive the Word…</p>';
@@ -9932,6 +10427,7 @@ function applyTranslationRtl(version) {
       if (readWrap) readWrap.style.display = readMode ? '' : 'none';
       if (customSearchWrap) customSearchWrap.style.display = showBooks ? '' : 'none';
       if (wrapper) wrapper.style.display = showBooks ? '' : 'none';
+      if (pl === 'd' && !readMode) setDesktopReadDisplayScrollButton(false);
       applyHbvModeChrome(pl, hbvMode);
       syncGenerateButtonVisibility(pl);
       if (hbvMode) {
@@ -10076,6 +10572,76 @@ function applyTranslationRtl(version) {
     if (display) display.classList.remove('loading', 'read-updating');
   }
 
+  function setDesktopReadDisplayScrollButton(enabled) {
+    const display = document.getElementById('d-verseDisplay');
+    if (!display) return;
+    display.classList.toggle('read-display-active', !!enabled);
+    if (!enabled) {
+      const oldBtn = display.querySelector('.read-display-scroll-btn');
+      if (oldBtn) oldBtn.remove();
+    }
+  }
+
+  function updateDesktopReadScrollButtonState() {
+    const display = document.getElementById('d-verseDisplay');
+    const btn = display?.querySelector('.read-display-scroll-btn');
+    if (!display || !btn) return;
+    const nearBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 24;
+    btn.setAttribute('aria-label', nearBottom ? 'Scroll to top' : 'Scroll reading panel');
+    btn.setAttribute('title', nearBottom ? 'Scroll to top' : 'Scroll reading panel');
+    btn.classList.toggle('is-at-bottom', nearBottom);
+    const icon = btn.querySelector('svg path');
+    if (icon) icon.setAttribute('d', nearBottom ? 'M6 13l6-6 6 6' : 'M6 11l6 6 6-6');
+  }
+
+  function scrollDesktopReadDisplay() {
+    const display = document.getElementById('d-verseDisplay');
+    if (!display) return;
+    const nearBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 24;
+    const nextTop = nearBottom ? 0 : display.scrollTop + Math.max(160, display.clientHeight * 0.72);
+    display.scrollTo({ top: nextTop, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    setTimeout(updateDesktopReadScrollButtonState, 260);
+  }
+
+  function ensureDesktopReadDisplayScrollButton() {
+    const display = document.getElementById('d-verseDisplay');
+    if (!display) return;
+    display.classList.add('read-display-active');
+
+    // Compact desktop mode must keep the original Backup-style reading panel:
+    // no floating scroll button and no internal scrolling limit.
+    const isCompactDesktop = window.matchMedia
+      && window.matchMedia('(min-width: 1025px)').matches
+      && document.documentElement.getAttribute('data-display-mode') === 'compact';
+    if (isCompactDesktop) {
+      const compactBtn = display.querySelector('.read-display-scroll-btn');
+      if (compactBtn) compactBtn.remove();
+      display.style.maxHeight = 'none';
+      display.style.overflow = 'visible';
+      display.style.overscrollBehavior = 'auto';
+      return;
+    }
+
+    display.style.maxHeight = '';
+    display.style.overflow = '';
+    display.style.overscrollBehavior = '';
+
+    let btn = display.querySelector('.read-display-scroll-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'read-display-scroll-btn';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+      btn.addEventListener('click', scrollDesktopReadDisplay);
+      display.insertBefore(btn, display.firstChild);
+    }
+    if (display.dataset.readScrollBound !== '1') {
+      display.dataset.readScrollBound = '1';
+      display.addEventListener('scroll', () => requestAnimationFrame(updateDesktopReadScrollButtonState), { passive: true });
+    }
+    requestAnimationFrame(updateDesktopReadScrollButtonState);
+  }
+
   function blurSearchInputs(p) {
     [p + '-custom-search', p + '-read-search'].forEach(id => {
       const el = document.getElementById(id);
@@ -10095,11 +10661,49 @@ function applyTranslationRtl(version) {
     else onReadSearch(p);
   }
 
+  function isDesktopCompactDisplayMode() {
+    return window.matchMedia
+      && window.matchMedia('(min-width: 1025px)').matches
+      && document.documentElement.getAttribute('data-display-mode') === 'compact';
+  }
+
   function scrollReadAreaToTop(p) {
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     requestAnimationFrame(() => {
-      const offset = p === 'm' ? 80 : 28;
+      if (p === 'd') {
+        const compactDesktop = isDesktopCompactDisplayMode();
+        const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+
+        // Full Page desktop: reset the internal reading panel to the Bible reference
+        // and also move the whole page back up to the header.
+        if (!compactDesktop) {
+          if (typeof smoothScrollElementTo === 'function') {
+            smoothScrollElementTo(el, 0, 900);
+          } else {
+            el.scrollTo({ top: 0, behavior });
+          }
+          const header = document.querySelector('#desktop-view .header') || document.getElementById('desktop-view');
+          if (header) {
+            const top = window.scrollY + header.getBoundingClientRect().top - 8;
+            if (typeof smoothScrollToY === 'function') smoothScrollToY(Math.max(0, top), 1100);
+            else window.scrollTo({ top: Math.max(0, top), behavior });
+          }
+          setTimeout(updateDesktopReadScrollButtonState, 320);
+          return;
+        }
+
+        // Compact Page desktop: no internal scroll panel; move the whole page to
+        // the parchment ornament section above the reading controls.
+        el.scrollTop = 0;
+        const ornament = document.querySelector('#desktop-view .scroll-card .card-ornament') || el;
+        const top = window.scrollY + ornament.getBoundingClientRect().top - 14;
+        if (typeof smoothScrollToY === 'function') smoothScrollToY(Math.max(0, top), 1100);
+        else window.scrollTo({ top: Math.max(0, top), behavior });
+        setTimeout(updateDesktopReadScrollButtonState, 320);
+        return;
+      }
+      const offset = 80;
       const top = window.scrollY + el.getBoundingClientRect().top - offset;
       const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
       window.scrollTo({ top: Math.max(0, top), behavior });
@@ -10148,6 +10752,34 @@ function applyTranslationRtl(version) {
     requestAnimationFrame(tick);
   }
 
+  function smoothScrollElementTo(el, targetY, durationMs) {
+    if (!el) return;
+    const top = Math.max(0, Math.min(targetY, el.scrollHeight - el.clientHeight));
+    if (prefersReducedMotion()) {
+      el.scrollTop = top;
+      updateDesktopReadScrollButtonState();
+      return;
+    }
+    const startY = el.scrollTop;
+    const distance = top - startY;
+    if (Math.abs(distance) < 2) {
+      updateDesktopReadScrollButtonState();
+      return;
+    }
+    const duration = durationMs || 1400;
+    const start = performance.now();
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      el.scrollTop = startY + distance * easeInOutCubic(t);
+      if (t < 1) requestAnimationFrame(tick);
+      else updateDesktopReadScrollButtonState();
+    }
+    requestAnimationFrame(tick);
+  }
+
   let _scrollToModeTicking = false;
 
   function getModePanelScrollTop(p) {
@@ -10160,6 +10792,12 @@ function applyTranslationRtl(version) {
   function scrollToModePanel() {
     const p = activePanel();
     smoothScrollToY(getModePanelScrollTop(p), 1000);
+  }
+
+  function scrollDesktopToHeader() {
+    const header = document.querySelector('#desktop-view .header');
+    const target = header ? Math.max(0, window.scrollY + header.getBoundingClientRect().top - 18) : 0;
+    smoothScrollToY(target, 1500);
   }
 
   function isPastMobileTextSizeSection() {
@@ -10182,14 +10820,13 @@ function applyTranslationRtl(version) {
   function initScrollToModeButtons() {
     const deskBtn = document.getElementById('scroll-to-mode-desktop');
     const mobBtn = document.getElementById('scroll-to-mode-mobile');
-    const onClick = () => scrollToModePanel();
     if (deskBtn && deskBtn.dataset.bound !== '1') {
       deskBtn.dataset.bound = '1';
-      deskBtn.addEventListener('click', onClick);
+      deskBtn.addEventListener('click', scrollDesktopToHeader);
     }
     if (mobBtn && mobBtn.dataset.bound !== '1') {
       mobBtn.dataset.bound = '1';
-      mobBtn.addEventListener('click', onClick);
+      mobBtn.addEventListener('click', scrollToModePanel);
     }
     if (window._scrollToModeScrollBound) return;
     window._scrollToModeScrollBound = true;
@@ -10215,7 +10852,7 @@ function applyTranslationRtl(version) {
     const end = Math.max(verseStart, verseEnd);
     const times = flashTimes || READ_VERSE_SCROLL_FLASH_TIMES;
     const flashClass = times >= 3 ? 'verse-phrase-flash verse-flash-x3' : 'verse-phrase-flash';
-    const clearMs = times >= 3 ? 2300 : 900;
+    const clearMs = times >= 3 ? 3200 : 900;
     passage.querySelectorAll('.read-verse-segment').forEach(el => {
       const n = parseInt(el.getAttribute('data-verse-num'), 10);
       if (Number.isNaN(n) || n < start || n > end) return;
@@ -10250,8 +10887,14 @@ function applyTranslationRtl(version) {
     }
     requestAnimationFrame(() => {
       const rect = firstTarget.getBoundingClientRect();
+      if (p === 'd') {
+        const displayRect = display.getBoundingClientRect();
+        const targetTop = display.scrollTop + rect.top - displayRect.top - (display.clientHeight * 0.38) + (rect.height / 2);
+        smoothScrollElementTo(display, targetTop, options.slowScroll ? 1600 : 900);
+        return;
+      }
       const viewMid = window.innerHeight * 0.42;
-      const chromeOffset = p === 'm' ? 72 : 24;
+      const chromeOffset = 72;
       const top = window.scrollY + rect.top - viewMid + (rect.height / 2) - chromeOffset;
       if (options.slowScroll) smoothScrollToY(top, 1000);
       else window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
@@ -10292,7 +10935,7 @@ function applyTranslationRtl(version) {
 
     const end = verseEnd ?? verse;
     // Allow passage DOM to settle after async load before smooth scroll.
-    const scrollDelay = options.slowScroll ? 120 : 0;
+    const scrollDelay = options.slowScroll ? 40 : 0;
     const runScroll = () => scrollToReadVerses(p, verse, end, options);
     if (scrollDelay) {
       setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(runScroll)), scrollDelay);
@@ -10422,10 +11065,11 @@ function applyTranslationRtl(version) {
     if (e?.type === 'click' && Date.now() < _verseTapSuppressClickUntil) return;
     const sel = window.getSelection();
     if (sel && sel.toString().trim()) return;
-    const block = e.target.closest('.verse-gen-tappable');
-    if (!block) return;
-    const display = block.closest('#d-verseDisplay, #m-verseDisplay');
+    let block = e.target.closest('.verse-gen-tappable');
+    const display = (block && block.closest('#d-verseDisplay, #m-verseDisplay')) || e.target.closest?.('#d-verseDisplay, #m-verseDisplay');
     if (!display) return;
+    if (!block && display.contains(e.target)) block = display.querySelector('.verse-gen-tappable');
+    if (!block) return;
     const p = display.id === 'm-verseDisplay' ? 'm' : 'd';
     if (isReadBibleMode(p)) return;
     if (isHbvMode(p)) return;
@@ -10465,10 +11109,11 @@ function applyTranslationRtl(version) {
       return;
     }
 
-    const block = e.target.closest('.verse-gen-tappable');
-    if (!block) return;
-    const display = block.closest('#d-verseDisplay, #m-verseDisplay');
+    let block = e.target.closest('.verse-gen-tappable');
+    const display = (block && block.closest('#d-verseDisplay, #m-verseDisplay')) || e.target.closest?.('#d-verseDisplay, #m-verseDisplay');
     if (!display) return;
+    if (!block && display.contains(e.target)) block = display.querySelector('.verse-gen-tappable');
+    if (!block) return;
     const p = display.id === 'm-verseDisplay' ? 'm' : 'd';
     if (isReadBibleMode(p) || isHbvMode(p)) return;
     _verseTapSuppressClickUntil = Date.now() + 450;
@@ -10916,6 +11561,7 @@ function applyTranslationRtl(version) {
     const openRef = escapeHtml(buildRefFromParsed(parsed) || uiRef);
     const reveal = verseRevealClass();
     clearReadDisplayLoading(p);
+    display.classList.remove('generator-image-overflow');
     display.innerHTML = isDesk
       ? `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${openRef} in Read Bible"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(uiRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
       : `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${openRef} in Read Bible"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(uiRef)} · ${escapeHtml(label)}</p></div>`;
@@ -11075,8 +11721,9 @@ function applyTranslationRtl(version) {
     const reveal = verseRevealClass(animate === false);
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
-      ? `<div class="${reveal}"><p class="verse-text read-mode read-passage-text">${body}</p><p class="verse-ref">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p></div>`
-      : `<div class="${reveal}"><p class="mob-verse-text read-mode read-passage-text">${body}</p><p class="mob-verse-ref">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p></div>`;
+      ? `<div class="${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
+      : `<div class="${reveal}"><p class="mob-verse-ref read-passage-ref-top">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p><p class="mob-verse-text read-mode read-passage-text">${body}</p></div>`;
+    if (isDesk) ensureDesktopReadDisplayScrollButton();
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
     const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
@@ -11252,6 +11899,7 @@ function applyTranslationRtl(version) {
     }
     display.classList.remove('read-updating');
     display.classList.add('loading');
+    if (p === 'd') display.classList.remove('read-display-active');
     const isDesk = p === 'd';
     display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}" style="font-style:italic;">Loading Scripture…</p>`;
   }
@@ -11705,6 +12353,19 @@ function applyTranslationRtl(version) {
       Math.max(VERSE_TEXT_SIZE_MIN, Number(val) || fallback)
     );
     document.documentElement.style.setProperty('--verse-size', px + 'px');
+
+    // Desktop Full Page fix:
+    // the verse display is moved into the right column in full-page mode, so force the
+    // currently rendered generator verse and Read Bible passage to follow the slider instantly.
+    if (!isMobile && document.documentElement.getAttribute('data-display-mode') === 'full') {
+      const desktopDisplay = document.getElementById('d-verseDisplay');
+      if (desktopDisplay) {
+        desktopDisplay.querySelectorAll('.verse-text, .read-passage-text').forEach(el => {
+          el.style.fontSize = px + 'px';
+        });
+      }
+    }
+
     const dSlider = document.getElementById('d-size-slider');
     const mSlider = document.getElementById('m-size-slider');
     if (dSlider) dSlider.value = px;
@@ -11772,7 +12433,7 @@ function applyTranslationRtl(version) {
     const label = escapeHtml(getTranslationLabel(entry.version, entry.genBook || entry.passageParsed?.book));
     const safeRef = escapeHtml(entry.ref);
     const reveal = verseRevealClass();
-    display.classList.remove('loading');
+    display.classList.remove('loading', 'generator-image-overflow');
     display.innerHTML = isDesk
       ? `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="${textClass}">${safeText}</p><p class="verse-ref">${safeRef} &nbsp;·&nbsp; ${label}</p></div>`
       : `<div class="${reveal} verse-gen-tappable" role="button" tabindex="0" aria-label="Open ${safeRef} in Read Bible"><p class="${textClass}">${safeText}</p><p class="mob-verse-ref">${safeRef} · ${label}</p></div>`;
@@ -12132,7 +12793,7 @@ function applyTranslationRtl(version) {
   ══════════════════════════════════════ */
   async function showPrev(p) {
     if (isReadBibleMode(p)) {
-      navigateReadChapter(p, -1);
+      await navigateReadChapter(p, -1);
       return;
     }
     if (isHbvMode(p)) {
@@ -12166,7 +12827,7 @@ function applyTranslationRtl(version) {
   }
   async function showNext(p) {
     if (isReadBibleMode(p)) {
-      navigateReadChapter(p, 1);
+      await navigateReadChapter(p, 1);
       return;
     }
     if (isHbvMode(p)) {
@@ -12688,6 +13349,58 @@ function applyTranslationRtl(version) {
     ctx.globalAlpha = 1;
   }
 
+  function isFullPageDesktopDisplay() {
+    return isDesktop() && document.documentElement.getAttribute('data-display-mode') !== 'compact';
+  }
+
+  function updateDesktopGeneratorImageScrollButtonState() {
+    const display = document.getElementById('d-verseDisplay');
+    if (!display) return;
+    const hasImage = !!display.querySelector('.verse-display-image-wrap img');
+    const shouldCheck = isFullPageDesktopDisplay() && !isReadBibleMode('d') && !isHbvMode('d') && hasImage;
+    if (!shouldCheck) {
+      display.classList.remove('generator-image-overflow');
+      return;
+    }
+    const overflows = display.scrollHeight > display.clientHeight + 8;
+    display.classList.toggle('generator-image-overflow', overflows);
+    const btn = display.querySelector('.generator-display-scroll-btn');
+    if (btn) {
+      const atBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 12;
+      btn.setAttribute('aria-label', atBottom ? 'Scroll image up' : 'Scroll image down');
+      btn.setAttribute('title', atBottom ? 'Scroll image up' : 'Scroll image down');
+      btn.innerHTML = atBottom
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    }
+  }
+
+  function ensureDesktopGeneratorImageScrollButton() {
+    const display = document.getElementById('d-verseDisplay');
+    if (!display) return null;
+    let btn = display.querySelector('.generator-display-scroll-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'generator-display-scroll-btn';
+      btn.setAttribute('aria-label', 'Scroll image down');
+      btn.setAttribute('title', 'Scroll image down');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+      btn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const atBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 12;
+        const target = atBottom ? 0 : Math.min(display.scrollHeight - display.clientHeight, display.scrollTop + Math.max(180, display.clientHeight * 0.78));
+        smoothScrollElementTo(display, target, 900);
+        setTimeout(updateDesktopGeneratorImageScrollButtonState, 940);
+      });
+      display.prepend(btn);
+      display.addEventListener('scroll', updateDesktopGeneratorImageScrollButtonState, { passive: true });
+    }
+    requestAnimationFrame(() => requestAnimationFrame(updateDesktopGeneratorImageScrollButtonState));
+    return btn;
+  }
+
   function generateImage(p) {
     if (!current[p]) { showToast('Generate a verse first!'); return; }
     try {
@@ -12699,8 +13412,41 @@ function applyTranslationRtl(version) {
       drawVerseImage(ctx, layout, current[p]);
 
       const wrap = document.getElementById(p + '-imageWrap');
-      wrap.style.display = 'block';
-      showToast('Image ready! Download or share below.');
+
+      if (p === 'd') {
+        if (wrap) wrap.style.display = 'none';
+        const display = document.getElementById('d-verseDisplay');
+        if (display) {
+          display.querySelectorAll('.verse-display-image-wrap').forEach(el => el.remove());
+          const inlineWrap = document.createElement('div');
+          inlineWrap.className = 'verse-display-image-wrap';
+
+          const img = document.createElement('img');
+          img.alt = current[p]?.ref ? 'Verse image for ' + current[p].ref : 'Generated verse image';
+          img.onload = function () { updateDesktopGeneratorImageScrollButtonState(); };
+          img.src = canvas.toDataURL('image/png');
+          inlineWrap.appendChild(img);
+
+          const actionRow = document.createElement('div');
+          actionRow.className = 'image-action-row';
+          const downloadBtn = document.createElement('button');
+          downloadBtn.type = 'button';
+          downloadBtn.className = 'btn-action';
+          downloadBtn.textContent = '⬇ Download';
+          downloadBtn.onclick = function () { downloadImage('d'); };
+          actionRow.appendChild(downloadBtn);
+          inlineWrap.appendChild(actionRow);
+
+          display.appendChild(inlineWrap);
+          ensureDesktopGeneratorImageScrollButton();
+          inlineWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          requestAnimationFrame(() => requestAnimationFrame(updateDesktopGeneratorImageScrollButtonState));
+        }
+      } else if (wrap) {
+        wrap.style.display = 'block';
+      }
+
+      showToast('Image ready! Download below.');
     } catch (e) {
       showToast('Image generation not supported in this browser. Please open in Safari or Chrome.');
     }
@@ -12959,6 +13705,8 @@ function applyTranslationRtl(version) {
     let preloadDone = false;
     let volumeRafId = 0;
     let lastAppliedVolume = -1;
+    let pendingPlayAfterReady = false;
+    let ytApiLoading = false;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
@@ -13080,10 +13828,10 @@ function applyTranslationRtl(version) {
         applyAudiblePlaybackToPlayer();
       }
       forceQuality144();
-      if (!andPlay || userMuted) {
+      if ((!andPlay && userMuted) || userMuted) {
         setTimeout(() => {
           if (!ytPlayer) return;
-          if (!andPlay || userMuted) {
+          if (userMuted) {
             try { ytPlayer.pauseVideo(); } catch (e) { /* ignore */ }
           }
         }, 80);
@@ -13115,11 +13863,12 @@ function applyTranslationRtl(version) {
       playlistPicked = false;
       ensureMutedSilent();
       loadPlaylistIntoPlayer();
-      setTimeout(() => tryPickRandomPreload(0, false), 400);
+      setTimeout(() => tryPickRandomPreload(0, !userMuted), 400);
     }
 
     function muteAndStop() {
       userMuted = true;
+      pendingPlayAfterReady = false;
       updateMuteUI();
       if (!ytPlayer) return;
       try {
@@ -13130,11 +13879,16 @@ function applyTranslationRtl(version) {
 
     function unmuteAndPlay() {
       userMuted = false;
+      pendingPlayAfterReady = true;
       updateMuteUI();
-      if (!ytPlayer) return;
+      if (!ytPlayer || !playerReady) {
+        injectYouTubeApi();
+        return;
+      }
 
       const startPlayback = () => {
         if (!ytPlayer || userMuted) return;
+        pendingPlayAfterReady = false;
         try {
           lastAppliedVolume = -1;
           ytPlayer.setVolume(savedVolume);
@@ -13153,6 +13907,8 @@ function applyTranslationRtl(version) {
       if (playerReady) {
         if (!preloadDone) preloadPlaylist();
         startPlayback();
+        setTimeout(startPlayback, 450);
+        setTimeout(startPlayback, 1100);
       }
     }
 
@@ -13169,6 +13925,9 @@ function applyTranslationRtl(version) {
       ytPlayer = event.target;
       ensureMutedSilent();
       preloadPlaylist();
+      if (pendingPlayAfterReady && !userMuted) {
+        setTimeout(() => unmuteAndPlay(), 250);
+      }
     }
 
     function onPlayerStateChange(event) {
@@ -13224,6 +13983,7 @@ function applyTranslationRtl(version) {
     updateMuteUI();
 
     function createPlayer() {
+      ytApiLoading = false;
       if (ytPlayer) return;
       const origin = window.location.origin && window.location.origin !== 'null'
         ? window.location.origin
@@ -13265,6 +14025,20 @@ function applyTranslationRtl(version) {
         createPlayer();
         return;
       }
+      if (ytApiLoading || document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        let tries = 0;
+        const waitForApi = setInterval(() => {
+          tries++;
+          if (window.YT && window.YT.Player) {
+            clearInterval(waitForApi);
+            createPlayer();
+          } else if (tries > 40) {
+            clearInterval(waitForApi);
+          }
+        }, 250);
+        return;
+      }
+      ytApiLoading = true;
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       tag.async = true;
@@ -13496,5 +14270,313 @@ function iabFallbackCopy(url, callback) {
 </script>
 <!-- End In-App Browser Detection Popup -->
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a02e04667fc08e6d',t:'MTc3OTk3OTI1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a02e04667fc08e6d',t:'MTc3OTk3OTI1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>
+  /* Desktop display mode manager: Full Page keeps the current fix.html layout, Compact Page restores the Backup-style desktop layout. */
+  (function () {
+    var STORAGE_KEY = 'vg-display-mode';
+    var currentMode = 'full';
+    var pendingMode = null;
+    var autoCloseTimer = null;
+
+    function isDesktop() {
+      return !!(window.matchMedia && window.matchMedia('(min-width: 1025px)').matches);
+    }
+
+    function getSavedMode() {
+      try {
+        return localStorage.getItem(STORAGE_KEY) === 'compact' ? 'compact' : 'full';
+      } catch (_) {
+        return 'full';
+      }
+    }
+
+    function saveMode(mode) {
+      try { localStorage.setItem(STORAGE_KEY, mode); } catch (_) {}
+      document.documentElement.setAttribute('data-display-mode', mode);
+    }
+
+    function getDesktopParts() {
+      return {
+        desktop: document.getElementById('desktop-view'),
+        display: document.getElementById('d-verseDisplay')
+      };
+    }
+
+    function applyFullLayout() {
+      var parts = getDesktopParts();
+      var desktop = parts.desktop;
+      var display = parts.display;
+      if (!desktop || !display || !isDesktop()) return;
+      display.style.maxHeight = '';
+      display.style.overflow = '';
+      display.style.overscrollBehavior = '';
+      if (desktop.classList.contains('desktop-two-column-ready')) return;
+
+      var oldParent = display.parentNode;
+      if (oldParent && !document.getElementById('d-verseDisplay-placeholder')) {
+        var placeholder = document.createElement('div');
+        placeholder.id = 'd-verseDisplay-placeholder';
+        oldParent.insertBefore(placeholder, display);
+      }
+
+      var existingShell = desktop.querySelector('.desktop-two-column-shell');
+      if (existingShell) existingShell.remove();
+
+      var shell = document.createElement('div');
+      shell.className = 'desktop-two-column-shell';
+      var left = document.createElement('div');
+      left.className = 'desktop-left-column';
+      var right = document.createElement('aside');
+      right.className = 'desktop-right-column';
+      right.setAttribute('aria-label', 'Verse display area');
+
+      while (desktop.firstChild) {
+        left.appendChild(desktop.firstChild);
+      }
+      right.appendChild(display);
+      shell.appendChild(left);
+      shell.appendChild(right);
+      desktop.appendChild(shell);
+      desktop.classList.add('desktop-two-column-ready');
+    }
+
+    function applyCompactLayout() {
+      var parts = getDesktopParts();
+      var desktop = parts.desktop;
+      var display = parts.display;
+      if (!desktop || !display) return;
+
+      var readScrollBtn = display.querySelector('.read-display-scroll-btn');
+      if (readScrollBtn) readScrollBtn.remove();
+      var generatorScrollBtn = display.querySelector('.generator-display-scroll-btn');
+      if (generatorScrollBtn) generatorScrollBtn.remove();
+      display.classList.remove('generator-image-overflow');
+      display.style.maxHeight = 'none';
+      display.style.overflow = 'visible';
+      display.style.overscrollBehavior = 'auto';
+
+      var shell = desktop.querySelector('.desktop-two-column-shell');
+      var left = desktop.querySelector('.desktop-left-column');
+      var placeholder = document.getElementById('d-verseDisplay-placeholder');
+
+      if (shell && left) {
+        while (left.firstChild) {
+          desktop.insertBefore(left.firstChild, shell);
+        }
+      }
+
+      placeholder = document.getElementById('d-verseDisplay-placeholder');
+      if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(display, placeholder);
+        placeholder.remove();
+      } else if (desktop && !desktop.contains(display)) {
+        desktop.appendChild(display);
+      }
+
+      if (shell && shell.parentNode) shell.parentNode.removeChild(shell);
+      desktop.classList.remove('desktop-two-column-ready');
+    }
+
+    function applyDisplayMode(mode) {
+      currentMode = mode === 'compact' ? 'compact' : 'full';
+      document.documentElement.setAttribute('data-display-mode', currentMode);
+      if (!isDesktop()) return;
+      document.documentElement.classList.add('display-mode-switching');
+      if (currentMode === 'compact') applyCompactLayout();
+      else applyFullLayout();
+      window.setTimeout(function () {
+        document.documentElement.classList.remove('display-mode-switching');
+      }, 360);
+    }
+
+    function getModal() {
+      return {
+        modal: document.getElementById('display-mode-modal'),
+        message: document.getElementById('display-mode-modal-message'),
+        countdown: document.getElementById('display-mode-modal-countdown'),
+        actions: document.getElementById('display-mode-modal-actions'),
+        yes: document.getElementById('display-mode-modal-yes'),
+        no: document.getElementById('display-mode-modal-no'),
+        close: document.getElementById('display-mode-modal-close')
+      };
+    }
+
+    function stopCountdown() {
+      window.clearTimeout(autoCloseTimer);
+      if (window._displayModeCountdownTimer) {
+        window.clearInterval(window._displayModeCountdownTimer);
+        window._displayModeCountdownTimer = null;
+      }
+    }
+
+    function closeModal(resetSelect) {
+      var m = getModal();
+      if (!m.modal) return;
+      stopCountdown();
+      m.modal.classList.remove('is-open', 'is-loading', 'is-success', 'is-counting');
+      window.setTimeout(function () {
+        m.modal.classList.remove('is-visible');
+        m.modal.setAttribute('aria-hidden', 'true');
+        if (m.message) m.message.textContent = 'Display mode updated successfully.';
+        if (m.countdown) m.countdown.textContent = '5 sec';
+        if (resetSelect) syncSelect(currentMode);
+      }, 260);
+    }
+
+    function startSuccessCountdown() {
+      var m = getModal();
+      var seconds = 5;
+      if (m.countdown) m.countdown.textContent = seconds + ' sec';
+      if (m.modal) m.modal.classList.add('is-counting');
+      stopCountdown();
+      window._displayModeCountdownTimer = window.setInterval(function () {
+        seconds -= 1;
+        if (m.countdown) m.countdown.textContent = seconds + ' sec';
+        if (seconds <= 1) {
+          stopCountdown();
+          autoCloseTimer = window.setTimeout(function () { closeModal(false); }, 700);
+        }
+      }, 1000);
+    }
+
+    function openConfirm(mode) {
+      var m = getModal();
+      if (!m.modal) return;
+      pendingMode = mode;
+      stopCountdown();
+      if (m.message) m.message.textContent = 'Switching display mode…';
+      if (m.countdown) m.countdown.textContent = '5 sec';
+      m.modal.classList.remove('is-success', 'is-counting');
+      m.modal.classList.add('is-visible', 'is-loading');
+      m.modal.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(function () { m.modal.classList.add('is-open'); });
+      confirmMode();
+    }
+
+    function confirmMode() {
+      if (!pendingMode) return;
+      var m = getModal();
+      var nextMode = pendingMode;
+      pendingMode = null;
+      if (m.modal) m.modal.classList.add('is-loading');
+      if (m.message) m.message.textContent = 'Switching display mode…';
+      window.setTimeout(function () {
+        saveMode(nextMode);
+        applyDisplayMode(nextMode);
+        syncSelect(nextMode);
+        if (m.modal) m.modal.classList.remove('is-loading');
+        if (m.modal) m.modal.classList.add('is-success');
+        if (m.message) m.message.textContent = 'Display mode updated successfully.';
+        startSuccessCountdown();
+      }, 320);
+    }
+
+    function syncSelect(mode) {
+      var select = document.getElementById('d-display-mode-select');
+      if (select) select.value = mode === 'compact' ? 'compact' : 'full';
+    }
+
+    function initDisplayModeControls() {
+      currentMode = getSavedMode();
+      saveMode(currentMode);
+      syncSelect(currentMode);
+      applyDisplayMode(currentMode);
+
+      var select = document.getElementById('d-display-mode-select');
+      if (select) {
+        select.addEventListener('change', function () {
+          var selected = select.value === 'compact' ? 'compact' : 'full';
+          if (!isDesktop() || selected === currentMode) {
+            syncSelect(currentMode);
+            return;
+          }
+          openConfirm(selected);
+        });
+      }
+
+      var m = getModal();
+      if (m.actions) m.actions.style.display = 'none';
+      if (m.yes) m.yes.addEventListener('click', confirmMode);
+      if (m.no) m.no.addEventListener('click', function () { closeModal(true); });
+      if (m.close) m.close.addEventListener('click', function () { closeModal(false); });
+      if (m.modal) {
+        m.modal.addEventListener('click', function (event) {
+          if (event.target === m.modal) closeModal(false);
+        });
+      }
+    }
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(function () {
+        if (isDesktop()) applyDisplayMode(currentMode);
+        else applyCompactLayout();
+        if (typeof updateDesktopGeneratorImageScrollButtonState === 'function') updateDesktopGeneratorImageScrollButtonState();
+      }, 160);
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDisplayModeControls, { once: true });
+    } else {
+      initDisplayModeControls();
+    }
+  })();
+</script>
+
+
+
+<script>
+  /* Desktop keyboard navigation: Left Arrow = Previous, Right Arrow = Next */
+  (function initDesktopArrowNavigation() {
+    function isDesktopView() {
+      return window.matchMedia && window.matchMedia('(min-width: 1025px)').matches;
+    }
+
+    function isTypingTarget(target) {
+      if (!target) return false;
+      const tag = (target.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+    }
+
+    function isHidden(el) {
+      if (!el) return true;
+      const style = window.getComputedStyle(el);
+      return style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
+    }
+
+    function clickDesktopNavButton(direction) {
+      const actions = document.getElementById('d-actions');
+      if (!actions || isHidden(actions)) return;
+
+      const isReadModeActive = typeof isReadBibleMode === 'function' && isReadBibleMode('d');
+      const isHbvModeActive = typeof isHbvMode === 'function' && isHbvMode('d');
+      if (isHbvModeActive) return;
+
+      const btn = document.getElementById(direction === 'prev' ? 'd-prev-btn' : 'd-next-btn');
+      if (!btn || btn.disabled || isHidden(btn)) return;
+
+      if (isReadModeActive && typeof updateReadChapterNav === 'function') {
+        updateReadChapterNav('d');
+        if (btn.disabled) return;
+      }
+
+      btn.click();
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.defaultPrevented) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      if (!isDesktopView()) return;
+      if (isTypingTarget(event.target)) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+      event.preventDefault();
+      clickDesktopNavButton(event.key === 'ArrowLeft' ? 'prev' : 'next');
+    });
+  })();
+</script>
+
+</body>
 </html>
