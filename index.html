@@ -14390,6 +14390,54 @@ function iabFallbackCopy(url, callback) {
       }, 360);
     }
 
+
+    function smoothScrollToElement(el, offset) {
+      if (!el || !isDesktop()) return;
+      var behavior = 'smooth';
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) behavior = 'auto';
+      } catch (_) {}
+      var top = window.scrollY + el.getBoundingClientRect().top - (offset || 0);
+      window.scrollTo({ top: Math.max(0, top), behavior: behavior });
+    }
+
+    function openDesktopControlPanel() {
+      var panel = document.getElementById('d-control-panel');
+      var btn = document.getElementById('d-control-toggle');
+      if (!panel) return;
+      if (typeof window.setControlPanelOpen === 'function') {
+        window.setControlPanelOpen(true);
+      } else {
+        panel.classList.add('is-open');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'true');
+          btn.setAttribute('aria-label', 'Collapse control panel');
+        }
+      }
+    }
+
+    function scrollAfterSuccessfulDisplaySwitch(mode) {
+      if (!isDesktop()) return;
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          if (mode === 'compact') {
+            openDesktopControlPanel();
+            smoothScrollToElement(document.getElementById('d-control-panel'), 24);
+            window.setTimeout(function () {
+              smoothScrollToElement(document.getElementById('d-control-panel'), 24);
+            }, 450);
+          } else {
+            var header = document.querySelector('#desktop-view .header') || document.getElementById('desktop-view');
+            smoothScrollToElement(header, 12);
+            window.setTimeout(function () {
+              var headerAgain = document.querySelector('#desktop-view .header') || document.getElementById('desktop-view');
+              smoothScrollToElement(headerAgain, 12);
+            }, 450);
+          }
+        });
+      });
+    }
+
     function getModal() {
       return {
         modal: document.getElementById('display-mode-modal'),
@@ -14465,6 +14513,7 @@ function iabFallbackCopy(url, callback) {
         saveMode(nextMode);
         applyDisplayMode(nextMode);
         syncSelect(nextMode);
+        scrollAfterSuccessfulDisplaySwitch(nextMode);
         if (m.modal) m.modal.classList.remove('is-loading');
         if (m.modal) m.modal.classList.add('is-success');
         if (m.message) m.message.textContent = 'Display mode updated successfully.';
