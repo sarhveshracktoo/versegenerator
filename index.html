@@ -11,6 +11,16 @@
         var dm = localStorage.getItem('vg-display-mode') || 'full';
         if (dm !== 'compact') dm = 'full';
         document.documentElement.setAttribute('data-display-mode', dm);
+
+        // Keep real phones on the mobile shell when rotated sideways.
+        // Tablets still use the tablet/desktop shell.
+        var w = window.innerWidth || 0;
+        var h = window.innerHeight || 0;
+        var ua = navigator.userAgent || '';
+        var isPhoneUa = /Mobi|iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|BB10|Opera Mini/i.test(ua);
+        var isPhoneLandscape = isPhoneUa && w > h && h <= 600 && w <= 1000;
+        var layout = (w <= 768 || isPhoneLandscape) ? 'mobile' : (w <= 1100 ? 'tablet' : 'desktop');
+        document.documentElement.setAttribute('data-layout', layout);
       } catch (_) {
         document.documentElement.setAttribute('data-theme', 'normal');
       }
@@ -323,6 +333,103 @@
       font-size: 0.9rem;
       margin-top: 6px;
       font-style: italic;
+    }
+
+
+    .votd-panel .devotional-panel-body,
+    .weekly-banner .devotional-panel-body {
+      position: relative;
+      padding-right: 64px;
+      padding-bottom: 22px;
+    }
+    .panel-magnify-btn {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      background: rgba(var(--accent-rgb), 0.10);
+      color: var(--gold-light);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 3;
+      opacity: 0.78;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .panel-magnify-btn:hover,
+    .panel-magnify-btn:focus-visible {
+      opacity: 1;
+      transform: translateY(-1px) scale(1.04);
+      background: rgba(var(--accent-rgb), 0.18);
+      border-color: rgba(var(--accent-rgb), 0.62);
+      color: var(--gold);
+      outline: none;
+    }
+    .panel-magnify-btn:active {
+      transform: translateY(0) scale(0.96);
+    }
+    .panel-magnify-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      pointer-events: none;
+    }
+    .votd-panel.is-magnified .votd-verse {
+      font-size: calc(1.08rem * 2);
+      line-height: 1.45;
+    }
+    .votd-panel.is-magnified .banner-ref {
+      font-size: calc(0.65rem * 2);
+      line-height: 1.35;
+      margin-top: 10px;
+    }
+    .weekly-banner.is-magnified .banner-verse {
+      font-size: calc(1.05rem * 2);
+      line-height: 1.45;
+    }
+    .weekly-banner.is-magnified .weekly-note {
+      font-size: calc(0.9rem * 2);
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+    .weekly-banner.is-magnified .banner-ref {
+      font-size: calc(0.65rem * 1.55);
+      line-height: 1.35;
+      margin-top: 10px;
+    }
+    .votd-panel .votd-verse,
+    .votd-panel .banner-ref,
+    .weekly-banner .banner-verse,
+    .weekly-banner .banner-ref,
+    .weekly-banner .weekly-note {
+      transition: font-size 0.22s ease, line-height 0.22s ease, margin 0.22s ease;
+    }
+    @media (max-width: 768px) {
+      .votd-panel .devotional-panel-body,
+      .weekly-banner .devotional-panel-body {
+        padding-right: 52px;
+      }
+      .panel-magnify-btn {
+        width: 32px;
+        height: 32px;
+        right: 10px;
+        bottom: 10px;
+      }
+      .votd-panel.is-magnified .votd-verse,
+      .weekly-banner.is-magnified .banner-verse {
+        font-size: 1.55rem;
+      }
+      .votd-panel.is-magnified .banner-ref,
+      .weekly-banner.is-magnified .banner-ref,
+      .weekly-banner.is-magnified .weekly-note {
+        font-size: 1rem;
+      }
     }
 
     /* Daily Devotional panel */
@@ -1476,6 +1583,61 @@
         min-height: 100vh;
         position: relative;
         z-index: 1;
+      }
+    }
+    /* Phone-only landscape: keep the portrait mobile layout, but let it breathe wider. */
+    @media (orientation: landscape) and (max-height: 600px) and (max-width: 1000px) and (hover: none) and (pointer: coarse) {
+      #desktop-view { display: none !important; }
+      #mobile-view {
+        display: flex !important;
+        flex-direction: column;
+        min-height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
+      .mob-topbar {
+        padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 10px max(18px, env(safe-area-inset-left));
+      }
+      .mob-title { font-size: 1rem; }
+      .mob-divider { margin-top: 5px; }
+      .mob-content {
+        width: 100%;
+        max-width: none;
+        padding: 10px max(18px, env(safe-area-inset-right)) 152px max(18px, env(safe-area-inset-left));
+        gap: 8px;
+        align-items: stretch;
+      }
+      .mob-content > .votd-panel,
+      .mob-content > .weekly-banner,
+      .mob-content > .devotional-banner,
+      .mob-content > .control-panel-banner,
+      .mob-card {
+        width: 100%;
+        max-width: none;
+        align-self: stretch;
+      }
+      .mob-card {
+        padding: 16px 18px 18px;
+      }
+      .mob-select-row,
+      .mob-read-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .mob-verse-box {
+        min-height: 96px;
+        max-height: none;
+      }
+      .mob-bottom {
+        padding: 10px max(18px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+        gap: 7px;
+      }
+      .mob-btn-generate {
+        max-width: none;
+        padding: 12px 16px;
+      }
+      .mob-bottom .mob-social-icon-btn {
+        width: 34px;
+        height: 34px;
       }
     }
 
@@ -2668,6 +2830,33 @@
     .mob-devotional-banner.legal-banner .legal-content {
       max-height: 50vh;
     }
+
+    .read-me-content,
+    .legal-content {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(var(--accent-rgb), 0.46) transparent;
+    }
+    .read-me-content::-webkit-scrollbar,
+    .legal-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    .read-me-content::-webkit-scrollbar-track,
+    .legal-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .read-me-content::-webkit-scrollbar-thumb,
+    .legal-content::-webkit-scrollbar-thumb {
+      background: rgba(var(--accent-rgb), 0.42);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    .read-me-content::-webkit-scrollbar-thumb:hover,
+    .legal-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(var(--accent-rgb), 0.68);
+      background-clip: content-box;
+    }
+
     .legal-content .legal-title {
       font-size: 1.02em;
       line-height: 1.45;
@@ -3219,8 +3408,12 @@
 <script>
 (function () {
   try {
-    var w = window.innerWidth;
-    var mode = w <= 768 ? 'mobile' : (w <= 1100 ? 'tablet' : 'desktop');
+    var w = window.innerWidth || 0;
+    var h = window.innerHeight || 0;
+    var ua = navigator.userAgent || '';
+    var isPhoneUa = /Mobi|iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|BB10|Opera Mini/i.test(ua);
+    var isPhoneLandscape = isPhoneUa && w > h && h <= 600 && w <= 1000;
+    var mode = (w <= 768 || isPhoneLandscape) ? 'mobile' : (w <= 1100 ? 'tablet' : 'desktop');
     document.documentElement.setAttribute('data-layout', mode);
     document.body.classList.add('layout-' + mode);
   } catch (e) { /* ignore */ }
@@ -3383,6 +3576,9 @@
             <p class="banner-verse votd-verse" id="d-votd-text"></p>
             <span class="banner-ref" id="d-votd-ref"></span>
           </div>
+          <button type="button" class="panel-magnify-btn" id="d-votd-magnify" onclick="togglePanelMagnify(event, 'votd')" aria-label="Magnify verse of the day" title="Magnify verse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -3404,6 +3600,9 @@
           <p class="banner-verse" id="d-weekly-text"></p>
           <span class="banner-ref" id="d-weekly-ref"></span>
           <p class="weekly-note" id="d-weekly-note"></p>
+          <button type="button" class="panel-magnify-btn" id="d-weekly-magnify" onclick="togglePanelMagnify(event, 'weekly')" aria-label="Magnify verse of the week" title="Magnify verse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -3502,7 +3701,7 @@
       <div class="display-mode-modal-loader" id="display-mode-modal-loader" aria-hidden="true"></div>
       <h3 id="display-mode-modal-title">Display Mode</h3>
       <p id="display-mode-modal-message">Display mode updated successfully.</p>
-      <div class="display-mode-modal-countdown" id="display-mode-modal-countdown" aria-live="polite">5 sec</div>
+      <div class="display-mode-modal-countdown" id="display-mode-modal-countdown" aria-live="polite">3 sec</div>
       <div class="display-mode-modal-actions" id="display-mode-modal-actions">
         <button type="button" class="display-mode-modal-btn display-mode-modal-no" id="display-mode-modal-no">No</button>
         <button type="button" class="display-mode-modal-btn display-mode-modal-yes" id="display-mode-modal-yes">Yes</button>
@@ -3609,6 +3808,9 @@
               <p class="banner-verse votd-verse" id="m-votd-text"></p>
               <span class="banner-ref" id="m-votd-ref"></span>
             </div>
+            <button type="button" class="panel-magnify-btn" id="m-votd-magnify" onclick="togglePanelMagnify(event, 'votd')" aria-label="Magnify verse of the day" title="Magnify verse">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -3630,6 +3832,9 @@
             <p class="banner-verse" id="m-weekly-text"></p>
             <span class="banner-ref" id="m-weekly-ref"></span>
             <p class="weekly-note" id="m-weekly-note"></p>
+          <button type="button" class="panel-magnify-btn" id="m-weekly-magnify" onclick="togglePanelMagnify(event, 'weekly')" aria-label="Magnify verse of the week" title="Magnify verse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+          </button>
           </div>
         </div>
       </div>
@@ -8324,9 +8529,17 @@ function applyTranslationRtl(version) {
   const LAYOUT_MOBILE_MAX = 768;
   const LAYOUT_TABLET_MAX = 1100;
 
+  function isPhoneLandscapeLayout() {
+    const w = window.innerWidth || 0;
+    const h = window.innerHeight || 0;
+    const ua = navigator.userAgent || '';
+    const isPhoneUa = /Mobi|iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|BB10|Opera Mini/i.test(ua);
+    return isPhoneUa && w > h && h <= 600 && w <= 1000;
+  }
+
   function getLayoutMode() {
-    const w = window.innerWidth;
-    if (w <= LAYOUT_MOBILE_MAX) return 'mobile';
+    const w = window.innerWidth || 0;
+    if (w <= LAYOUT_MOBILE_MAX || isPhoneLandscapeLayout()) return 'mobile';
     if (w <= LAYOUT_TABLET_MAX) return 'tablet';
     return 'desktop';
   }
@@ -8681,42 +8894,118 @@ function applyTranslationRtl(version) {
     });
   }
 
+  function scrollToBannerPanel(kind) {
+    const p = activePanel();
+    const id = kind === 'weekly' ? p + '-weekly-banner' : p + '-votd-panel';
+    const panel = document.getElementById(id);
+    if (!panel) return;
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    const offset = p === 'm' ? 72 : 24;
+    requestAnimationFrame(() => {
+      const top = window.scrollY + panel.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior });
+    });
+  }
+
+  function scrollToOpenedBannerPanel(kind) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToBannerPanel(kind);
+        setTimeout(() => scrollToBannerPanel(kind), 420);
+      });
+    });
+  }
+
+  const PANEL_MAGNIFY_KEYS = {
+    votd: 'vg-votd-panel-magnified',
+    weekly: 'vg-weekly-panel-magnified'
+  };
+
+  function applyPanelMagnify(kind, enabled) {
+    const ids = kind === 'weekly' ? ['d-weekly-banner', 'm-weekly-banner'] : ['d-votd-panel', 'm-votd-panel'];
+    ids.forEach(id => {
+      const panel = document.getElementById(id);
+      if (panel) panel.classList.toggle('is-magnified', !!enabled);
+    });
+    const buttons = kind === 'weekly'
+      ? [document.getElementById('d-weekly-magnify'), document.getElementById('m-weekly-magnify')]
+      : [document.getElementById('d-votd-magnify'), document.getElementById('m-votd-magnify')];
+    buttons.forEach(btn => {
+      if (!btn) return;
+      btn.classList.toggle('is-active', !!enabled);
+      btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      btn.setAttribute('title', enabled ? 'Reset size' : 'Magnify verse');
+    });
+  }
+
+  function getSavedPanelMagnify(kind) {
+    try { return localStorage.getItem(PANEL_MAGNIFY_KEYS[kind]) === '1'; } catch { return false; }
+  }
+
+  function savePanelMagnify(kind, enabled) {
+    try { localStorage.setItem(PANEL_MAGNIFY_KEYS[kind], enabled ? '1' : '0'); } catch { /* private mode */ }
+  }
+
+  function togglePanelMagnify(event, kind) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const panel = document.getElementById((activePanel() === 'm' ? 'm-' : 'd-') + (kind === 'weekly' ? 'weekly-banner' : 'votd-panel'));
+    const next = !(panel && panel.classList.contains('is-magnified'));
+    applyPanelMagnify(kind, next);
+    savePanelMagnify(kind, next);
+    scrollToOpenedBannerPanel(kind);
+  }
+
+  function initPanelMagnifyPrefs() {
+    applyPanelMagnify('votd', getSavedPanelMagnify('votd'));
+    applyPanelMagnify('weekly', getSavedPanelMagnify('weekly'));
+  }
+
   async function toggleVotdPanel() {
     const willOpen = !_votdOpen;
     setVotdPanelOpen(willOpen);
     if (!willOpen) return;
+    scrollToOpenedBannerPanel('votd');
 
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
     const cached = _votdDisplayCache[version];
     if (cached) {
       paintVotdPanel(cached);
+      scrollToOpenedBannerPanel('votd');
       return;
     }
 
     if (_votdInFlight) {
       setVotdPanelLoading(true);
       try { await _votdInFlight; } catch { /* paintVotdError handles */ }
+      scrollToOpenedBannerPanel('votd');
       return;
     }
 
     setVotdPanelLoading(true);
     await loadVerseOfTheDay(version, { silent: false });
+    scrollToOpenedBannerPanel('votd');
   }
 
   async function toggleWeeklyPanel() {
     const willOpen = !_weeklyOpen;
     setWeeklyPanelOpen(willOpen);
     if (!willOpen) return;
+    scrollToOpenedBannerPanel('weekly');
 
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
     const cacheKey = getWeeklyBannerCacheKey(version);
     const cached = _weeklyDisplayCache[cacheKey];
     if (cached) {
       paintWeeklyBanner(cached.weeklyEntry, cached.label, cached.note);
+      scrollToOpenedBannerPanel('weekly');
       return;
     }
 
     await loadWeeklyBanner(version, { silent: false });
+    scrollToOpenedBannerPanel('weekly');
   }
 
   function paintVotdPanel(entry, version) {
@@ -9789,6 +10078,40 @@ function applyTranslationRtl(version) {
       || document.getElementById('d-version')?.value
       || GH_DEFAULT_TRANSLATION;
     syncDefaultPrefSelects(mode, isValidTranslationModule(trans) ? trans : GH_DEFAULT_TRANSLATION);
+  }
+
+  function displayNeedsReadBibleBoot(p) {
+    const testSel = document.getElementById(p + '-testament');
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!testSel || testSel.value !== 'read' || !display) return false;
+    if (display.querySelector('.read-passage-text, .read-verse-segment')) return false;
+    const text = (display.textContent || '').trim().toLowerCase();
+    return !text || text.includes('reveal a verse') || text.includes('receive the word') || text.includes('tap the button') || text.includes('click above');
+  }
+
+  async function ensureDefaultReadBiblePassage(options) {
+    options = options || {};
+    if (getSavedDefaultMode() !== 'read') return;
+    const p = activePanel();
+    const testSel = document.getElementById(p + '-testament');
+    if (testSel && testSel.value !== 'read') {
+      testSel.value = 'read';
+      testSel.dataset.prevValue = '';
+    }
+    if (!displayNeedsReadBibleBoot(p) && !options.force) return;
+    try {
+      await updateBooks(p, { forceReadInit: true, skipGeneratorRestore: true, silent: true });
+    } catch {
+      try { await initReadBiblePanel(p, true); } catch { /* normal error UI handles failed passage loads */ }
+    }
+  }
+
+  function scheduleDefaultReadBibleBoot() {
+    if (getSavedDefaultMode() !== 'read') return;
+    const run = () => { void ensureDefaultReadBiblePassage(); };
+    setTimeout(run, 150);
+    setTimeout(run, 900);
+    setTimeout(run, 2200);
   }
 
   /* ══════════════════════════════════════
@@ -13646,7 +13969,9 @@ function applyTranslationRtl(version) {
     initReadMeTextSize();
     initLegalPanel();
     initLegalTextSize();
+    initPanelMagnifyPrefs();
     initDefaultPreferencesUI();
+    scheduleDefaultReadBibleBoot();
 
     // Background work — must not block taps on Generate or social links.
     void loadWeeklyVersesCatalog();
@@ -13672,7 +13997,7 @@ function applyTranslationRtl(version) {
   // Defer heavy JSON parse + dropdown build until after the first paint so mobile
   // stays interactive (Generate + social bar visible immediately).
   function finishInstantInit() {
-    const activePanels = window.innerWidth <= 768 ? ['m'] : ['d'];
+    const activePanels = getLayoutMode() === 'mobile' ? ['m'] : ['d'];
     const otherPanels = activePanels[0] === 'm' ? ['d'] : ['m'];
     populateTranslationSelects(activePanels);
     applySavedDefaultsOnLoad();
@@ -13686,7 +14011,9 @@ function applyTranslationRtl(version) {
     activePanels.forEach(p => { void updateBooks(p, { skipFetch: true }); });
     prefetchGhTranslation(defaultVer, () => {
       activePanels.forEach(p => { void updateBooks(p, { silent: true }); });
+      scheduleDefaultReadBibleBoot();
     });
+    scheduleDefaultReadBibleBoot();
     const fillOther = () => {
       populateTranslationSelects(otherPanels);
       otherPanels.forEach(p => {
@@ -14118,7 +14445,7 @@ function applyTranslationRtl(version) {
     }
 
     // Defer YouTube on phones — it competes with first interaction on slow CPUs.
-    if (window.innerWidth <= 768 || (typeof isRestrictedMobileBrowser === 'function' && isRestrictedMobileBrowser())) {
+    if ((typeof getLayoutMode === 'function' && getLayoutMode() === 'mobile') || window.innerWidth <= 768 || (typeof isRestrictedMobileBrowser === 'function' && isRestrictedMobileBrowser())) {
       scheduleYouTubeApi();
     } else {
       injectYouTubeApi();
@@ -14529,14 +14856,14 @@ function iabFallbackCopy(url, callback) {
         m.modal.classList.remove('is-visible');
         m.modal.setAttribute('aria-hidden', 'true');
         if (m.message) m.message.textContent = 'Display mode updated successfully.';
-        if (m.countdown) m.countdown.textContent = '5 sec';
+        if (m.countdown) m.countdown.textContent = '3 sec';
         if (resetSelect) syncSelect(currentMode);
       }, 260);
     }
 
     function startSuccessCountdown() {
       var m = getModal();
-      var seconds = 5;
+      var seconds = 3;
       if (m.countdown) m.countdown.textContent = seconds + ' sec';
       if (m.modal) m.modal.classList.add('is-counting');
       stopCountdown();
@@ -14556,7 +14883,7 @@ function iabFallbackCopy(url, callback) {
       pendingMode = mode;
       stopCountdown();
       if (m.message) m.message.textContent = 'Switching display mode…';
-      if (m.countdown) m.countdown.textContent = '5 sec';
+      if (m.countdown) m.countdown.textContent = '3 sec';
       m.modal.classList.remove('is-success', 'is-counting');
       m.modal.classList.add('is-visible', 'is-loading');
       m.modal.setAttribute('aria-hidden', 'false');
