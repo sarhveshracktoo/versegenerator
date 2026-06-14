@@ -4435,8 +4435,8 @@ The website owner respects legitimate copyright claims and aims to resolve such 
 
 <!-- Hidden background music (GitHub MP3 shuffle player) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
-  <audio id="bg-music-audio-current" preload="auto" playsinline></audio>
-  <audio id="bg-music-audio-next" preload="auto" playsinline></audio>
+  <audio id="bg-music-audio-current" preload="auto" playsinline muted></audio>
+  <audio id="bg-music-audio-next" preload="auto" playsinline muted></audio>
 </div>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
@@ -14170,10 +14170,14 @@ function applyTranslationRtl(version) {
       currentAudio = document.createElement('audio');
       currentAudio.id = 'bg-music-audio-current';
       currentAudio.preload = 'auto';
+      currentAudio.muted = true;
+      currentAudio.setAttribute('muted', '');
       currentAudio.setAttribute('playsinline', '');
       nextAudio = document.createElement('audio');
       nextAudio.id = 'bg-music-audio-next';
       nextAudio.preload = 'auto';
+      nextAudio.muted = true;
+      nextAudio.setAttribute('muted', '');
       nextAudio.setAttribute('playsinline', '');
       wrap.appendChild(currentAudio);
       wrap.appendChild(nextAudio);
@@ -14184,6 +14188,8 @@ function applyTranslationRtl(version) {
     [currentAudio, nextAudio].forEach(audio => {
       audio.preload = 'auto';
       audio.crossOrigin = 'anonymous';
+      audio.muted = true;
+      audio.setAttribute('muted', '');
       audio.volume = 0;
       audio.addEventListener('ended', () => {
         if (!userPaused) transitionToPreloaded(NORMAL_FADE_MS, true);
@@ -14388,6 +14394,8 @@ function applyTranslationRtl(version) {
     async function safePlay(audio) {
       if (!audio) return false;
       try {
+        audio.muted = false;
+        audio.removeAttribute('muted');
         const promise = audio.play();
         if (promise && typeof promise.then === 'function') await promise;
         return true;
@@ -14442,7 +14450,7 @@ function applyTranslationRtl(version) {
       activeAudio.volume = 0;
       const started = await safePlay(activeAudio);
       if (!started) return;
-      fadeBetween(null, activeAudio, 1200);
+      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
       startWatchdog();
     }
 
@@ -14450,8 +14458,8 @@ function applyTranslationRtl(version) {
       userPaused = true;
       updateMusicUI();
       clearFade();
-      try { activeAudio.pause(); } catch { /* ignore */ }
-      try { preloadedAudio.pause(); preloadedAudio.currentTime = 0; preloadedAudio.volume = 0; } catch { /* ignore */ }
+      try { activeAudio.pause(); activeAudio.muted = true; activeAudio.setAttribute('muted', ''); } catch { /* ignore */ }
+      try { preloadedAudio.pause(); preloadedAudio.currentTime = 0; preloadedAudio.volume = 0; preloadedAudio.muted = true; preloadedAudio.setAttribute('muted', ''); } catch { /* ignore */ }
     }
 
     async function resumePlayback() {
@@ -14463,7 +14471,7 @@ function applyTranslationRtl(version) {
       updateMusicUI();
       const started = await safePlay(activeAudio);
       if (!started) return;
-      fadeBetween(null, activeAudio, 1000);
+      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
       startWatchdog();
     }
 
@@ -14509,7 +14517,8 @@ function applyTranslationRtl(version) {
     }
 
     function goPrevious() {
-      if (!tracks.length) return;
+      // Previous must not start hidden music from a fresh paused/muted visit.
+      if (userPaused || !tracks.length) return;
       if (historyIndex > 0) {
         historyIndex--;
         skipToIndex(history[historyIndex], MANUAL_FADE_MS, false);
@@ -14537,10 +14546,14 @@ function applyTranslationRtl(version) {
       persistVolume(savedVolume);
       syncVolumeUI(savedVolume);
       applyLiveVolume();
-      if (userPaused) updateMusicUI();
+      // Volume changes must only save/apply the volume. They must not start music.
+      // Fresh visits and refreshes stay silent until the dedicated unmute/play button is tapped.
+      updateMusicUI();
     }
 
     function firstInteractionStart() {
+      // Music must never start from normal page taps, scrolling, or key presses.
+      // Fresh visits and refreshes stay paused/muted until the music controls are used.
       if (hasUserInteracted || !userPaused) return;
       hasUserInteracted = true;
       resumePlayback();
@@ -14553,14 +14566,27 @@ function applyTranslationRtl(version) {
     muteBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
     playBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
     prevBtns.forEach(btn => btn.addEventListener('click', goPrevious));
-    nextBtns.forEach(btn => btn.addEventListener('click', () => skipToRandom(MANUAL_FADE_MS)));
+    nextBtns.forEach(btn => btn.addEventListener('click', () => {
+      // Next must not start hidden music from a fresh paused/muted visit.
+      if (userPaused) return;
+      skipToRandom(MANUAL_FADE_MS);
+    }));
 
-    ['pointerdown', 'keydown', 'touchstart'].forEach(evt => {
-      document.addEventListener(evt, firstInteractionStart, { once: true, passive: true });
-    });
+    // Do not attach page-wide interaction listeners here. Only the dedicated
+    // music unmute/play buttons may start music from a paused/muted fresh visit.
 
     const vol = readSavedVolume();
     savedVolume = vol != null ? vol : DEFAULT_VOLUME;
+    userPaused = true;
+    hasUserInteracted = false;
+    [currentAudio, nextAudio].forEach(audio => {
+      try {
+        audio.pause();
+        audio.muted = true;
+        audio.setAttribute('muted', '');
+        audio.volume = 0;
+      } catch { /* ignore */ }
+    });
     syncVolumeUI(savedVolume);
     updateMusicUI();
     loadTrackList();
