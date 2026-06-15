@@ -3449,8 +3449,8 @@
       <div class="control-group">
         <label for="d-testament" id="d-testament-label">Mode</label>
         <select id="d-testament" onchange="updateBooks('d')">
-          <option value="custom" selected>Verse Generator</option>
-          <option value="read">Read Bible</option>
+          <option value="read" selected>Read Bible</option>
+          <option value="custom">Verse Generator</option>
           <option value="hbv">Hardest Bible Verse Generator</option>
         </select>
       </div>
@@ -3653,8 +3653,8 @@
             <div class="control-pref-field">
               <label class="control-pref-label" for="d-default-mode">Default Mode</label>
               <select id="d-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
-                <option value="custom">Verse Generator</option>
                 <option value="read">Read Bible</option>
+                <option value="custom">Verse Generator</option>
                 <option value="hbv">Hardest Bible Verse Generator</option>
               </select>
             </div>
@@ -3874,8 +3874,8 @@
         <div class="mob-field">
           <span class="mob-label" id="m-testament-label">Mode</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="custom" selected>Verse Generator</option>
-            <option value="read">Read Bible</option>
+            <option value="read" selected>Read Bible</option>
+            <option value="custom">Verse Generator</option>
             <option value="hbv">Hardest Bible Verse Generator</option>
           </select>
         </div>
@@ -3990,8 +3990,8 @@
               <div class="control-pref-field">
                 <label class="control-pref-label" for="m-default-mode">Default Mode</label>
                 <select id="m-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
-                  <option value="custom">Verse Generator</option>
                   <option value="read">Read Bible</option>
+                  <option value="custom">Verse Generator</option>
                   <option value="hbv">Hardest Bible Verse Generator</option>
                 </select>
               </div>
@@ -8080,9 +8080,11 @@ function prefetchGhTranslation(module, onReady) {
       GH_BOOK_IDS_BY_MODULE[module] = data.bookIds;
       VERSION_BOOK_IDS_CACHE[module] = [...data.bookIds];
       saveGhBookMeta(module, data);
-      if (typeof onReady === 'function') onReady(module);
     }
-  }).catch(() => {});
+    if (typeof onReady === 'function') onReady(module);
+  }).catch(() => {
+    if (typeof onReady === 'function') onReady(module);
+  });
 }
 
 function getInstantBooksForVersion(version) {
@@ -9958,10 +9960,11 @@ function applyTranslationRtl(version) {
   ══════════════════════════════════════ */
   const DEFAULT_MODE_STORAGE_KEY = 'vg-default-mode';
   const DEFAULT_MODES = [
-    { id: 'custom', label: 'Verse Generator' },
     { id: 'read', label: 'Read Bible' },
+    { id: 'custom', label: 'Verse Generator' },
     { id: 'hbv', label: 'Hardest Bible Verse Generator' }
   ];
+  const FALLBACK_DEFAULT_MODE = 'read';
 
   function getSavedDefaultMode() {
     try {
@@ -9969,6 +9972,10 @@ function applyTranslationRtl(version) {
       if (saved && DEFAULT_MODES.some(m => m.id === saved)) return saved;
     } catch { /* ignore */ }
     return null;
+  }
+
+  function getEffectiveDefaultMode() {
+    return getSavedDefaultMode() || FALLBACK_DEFAULT_MODE;
   }
 
   function isValidTranslationModule(module) {
@@ -10008,13 +10015,11 @@ function applyTranslationRtl(version) {
 
   function applySavedDefaultsOnLoad() {
     applySavedDefaultTranslation();
-    const mode = getSavedDefaultMode();
-    if (mode) {
-      ['d', 'm'].forEach(p => {
-        const sel = document.getElementById(p + '-testament');
-        if (sel) sel.value = mode;
-      });
-    }
+    const mode = getEffectiveDefaultMode();
+    ['d', 'm'].forEach(p => {
+      const sel = document.getElementById(p + '-testament');
+      if (sel && optionValueExists(sel, mode)) sel.value = mode;
+    });
   }
 
   async function applyDefaultMode(modeId, options) {
@@ -10071,13 +10076,23 @@ function applyTranslationRtl(version) {
   function initDefaultPreferencesUI() {
     populateDefaultTranslationSelects();
     bindDefaultPreferenceControls();
-    const mode = getSavedDefaultMode()
-      || document.getElementById('d-testament')?.value
-      || 'custom';
+    const mode = getEffectiveDefaultMode();
     const trans = getSavedDefaultTranslation()
       || document.getElementById('d-version')?.value
       || GH_DEFAULT_TRANSLATION;
     syncDefaultPrefSelects(mode, isValidTranslationModule(trans) ? trans : GH_DEFAULT_TRANSLATION);
+  }
+
+  function cancelReadBibleBootTimers() {
+    _readBibleBootTimers.forEach(id => clearTimeout(id));
+    _readBibleBootTimers = [];
+  }
+
+  function markReadBibleBootComplete(p) {
+    if (!isReadBibleMode(p)) return;
+    if (!hasReadPassageContent(document.getElementById(p + '-verseDisplay'))) return;
+    _readBibleBootDone = true;
+    cancelReadBibleBootTimers();
   }
 
   function displayNeedsReadBibleBoot(p) {
@@ -10085,33 +10100,61 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!testSel || testSel.value !== 'read' || !display) return false;
     if (display.querySelector('.read-passage-text, .read-verse-segment')) return false;
+    if (display.querySelector('.passage-load-error')) return true;
     const text = (display.textContent || '').trim().toLowerCase();
-    return !text || text.includes('reveal a verse') || text.includes('receive the word') || text.includes('tap the button') || text.includes('click above');
+    return !text || text.includes('loading scripture') || text.includes('could not load') ||
+      text.includes('reveal a verse') || text.includes('receive the word') ||
+      text.includes('tap the button') || text.includes('click above');
   }
 
   async function ensureDefaultReadBiblePassage(options) {
     options = options || {};
-    if (getSavedDefaultMode() !== 'read') return;
+    if (getEffectiveDefaultMode() !== 'read') return;
+    if (_readBibleBootDone && !options.force) return;
     const p = activePanel();
     const testSel = document.getElementById(p + '-testament');
     if (testSel && testSel.value !== 'read') {
       testSel.value = 'read';
       testSel.dataset.prevValue = '';
     }
-    if (!displayNeedsReadBibleBoot(p) && !options.force) return;
-    try {
-      await updateBooks(p, { forceReadInit: true, skipGeneratorRestore: true, silent: true });
-    } catch {
-      try { await initReadBiblePanel(p, true); } catch { /* normal error UI handles failed passage loads */ }
+    if (!displayNeedsReadBibleBoot(p) && !options.force) {
+      markReadBibleBootComplete(p);
+      return;
     }
+    if (_readBibleBootPromise) return _readBibleBootPromise;
+
+    _readBibleBootPromise = (async () => {
+      try {
+        const version = normalizeGhModuleId(
+          document.getElementById(p + '-version')?.value || GH_DEFAULT_TRANSLATION
+        );
+        const display = document.getElementById(p + '-verseDisplay');
+        if (!hasReadPassageContent(display)) setReadDisplayLoading(p, true);
+        await loadGhTranslationData(version);
+        if (!displayNeedsReadBibleBoot(p) && !options.force) {
+          markReadBibleBootComplete(p);
+          return;
+        }
+        try {
+          await updateBooks(p, { forceReadInit: true, skipGeneratorRestore: true, silent: true });
+        } catch {
+          try { await initReadBiblePanel(p, true); } catch { /* normal error UI handles failed passage loads */ }
+        }
+        markReadBibleBootComplete(p);
+      } finally {
+        _readBibleBootPromise = null;
+      }
+    })();
+    return _readBibleBootPromise;
   }
 
   function scheduleDefaultReadBibleBoot() {
-    if (getSavedDefaultMode() !== 'read') return;
+    if (getEffectiveDefaultMode() !== 'read') return;
+    if (_readBibleBootDone) return;
+    cancelReadBibleBootTimers();
     const run = () => { void ensureDefaultReadBiblePassage(); };
-    setTimeout(run, 150);
-    setTimeout(run, 900);
-    setTimeout(run, 2200);
+    _readBibleBootTimers.push(setTimeout(run, 100));
+    _readBibleBootTimers.push(setTimeout(run, 900));
   }
 
   /* ══════════════════════════════════════
@@ -10131,8 +10174,8 @@ function applyTranslationRtl(version) {
     if (!sel || optionValueExists(sel, 'hbv')) return;
     const prev = sel.value;
     sel.innerHTML =
-      '<option value="custom" selected>Verse Generator</option>' +
-      '<option value="read">Read Bible</option>' +
+      '<option value="read" selected>Read Bible</option>' +
+      '<option value="custom">Verse Generator</option>' +
       '<option value="hbv">Hardest Bible Verse Generator</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
   }
@@ -10616,6 +10659,9 @@ function applyTranslationRtl(version) {
   /** Read Bible verse dropdown: show entire chapter in the display panel */
   const READ_VERSE_WHOLE = 'whole-chapter';
   let _readLoadId = { d: 0, m: 0 };
+  let _readBibleBootTimers = [];
+  let _readBibleBootPromise = null;
+  let _readBibleBootDone = false;
   let _layoutMode = null;
   let _layoutIsMobile = null;
   /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
@@ -11541,9 +11587,7 @@ function applyTranslationRtl(version) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    if (isApocryphaStandaloneTranslation(version)) {
-      await loadGhTranslationData(version);
-    }
+    await loadGhTranslationData(version);
     if (!isBookAvailableInVersion(version, bookEn)) {
       bookEn = getFirstAvailableBook(version);
       chapter = usesCatalogChapterKeys(version)
@@ -11574,7 +11618,16 @@ function applyTranslationRtl(version) {
     let data;
     try {
       const chapterTimeout = GH_TRANSLATION_LOAD_TIMEOUT_MS;
-      data = await withTimeout(fetchGhPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
+      const fetchChapter = () => withTimeout(
+        fetchGhPassageVerses(version, bookEn, chapter, null, null),
+        chapterTimeout,
+        null
+      );
+      data = await fetchChapter();
+      if (!data?.verses?.length) {
+        await loadGhTranslationData(version);
+        data = await fetchChapter();
+      }
     } finally {
       if (loadId === _readLoadId[p]) clearReadDisplayLoading(p);
     }
@@ -12100,7 +12153,7 @@ function applyTranslationRtl(version) {
     const bookEn = document.getElementById(p + '-read-book')?.value;
     const label = getTranslationLabel(data.version, bookEn);
     const displayRef = getReadDisplayRef(data);
-    const reveal = verseRevealClass(animate === false);
+    const reveal = animate === false ? '' : verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
       ? `<div class="${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
@@ -12156,6 +12209,7 @@ function applyTranslationRtl(version) {
 
     const counter = document.getElementById(p + '-counter');
     if (counter) counter.style.display = 'none';
+    markReadBibleBootComplete(p);
   }
 
   function collectGeneratorStateSnapshot() {
@@ -12297,10 +12351,22 @@ function applyTranslationRtl(version) {
       const chSelEl   = document.getElementById(p + '-read-chapter');
       const bookEn = bookSelEl?.value || null;
       const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-      if (bookEn && getAvailableBookIds(version).includes(BOOK_NUM[bookEn])) {
-        data = await withTimeout(fetchGhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-      } else {
-        data = await withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
+      const fetchPassage = async () => {
+        if (bookEn && getAvailableBookIds(version).includes(BOOK_NUM[bookEn])) {
+          return withTimeout(
+            fetchGhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null),
+            passageTimeout,
+            null
+          );
+        }
+        return withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
+      };
+      await loadGhTranslationData(version);
+      data = await fetchPassage();
+      if (!data) {
+        await delay(350);
+        await loadGhTranslationData(version);
+        data = await fetchPassage();
       }
       if (data) {
         renderReadPassage(p, data);
@@ -12704,7 +12770,7 @@ function applyTranslationRtl(version) {
         if (!stillCurrent()) return;
         await ensureGhBooksDiscovered(version);
         if (!stillCurrent()) return;
-        if (prevTest !== 'read' || options.forceReadInit) {
+        if ((prevTest !== 'read' || options.forceReadInit) && !options.skipReadInit) {
           await initReadBiblePanel(p, true);
         } else if (options.refreshReadLabels) {
           await refreshReadBibleLabels(p);
@@ -13971,7 +14037,6 @@ function applyTranslationRtl(version) {
     initLegalTextSize();
     initPanelMagnifyPrefs();
     initDefaultPreferencesUI();
-    scheduleDefaultReadBibleBoot();
 
     // Background work — must not block taps on Generate or social links.
     void loadWeeklyVersesCatalog();
@@ -14008,12 +14073,11 @@ function applyTranslationRtl(version) {
     const defaultVer = applySavedDefaultTranslation({ syncPrefs: false })
       || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
     applyInstantBookIdsFromMeta(defaultVer);
-    activePanels.forEach(p => { void updateBooks(p, { skipFetch: true }); });
+    activePanels.forEach(p => { void updateBooks(p, { skipFetch: true, skipReadInit: true }); });
     prefetchGhTranslation(defaultVer, () => {
       activePanels.forEach(p => { void updateBooks(p, { silent: true }); });
       scheduleDefaultReadBibleBoot();
     });
-    scheduleDefaultReadBibleBoot();
     const fillOther = () => {
       populateTranslationSelects(otherPanels);
       otherPanels.forEach(p => {
