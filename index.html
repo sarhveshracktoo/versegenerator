@@ -6737,7 +6737,9 @@ function getSavedDefaultTranslation() {
     const saved = localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY);
     if (!saved) return null;
     const normalized = normalizeGhModuleId(saved);
-    return normalized && GH_BIBLES[normalized] ? normalized : null;
+    if (!normalized) return null;
+    if (Object.keys(GH_BIBLES).length && !GH_BIBLES[normalized]) return null;
+    return normalized;
   } catch { /* private mode */ }
   return null;
 }
@@ -8434,6 +8436,7 @@ function populateTranslationSelects(panels) {
   });
   applySavedDefaultTranslation();
   populateDefaultTranslationSelects();
+  refreshDefaultPreferenceSelectValues();
 }
 
 async function backgroundRefreshBibleList() {
@@ -9979,8 +9982,14 @@ function applyTranslationRtl(version) {
   }
 
   function isValidTranslationModule(module) {
-    const sel = document.getElementById('d-version');
-    return !!(module && sel && optionValueExists(sel, module));
+    module = normalizeGhModuleId(module);
+    if (!module) return false;
+    if (GH_BIBLES[module]) return true;
+    for (const pl of ['d', 'm']) {
+      const sel = document.getElementById(pl + '-version');
+      if (sel && optionValueExists(sel, module)) return true;
+    }
+    return false;
   }
 
   function syncDefaultPrefSelects(mode, translation) {
@@ -10000,17 +10009,31 @@ function applyTranslationRtl(version) {
     const source = document.getElementById('d-version');
     if (!source) return;
     const saved = getSavedDefaultTranslation();
-    const activeVersion = document.getElementById(activePanel() + '-version')?.value
+    const activeVersion = normalizeGhModuleId(
+      document.getElementById(activePanel() + '-version')?.value
       || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION;
-    const pick = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+      || GH_DEFAULT_TRANSLATION
+    );
     document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
       const prev = sel.value;
       sel.innerHTML = source.innerHTML;
-      if (optionValueExists(sel, pick)) sel.value = pick;
+      if (saved && optionValueExists(sel, saved)) sel.value = saved;
+      else if (optionValueExists(sel, activeVersion)) sel.value = activeVersion;
       else if (optionValueExists(sel, prev)) sel.value = prev;
       else if (optionValueExists(sel, GH_DEFAULT_TRANSLATION)) sel.value = GH_DEFAULT_TRANSLATION;
     });
+  }
+
+  function refreshDefaultPreferenceSelectValues() {
+    const mode = getEffectiveDefaultMode();
+    const saved = getSavedDefaultTranslation();
+    const activeVersion = normalizeGhModuleId(
+      document.getElementById(activePanel() + '-version')?.value
+      || document.getElementById('d-version')?.value
+      || GH_DEFAULT_TRANSLATION
+    );
+    const trans = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+    syncDefaultPrefSelects(mode, trans);
   }
 
   function applySavedDefaultsOnLoad() {
@@ -10049,13 +10072,13 @@ function applyTranslationRtl(version) {
     if (options.save !== false) {
       try { localStorage.setItem(DEFAULT_TRANSLATION_STORAGE_KEY, version); } catch { /* private mode */ }
     }
-    if (!isValidTranslationModule(version)) return;
+    if (!GH_BIBLES[version] && !isValidTranslationModule(version)) return;
     syncDefaultPrefSelects(null, version);
     const active = activePanel();
     const vSel = document.getElementById(active + '-version');
     const prev = vSel?.value;
     syncVersionSelects(version);
-    if (prev !== version) {
+    if (prev !== version || options.force) {
       await onVersionChangeImpl(active);
     }
   }
@@ -10076,11 +10099,7 @@ function applyTranslationRtl(version) {
   function initDefaultPreferencesUI() {
     populateDefaultTranslationSelects();
     bindDefaultPreferenceControls();
-    const mode = getEffectiveDefaultMode();
-    const trans = getSavedDefaultTranslation()
-      || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION;
-    syncDefaultPrefSelects(mode, isValidTranslationModule(trans) ? trans : GH_DEFAULT_TRANSLATION);
+    refreshDefaultPreferenceSelectValues();
   }
 
   function cancelReadBibleBootTimers() {
@@ -11583,6 +11602,21 @@ function applyTranslationRtl(version) {
     renderReadPassage(p, data, false);
   }
 
+  function resolveReadLocationForVersion(version, bookEn, chapter) {
+    version = normalizeGhModuleId(version);
+    if (!bookEn || !isBookAvailableInVersion(version, bookEn)) {
+      bookEn = getFirstAvailableBook(version);
+      const nextChapter = usesCatalogChapterKeys(version)
+        ? getDefaultReadChapter(version, bookEn)
+        : 1;
+      return { bookEn, chapter: nextChapter };
+    }
+    const nextChapter = usesCatalogChapterKeys(version)
+      ? resolveReadChapter(version, bookEn, chapter)
+      : (parseInt(chapter, 10) || 1);
+    return { bookEn, chapter: nextChapter };
+  }
+
   async function loadReadChapterAt(p, bookEn, chapter, options) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
@@ -13083,7 +13117,7 @@ function applyTranslationRtl(version) {
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead, changeGen });
+    await updateBooks(active, { refreshReadLabels: inRead, changeGen });
     if (isStale()) return;
     await loadVotdAndWeekly(version);
     if (isStale()) return;
@@ -13097,8 +13131,14 @@ function applyTranslationRtl(version) {
 
     if (inRead) {
       const currentVersion = normalizeGhModuleId(document.getElementById(active + '-version').value);
-      const firstBook = getFirstAvailableBook(currentVersion);
-      await loadReadChapterAt(active, firstBook, 1, { scrollToTop: false });
+      const bookSel = document.getElementById(active + '-read-book');
+      const chSel = document.getElementById(active + '-read-chapter');
+      const loc = resolveReadLocationForVersion(
+        currentVersion,
+        bookSel?.value,
+        chSel?.value
+      );
+      await loadReadChapterAt(active, loc.bookEn, loc.chapter, { scrollToTop: false });
     } else if (current[active]) {
       await retranslateCurrentVerse(active, version);
     }
@@ -14025,7 +14065,9 @@ function applyTranslationRtl(version) {
     }
 
     applySavedDefaultTranslation();
-    const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    const version = getSavedDefaultTranslation()
+      || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    if (version) syncVersionSelects(version);
     applyInstantBookIdsFromMeta(version);
     applyTranslationRtl(version);
 
@@ -14066,9 +14108,13 @@ function applyTranslationRtl(version) {
     const otherPanels = activePanels[0] === 'm' ? ['d'] : ['m'];
     populateTranslationSelects(activePanels);
     applySavedDefaultsOnLoad();
+    refreshDefaultPreferenceSelectValues();
     activePanels.forEach(p => {
       const sel = document.getElementById(p + '-version');
-      if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
+      if (!sel) return;
+      const savedTrans = getSavedDefaultTranslation();
+      if (savedTrans && optionValueExists(sel, savedTrans)) sel.value = savedTrans;
+      else if (!optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
     });
     const defaultVer = applySavedDefaultTranslation({ syncPrefs: false })
       || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
@@ -14082,8 +14128,12 @@ function applyTranslationRtl(version) {
       populateTranslationSelects(otherPanels);
       otherPanels.forEach(p => {
         const sel = document.getElementById(p + '-version');
-        if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
+        if (!sel) return;
+        const savedTrans = getSavedDefaultTranslation();
+        if (savedTrans && optionValueExists(sel, savedTrans)) sel.value = savedTrans;
+        else if (!optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
       });
+      refreshDefaultPreferenceSelectValues();
       void updateBooks(otherPanels[0], { skipFetch: true, silent: true });
     };
     if (typeof requestIdleCallback === 'function') requestIdleCallback(fillOther, { timeout: 2500 });
