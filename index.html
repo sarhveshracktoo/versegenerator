@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -794,6 +793,8 @@
       border-radius:3px; transition: opacity 0.3s, background 0.42s ease, border-color 0.42s ease, box-shadow 0.42s ease, color 0.42s ease;
     }
     #d-verseDisplay.loading { opacity:0.5; }
+    #d-verseDisplay.read-bible-boot-loading,
+    #m-verseDisplay.read-bible-boot-loading { opacity: 1 !important; }
     #d-verseDisplay.read-display-active {
       position: relative;
       max-height: min(64vh, 720px);
@@ -963,6 +964,110 @@
       gap: 10px;
       justify-content: center;
       align-items: center;
+    }
+
+    .read-bible-start-loader {
+      min-height: 190px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 22px 14px;
+      text-align: center;
+      color: var(--verse-placeholder-color);
+    }
+    .read-bible-loader-orb {
+      position: relative;
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.30), transparent 38%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.20), transparent 58%);
+      box-shadow: 0 0 28px rgba(var(--accent-rgb), 0.28), inset 0 0 18px rgba(var(--accent-rgb), 0.16);
+      animation: readBibleOrbBreathe 1.8s ease-in-out infinite;
+    }
+    .read-bible-loader-orb::before,
+    .read-bible-loader-orb::after {
+      content: '';
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: var(--gold);
+      border-bottom-color: rgba(var(--accent-rgb), 0.30);
+      animation: readBibleLoaderSpin 1.25s linear infinite;
+    }
+    .read-bible-loader-orb::after {
+      inset: 20px;
+      border-top-color: rgba(var(--accent-rgb), 0.22);
+      border-bottom-color: var(--gold-light);
+      animation-duration: 1.8s;
+      animation-direction: reverse;
+    }
+    .read-bible-loader-cross {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-light);
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.25rem;
+      text-shadow: 0 0 16px rgba(var(--accent-rgb), 0.58);
+      animation: readBibleLoaderGlow 1.6s ease-in-out infinite;
+    }
+    .read-bible-loader-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--verse-ref-color);
+    }
+    .read-bible-loader-subtitle {
+      font-size: 0.98rem;
+      font-style: italic;
+      line-height: 1.45;
+      opacity: 0.82;
+      max-width: 360px;
+    }
+    .read-bible-loader-dots {
+      display: inline-flex;
+      gap: 6px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .read-bible-loader-dots span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: readBibleDotPulse 1.15s ease-in-out infinite;
+    }
+    .read-bible-loader-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .read-bible-loader-dots span:nth-child(3) { animation-delay: 0.30s; }
+    @keyframes readBibleLoaderSpin { to { transform: rotate(360deg); } }
+    @keyframes readBibleOrbBreathe {
+      0%, 100% { transform: scale(0.96); opacity: 0.82; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    @keyframes readBibleLoaderGlow {
+      0%, 100% { opacity: 0.72; transform: scale(0.96); }
+      50% { opacity: 1; transform: scale(1.06); }
+    }
+    @keyframes readBibleDotPulse {
+      0%, 100% { opacity: 0.28; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-4px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .read-bible-loader-orb,
+      .read-bible-loader-orb::before,
+      .read-bible-loader-orb::after,
+      .read-bible-loader-cross,
+      .read-bible-loader-dots span { animation: none !important; }
     }
     .passage-action-btn {
       font-family: 'Cinzel', serif;
@@ -1465,7 +1570,6 @@
     }
     .bg-music-controls {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 12px;
       margin-top: 6px;
@@ -1548,47 +1652,8 @@
     .bg-music-controls.is-muted-panel .bg-music-volume {
       opacity: 0.45;
     }
-    .bg-music-transport {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .bg-music-transport-btn {
-      min-width: 0;
-      padding: 9px 8px;
-      border-radius: 6px;
-      border: 1px solid rgba(201,168,76,0.34);
-      background: rgba(201,168,76,0.10);
-      color: var(--gold-light);
-      font-family: 'Cinzel', serif;
-      font-size: 0.62rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: transform 0.18s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease, opacity 0.22s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .bg-music-transport-btn:hover,
-    .bg-music-transport-btn:focus-visible {
-      transform: translateY(-1px);
-      background: rgba(201,168,76,0.18);
-      border-color: rgba(201,168,76,0.58);
-      color: var(--gold);
-      outline: none;
-    }
-    .bg-music-transport-btn:active {
-      transform: translateY(0) scale(0.97);
-    }
-    .bg-music-transport-btn:disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
     #mobile-view .bg-music-controls {
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 10px;
       padding: 10px 12px;
     }
@@ -1827,6 +1892,7 @@
       text-align:center; transition:opacity 0.3s; margin-top:4px;
     }
     .mob-verse-box.loading { opacity:0.5; }
+    .mob-verse-box.read-bible-boot-loading { opacity: 1 !important; }
     .mob-verse-text {
       color:var(--verse-quote-color);
       font-family: 'DrescherGroteskBT-SemiBold', sans-serif;
@@ -3490,8 +3556,8 @@
       <div class="control-group">
         <label for="d-testament" id="d-testament-label">Mode</label>
         <select id="d-testament" onchange="updateBooks('d')">
-          <option value="custom" selected>Verse Generator</option>
-          <option value="read">Read Bible</option>
+          <option value="read" selected>Read Bible</option>
+          <option value="custom">Verse Generator</option>
           <option value="hbv">Hardest Bible Verse Generator</option>
         </select>
       </div>
@@ -3694,8 +3760,8 @@
             <div class="control-pref-field">
               <label class="control-pref-label" for="d-default-mode">Default Mode</label>
               <select id="d-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
-                <option value="custom">Verse Generator</option>
                 <option value="read">Read Bible</option>
+                <option value="custom">Verse Generator</option>
                 <option value="hbv">Hardest Bible Verse Generator</option>
               </select>
             </div>
@@ -3728,11 +3794,6 @@
               <label class="bg-music-volume-label" for="d-bg-music-volume">Vol</label>
               <input type="range" id="d-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
               <span class="bg-music-volume-value" id="d-bg-music-volume-value">20%</span>
-            </div>
-            <div class="bg-music-transport" role="group" aria-label="Background music track controls">
-              <button type="button" class="bg-music-transport-btn" data-bg-music-prev aria-label="Previous background music track">Previous</button>
-              <button type="button" class="bg-music-transport-btn" data-bg-music-play aria-label="Pause background music">Pause</button>
-              <button type="button" class="bg-music-transport-btn" data-bg-music-next aria-label="Next background music track">Next</button>
             </div>
           </div>
         </div>
@@ -3920,8 +3981,8 @@
         <div class="mob-field">
           <span class="mob-label" id="m-testament-label">Mode</span>
           <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="custom" selected>Verse Generator</option>
-            <option value="read">Read Bible</option>
+            <option value="read" selected>Read Bible</option>
+            <option value="custom">Verse Generator</option>
             <option value="hbv">Hardest Bible Verse Generator</option>
           </select>
         </div>
@@ -4036,8 +4097,8 @@
               <div class="control-pref-field">
                 <label class="control-pref-label" for="m-default-mode">Default Mode</label>
                 <select id="m-default-mode" class="control-pref-select" data-default-mode-select aria-label="Default mode">
-                  <option value="custom">Verse Generator</option>
                   <option value="read">Read Bible</option>
+                  <option value="custom">Verse Generator</option>
                   <option value="hbv">Hardest Bible Verse Generator</option>
                 </select>
               </div>
@@ -4059,11 +4120,6 @@
                 <label class="bg-music-volume-label" for="m-bg-music-volume">Vol</label>
                 <input type="range" id="m-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
                 <span class="bg-music-volume-value" id="m-bg-music-volume-value">20%</span>
-              </div>
-              <div class="bg-music-transport" role="group" aria-label="Background music track controls">
-                <button type="button" class="bg-music-transport-btn" data-bg-music-prev aria-label="Previous background music track">Previous</button>
-                <button type="button" class="bg-music-transport-btn" data-bg-music-play aria-label="Pause background music">Pause</button>
-                <button type="button" class="bg-music-transport-btn" data-bg-music-next aria-label="Next background music track">Next</button>
               </div>
             </div>
           </div>
@@ -4434,10 +4490,9 @@ Upon receiving a valid copyright notice, the website owner will promptly investi
 
 The website owner respects legitimate copyright claims and aims to resolve such matters quickly and professionally.</script>
 
-<!-- Hidden background music (GitHub MP3 shuffle player) -->
+<!-- Hidden background music (YouTube IFrame API) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
-  <audio id="bg-music-audio-current" preload="auto" playsinline muted></audio>
-  <audio id="bg-music-audio-next" preload="auto" playsinline muted></audio>
+  <div id="bg-music-player"></div>
 </div>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
@@ -6784,19 +6839,55 @@ function normalizeGhModuleId(id) {
   return id;
 }
 
-function getSavedDefaultTranslation() {
+function readDefaultTranslationFromStorage() {
   try {
     const saved = localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY);
     if (!saved) return null;
-    const normalized = normalizeGhModuleId(saved);
-    return normalized && GH_BIBLES[normalized] ? normalized : null;
+    return normalizeGhModuleId(saved);
   } catch { /* private mode */ }
   return null;
 }
 
+function getSavedDefaultTranslation() {
+  const normalized = readDefaultTranslationFromStorage();
+  if (!normalized) return null;
+  if (!Object.keys(GH_BIBLES).length) return normalized;
+  if (GH_BIBLES[normalized]) return normalized;
+  const upper = normalized.toUpperCase();
+  for (const key of Object.keys(GH_BIBLES)) {
+    if (key.toUpperCase() === upper) return key;
+  }
+  return normalized;
+}
+
+function resolveDefaultTranslationForBoot() {
+  return readDefaultTranslationFromStorage()
+    || getSavedDefaultTranslation()
+    || normalizeGhModuleId(
+      document.getElementById(typeof activePanel === 'function' ? activePanel() + '-version' : 'd-version')?.value
+      || document.getElementById('d-version')?.value
+      || GH_DEFAULT_TRANSLATION
+    );
+}
+
+function applyDefaultTranslationToUi(trans) {
+  trans = normalizeGhModuleId(trans);
+  if (!trans) return false;
+  ['d', 'm'].forEach(pl => {
+    const sel = document.getElementById(pl + '-version');
+    if (sel && optionValueExists(sel, trans)) sel.value = trans;
+  });
+  applyTranslationRtl(trans);
+  applyInstantBookIdsFromMeta(trans);
+  document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+    if (optionValueExists(sel, trans)) sel.value = trans;
+  });
+  return true;
+}
+
 function applySavedDefaultTranslation(options) {
   options = options || {};
-  const trans = getSavedDefaultTranslation();
+  const trans = getSavedDefaultTranslation() || readDefaultTranslationFromStorage();
   if (!trans) return null;
   let applied = false;
   ['d', 'm'].forEach(p => {
@@ -6814,7 +6905,7 @@ function applySavedDefaultTranslation(options) {
       });
     }
   }
-  return applied ? trans : null;
+  return trans;
 }
 
 function readEmbeddedTranslationsIndex() {
@@ -8132,9 +8223,11 @@ function prefetchGhTranslation(module, onReady) {
       GH_BOOK_IDS_BY_MODULE[module] = data.bookIds;
       VERSION_BOOK_IDS_CACHE[module] = [...data.bookIds];
       saveGhBookMeta(module, data);
-      if (typeof onReady === 'function') onReady(module);
     }
-  }).catch(() => {});
+    if (typeof onReady === 'function') onReady(module);
+  }).catch(() => {
+    if (typeof onReady === 'function') onReady(module);
+  });
 }
 
 function getInstantBooksForVersion(version) {
@@ -8473,7 +8566,7 @@ function populateTranslationSelects(panels) {
       frag.appendChild(og);
     });
     sel.replaceChildren(frag);
-    const savedTrans = getSavedDefaultTranslation();
+    const savedTrans = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
     if (savedTrans && optionValueExists(sel, savedTrans)) {
       sel.value = savedTrans;
     } else if (optionValueExists(sel, prev)) {
@@ -8484,6 +8577,7 @@ function populateTranslationSelects(panels) {
   });
   applySavedDefaultTranslation();
   populateDefaultTranslationSelects();
+  refreshDefaultPreferenceSelectValues();
 }
 
 async function backgroundRefreshBibleList() {
@@ -8497,20 +8591,22 @@ async function backgroundRefreshBibleList() {
       const restored = applySavedDefaultTranslation({ syncPrefs: true });
       if (restored) {
         applyInstantBookIdsFromMeta(restored);
-        try { await updateBooks(activePanel()); } catch { /* ignore */ }
+        const deferRead = shouldBootReadBibleOnLoad() && !_readBibleBootDone;
+        try { await updateBooks(activePanel(), { skipReadInit: !shouldBootReadBibleOnLoad() || deferRead }); } catch { /* ignore */ }
       }
     }
   } catch { /* ignore */ }
-  const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+  const version = resolveDefaultTranslationForBoot();
   prefetchGhTranslation(version);
 }
 
 async function loadBibleList() {
   await resetStaleBibleJsonCachesOnce();
   void backgroundRefreshBibleList();
-  const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+  const version = resolveDefaultTranslationForBoot();
   applyInstantBookIdsFromMeta(version);
-  try { await updateBooks(activePanel()); }
+  const deferRead = shouldBootReadBibleOnLoad() && !_readBibleBootDone;
+  try { await updateBooks(activePanel(), { skipReadInit: !shouldBootReadBibleOnLoad() || deferRead }); }
   catch { ['d', 'm'].forEach(p => setBookLabelState(p, 'error')); }
 }
 
@@ -8705,8 +8801,13 @@ function applyTranslationRtl(version) {
       if (prevMode) {
         await onLayoutModeChange(prevMode, mode);
       } else {
+        // Apply the saved default mode before the first book/passage init.
+        // This prevents the HTML's default Read Bible option from loading Genesis 1
+        // when the user's saved default is Verse Generator or HBV.
+        applySavedDefaultsOnLoad();
         restoreTestamentOptions(activePanel());
-        void updateBooks(activePanel());
+        applySavedDefaultsOnLoad();
+        void updateBooks(activePanel(), { skipReadInit: getEffectiveDefaultMode() !== 'read' });
       }
     }
     updateScrollToModeButtons();
@@ -10010,10 +10111,11 @@ function applyTranslationRtl(version) {
   ══════════════════════════════════════ */
   const DEFAULT_MODE_STORAGE_KEY = 'vg-default-mode';
   const DEFAULT_MODES = [
-    { id: 'custom', label: 'Verse Generator' },
     { id: 'read', label: 'Read Bible' },
+    { id: 'custom', label: 'Verse Generator' },
     { id: 'hbv', label: 'Hardest Bible Verse Generator' }
   ];
+  const FALLBACK_DEFAULT_MODE = 'read';
 
   function getSavedDefaultMode() {
     try {
@@ -10023,9 +10125,19 @@ function applyTranslationRtl(version) {
     return null;
   }
 
+  function getEffectiveDefaultMode() {
+    return getSavedDefaultMode() || FALLBACK_DEFAULT_MODE;
+  }
+
   function isValidTranslationModule(module) {
-    const sel = document.getElementById('d-version');
-    return !!(module && sel && optionValueExists(sel, module));
+    module = normalizeGhModuleId(module);
+    if (!module) return false;
+    if (GH_BIBLES[module]) return true;
+    for (const pl of ['d', 'm']) {
+      const sel = document.getElementById(pl + '-version');
+      if (sel && optionValueExists(sel, module)) return true;
+    }
+    return false;
   }
 
   function syncDefaultPrefSelects(mode, translation) {
@@ -10044,29 +10156,57 @@ function applyTranslationRtl(version) {
   function populateDefaultTranslationSelects() {
     const source = document.getElementById('d-version');
     if (!source) return;
-    const saved = getSavedDefaultTranslation();
-    const activeVersion = document.getElementById(activePanel() + '-version')?.value
+    const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
+    const activeVersion = normalizeGhModuleId(
+      document.getElementById(activePanel() + '-version')?.value
       || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION;
-    const pick = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+      || GH_DEFAULT_TRANSLATION
+    );
     document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
       const prev = sel.value;
       sel.innerHTML = source.innerHTML;
-      if (optionValueExists(sel, pick)) sel.value = pick;
+      if (saved && optionValueExists(sel, saved)) sel.value = saved;
+      else if (optionValueExists(sel, activeVersion)) sel.value = activeVersion;
       else if (optionValueExists(sel, prev)) sel.value = prev;
       else if (optionValueExists(sel, GH_DEFAULT_TRANSLATION)) sel.value = GH_DEFAULT_TRANSLATION;
     });
   }
 
+  function refreshDefaultPreferenceSelectValues() {
+    const mode = getEffectiveDefaultMode();
+    const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
+    const activeVersion = normalizeGhModuleId(
+      document.getElementById(activePanel() + '-version')?.value
+      || document.getElementById('d-version')?.value
+      || GH_DEFAULT_TRANSLATION
+    );
+    const trans = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+    syncDefaultPrefSelects(mode, trans);
+  }
+
+  function shouldBootReadBibleOnLoad() {
+    return getEffectiveDefaultMode() === 'read';
+  }
+
+  function cancelReadBibleBootForNonReadMode() {
+    if (shouldBootReadBibleOnLoad()) return;
+    _readBibleBootDone = true;
+    cancelReadBibleBootTimers();
+    releaseReadBibleBootLock();
+    _readBibleBootPromise = null;
+  }
+
   function applySavedDefaultsOnLoad() {
     applySavedDefaultTranslation();
-    const mode = getSavedDefaultMode();
-    if (mode) {
-      ['d', 'm'].forEach(p => {
-        const sel = document.getElementById(p + '-testament');
-        if (sel) sel.value = mode;
-      });
-    }
+    const mode = getEffectiveDefaultMode();
+    ['d', 'm'].forEach(p => {
+      const sel = document.getElementById(p + '-testament');
+      if (sel && optionValueExists(sel, mode)) {
+        sel.value = mode;
+        if (mode !== 'read') sel.dataset.prevValue = '';
+      }
+    });
+    if (mode !== 'read') cancelReadBibleBootForNonReadMode();
   }
 
   async function applyDefaultMode(modeId, options) {
@@ -10096,13 +10236,13 @@ function applyTranslationRtl(version) {
     if (options.save !== false) {
       try { localStorage.setItem(DEFAULT_TRANSLATION_STORAGE_KEY, version); } catch { /* private mode */ }
     }
-    if (!isValidTranslationModule(version)) return;
+    if (!GH_BIBLES[version] && !isValidTranslationModule(version)) return;
     syncDefaultPrefSelects(null, version);
     const active = activePanel();
     const vSel = document.getElementById(active + '-version');
     const prev = vSel?.value;
     syncVersionSelects(version);
-    if (prev !== version) {
+    if (prev !== version || options.force) {
       await onVersionChangeImpl(active);
     }
   }
@@ -10123,13 +10263,88 @@ function applyTranslationRtl(version) {
   function initDefaultPreferencesUI() {
     populateDefaultTranslationSelects();
     bindDefaultPreferenceControls();
-    const mode = getSavedDefaultMode()
-      || document.getElementById('d-testament')?.value
-      || 'custom';
-    const trans = getSavedDefaultTranslation()
-      || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION;
-    syncDefaultPrefSelects(mode, isValidTranslationModule(trans) ? trans : GH_DEFAULT_TRANSLATION);
+    refreshDefaultPreferenceSelectValues();
+  }
+
+
+  function startReadBibleBootSession(p) {
+    if (_readBibleBootDone) return;
+    if (!_readBibleBootLock) _readBibleBootStartedAt = Date.now();
+    _readBibleBootLock = true;
+    _readBibleBootShowUntil = _readBibleBootStartedAt + READ_BIBLE_BOOT_MS;
+    setReadBibleBootLoader(p);
+  }
+
+  function isReadBibleBootLocked() {
+    return _readBibleBootLock && !_readBibleBootDone;
+  }
+
+  async function enforceReadBibleBootMinimumWait(p) {
+    const deadline = _readBibleBootStartedAt + READ_BIBLE_BOOT_MS;
+    while (Date.now() < deadline) {
+      const display = document.getElementById(p + '-verseDisplay');
+      if (display && !display.querySelector('.read-bible-start-loader')) {
+        setReadBibleBootLoader(p);
+      }
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      await delay(Math.min(200, remaining));
+    }
+  }
+
+  function releaseReadBibleBootLock() {
+    _readBibleBootLock = false;
+    _readBibleBootShowUntil = 0;
+  }
+
+  function beginReadBibleBootDisplay(p) {
+    startReadBibleBootSession(p);
+  }
+
+  function isReadBibleBootDisplayActive() {
+    return isReadBibleBootLocked();
+  }
+
+  function showEarlyReadBibleBootLoader() {
+    if (!shouldBootReadBibleOnLoad()) return;
+    const p = activePanel();
+    const testSel = document.getElementById(p + '-testament');
+    if (testSel && optionValueExists(testSel, 'read')) testSel.value = 'read';
+    applyDefaultTranslationToUi(resolveDefaultTranslationForBoot());
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!hasReadPassageContent(display)) startReadBibleBootSession(p);
+  }
+
+  function readBibleBootLoaderHtml(p) {
+    const subtitleClass = p === 'd' ? 'verse-placeholder' : 'mob-placeholder';
+    return (
+      '<div class="read-bible-start-loader" role="status" aria-live="polite">' +
+        '<div class="read-bible-loader-orb" aria-hidden="true"><span class="read-bible-loader-cross">✝</span></div>' +
+        '<div class="read-bible-loader-title">Loading Read Bible<span class="read-bible-loader-dots"><span></span><span></span><span></span></span></div>' +
+        '<p class="read-bible-loader-subtitle ' + subtitleClass + '">Preparing your default Bible version and passage.</p>' +
+      '</div>'
+    );
+  }
+
+  function setReadBibleBootLoader(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    display.classList.remove('read-updating');
+    display.classList.add('loading', 'read-bible-boot-loading');
+    if (p === 'd') display.classList.remove('read-display-active');
+    display.innerHTML = readBibleBootLoaderHtml(p);
+  }
+
+  function cancelReadBibleBootTimers() {
+    _readBibleBootTimers.forEach(id => clearTimeout(id));
+    _readBibleBootTimers = [];
+  }
+
+  function markReadBibleBootComplete(p) {
+    if (!isReadBibleMode(p)) return;
+    if (!hasReadPassageContent(document.getElementById(p + '-verseDisplay'))) return;
+    _readBibleBootDone = true;
+    cancelReadBibleBootTimers();
   }
 
   function displayNeedsReadBibleBoot(p) {
@@ -10137,33 +10352,77 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!testSel || testSel.value !== 'read' || !display) return false;
     if (display.querySelector('.read-passage-text, .read-verse-segment')) return false;
+    if (display.querySelector('.passage-load-error')) return true;
     const text = (display.textContent || '').trim().toLowerCase();
-    return !text || text.includes('reveal a verse') || text.includes('receive the word') || text.includes('tap the button') || text.includes('click above');
+    return !text || text.includes('loading scripture') || text.includes('loading read bible') ||
+      text.includes('preparing your default bible version') || text.includes('could not load') ||
+      text.includes('reveal a verse') || text.includes('receive the word') ||
+      text.includes('tap the button') || text.includes('click above');
   }
 
   async function ensureDefaultReadBiblePassage(options) {
     options = options || {};
-    if (getSavedDefaultMode() !== 'read') return;
+    if (!shouldBootReadBibleOnLoad()) return;
+    if (_readBibleBootDone && !options.force) return;
     const p = activePanel();
     const testSel = document.getElementById(p + '-testament');
     if (testSel && testSel.value !== 'read') {
       testSel.value = 'read';
       testSel.dataset.prevValue = '';
     }
-    if (!displayNeedsReadBibleBoot(p) && !options.force) return;
-    try {
-      await updateBooks(p, { forceReadInit: true, skipGeneratorRestore: true, silent: true });
-    } catch {
-      try { await initReadBiblePanel(p, true); } catch { /* normal error UI handles failed passage loads */ }
+    if (!displayNeedsReadBibleBoot(p) && !options.force) {
+      markReadBibleBootComplete(p);
+      return;
     }
+    if (_readBibleBootPromise) return _readBibleBootPromise;
+
+    _readBibleBootPromise = (async () => {
+      try {
+        const version = resolveDefaultTranslationForBoot();
+        applyDefaultTranslationToUi(version);
+
+        const display = document.getElementById(p + '-verseDisplay');
+        const showBootLoader = !hasReadPassageContent(display);
+        if (showBootLoader) startReadBibleBootSession(p);
+
+        await Promise.all([
+          loadGhTranslationData(version),
+          ensureGhBooksDiscovered(version).catch(() => []),
+        ]);
+        applyDefaultTranslationToUi(version);
+        await updateBooks(p, { skipReadInit: true, skipGeneratorRestore: true, silent: true }).catch(() => {});
+
+        if (showBootLoader) await enforceReadBibleBootMinimumWait(p);
+
+        applyDefaultTranslationToUi(resolveDefaultTranslationForBoot());
+        releaseReadBibleBootLock();
+
+        if (!displayNeedsReadBibleBoot(p) && !options.force) {
+          markReadBibleBootComplete(p);
+          return;
+        }
+
+        try {
+          await initReadBiblePanel(p, true);
+        } catch {
+          try { await loadReadChapterAt(p, getFirstAvailableBook(version), usesCatalogChapterKeys(version) ? getDefaultReadChapter(version, getFirstAvailableBook(version)) : 1); } catch { /* error UI */ }
+        }
+        markReadBibleBootComplete(p);
+      } finally {
+        releaseReadBibleBootLock();
+        _readBibleBootPromise = null;
+      }
+    })();
+    return _readBibleBootPromise;
   }
 
   function scheduleDefaultReadBibleBoot() {
-    if (getSavedDefaultMode() !== 'read') return;
+    if (!shouldBootReadBibleOnLoad()) return;
+    if (_readBibleBootDone) return;
+    cancelReadBibleBootTimers();
     const run = () => { void ensureDefaultReadBiblePassage(); };
-    setTimeout(run, 150);
-    setTimeout(run, 900);
-    setTimeout(run, 2200);
+    _readBibleBootTimers.push(setTimeout(run, 100));
+    _readBibleBootTimers.push(setTimeout(run, 900));
   }
 
   /* ══════════════════════════════════════
@@ -10183,8 +10442,8 @@ function applyTranslationRtl(version) {
     if (!sel || optionValueExists(sel, 'hbv')) return;
     const prev = sel.value;
     sel.innerHTML =
-      '<option value="custom" selected>Verse Generator</option>' +
-      '<option value="read">Read Bible</option>' +
+      '<option value="read" selected>Read Bible</option>' +
+      '<option value="custom">Verse Generator</option>' +
       '<option value="hbv">Hardest Bible Verse Generator</option>';
     if (optionValueExists(sel, prev)) sel.value = prev;
   }
@@ -10668,6 +10927,13 @@ function applyTranslationRtl(version) {
   /** Read Bible verse dropdown: show entire chapter in the display panel */
   const READ_VERSE_WHOLE = 'whole-chapter';
   let _readLoadId = { d: 0, m: 0 };
+  const READ_BIBLE_BOOT_MS = 4000;
+  let _readBibleBootTimers = [];
+  let _readBibleBootPromise = null;
+  let _readBibleBootDone = false;
+  let _readBibleBootShowUntil = 0;
+  let _readBibleBootLock = false;
+  let _readBibleBootStartedAt = 0;
   let _layoutMode = null;
   let _layoutIsMobile = null;
   /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
@@ -10776,7 +11042,7 @@ function applyTranslationRtl(version) {
     if (display) {
       display.classList.remove('loading', 'read-updating', 'read-display-active', 'generator-image-overflow');
       display.innerHTML = isDesk
-        ? '<p class="verse-placeholder">Click above to receive the Word…</p>'
+        ? '<p class="verse-placeholder">Tap ✦ Reveal a Verse ✦ button to randomly reveal a bible verse…</p>'
         : '<p class="mob-placeholder">Tap the button below to receive the Word…</p>';
     }
     document.getElementById(p + '-actions').style.display = 'flex';
@@ -10990,7 +11256,7 @@ function applyTranslationRtl(version) {
 
   function clearReadDisplayLoading(p) {
     const display = document.getElementById(p + '-verseDisplay');
-    if (display) display.classList.remove('loading', 'read-updating');
+    if (display) display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
   }
 
   function setDesktopReadDisplayScrollButton(enabled) {
@@ -11589,13 +11855,26 @@ function applyTranslationRtl(version) {
     renderReadPassage(p, data, false);
   }
 
+  function resolveReadLocationForVersion(version, bookEn, chapter) {
+    version = normalizeGhModuleId(version);
+    if (!bookEn || !isBookAvailableInVersion(version, bookEn)) {
+      bookEn = getFirstAvailableBook(version);
+      const nextChapter = usesCatalogChapterKeys(version)
+        ? getDefaultReadChapter(version, bookEn)
+        : 1;
+      return { bookEn, chapter: nextChapter };
+    }
+    const nextChapter = usesCatalogChapterKeys(version)
+      ? resolveReadChapter(version, bookEn, chapter)
+      : (parseInt(chapter, 10) || 1);
+    return { bookEn, chapter: nextChapter };
+  }
+
   async function loadReadChapterAt(p, bookEn, chapter, options) {
     options = options || {};
     const scrollToTop = !!options.scrollToTop;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    if (isApocryphaStandaloneTranslation(version)) {
-      await loadGhTranslationData(version);
-    }
+    await loadGhTranslationData(version);
     if (!isBookAvailableInVersion(version, bookEn)) {
       bookEn = getFirstAvailableBook(version);
       chapter = usesCatalogChapterKeys(version)
@@ -11615,18 +11894,31 @@ function applyTranslationRtl(version) {
     const cached = readChapterCache[key];
 
     if (cached) {
-      applyReadChapterData(p, bookEn, chapter, cached);
+      if (!isReadBibleBootLocked()) {
+        applyReadChapterData(p, bookEn, chapter, cached);
+      }
       if (scrollToTop) scrollReadAreaToTop(p);
       updateReadChapterNav(p);
       return;
     }
 
-    setReadDisplayLoading(p, !hasReadPassageContent(display));
+    if (!isReadBibleBootLocked()) {
+      setReadDisplayLoading(p, !hasReadPassageContent(display));
+    }
 
     let data;
     try {
       const chapterTimeout = GH_TRANSLATION_LOAD_TIMEOUT_MS;
-      data = await withTimeout(fetchGhPassageVerses(version, bookEn, chapter, null, null), chapterTimeout, null);
+      const fetchChapter = () => withTimeout(
+        fetchGhPassageVerses(version, bookEn, chapter, null, null),
+        chapterTimeout,
+        null
+      );
+      data = await fetchChapter();
+      if (!data?.verses?.length) {
+        await loadGhTranslationData(version);
+        data = await fetchChapter();
+      }
     } finally {
       if (loadId === _readLoadId[p]) clearReadDisplayLoading(p);
     }
@@ -12146,13 +12438,18 @@ function applyTranslationRtl(version) {
   }
 
   function renderReadPassage(p, data, animate) {
+    if (isReadBibleBootLocked()) return;
+    // Guard against stale Read Bible requests finishing after the user/default mode
+    // has already switched back to Verse Generator or HBV.
+    if (!isReadBibleMode(p)) return;
     const display = document.getElementById(p + '-verseDisplay');
+    if (display) display.classList.remove('read-bible-boot-loading');
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const bookEn = document.getElementById(p + '-read-book')?.value;
     const label = getTranslationLabel(data.version, bookEn);
     const displayRef = getReadDisplayRef(data);
-    const reveal = verseRevealClass(animate === false);
+    const reveal = animate === false ? '' : verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
       ? `<div class="${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
@@ -12208,6 +12505,7 @@ function applyTranslationRtl(version) {
 
     const counter = document.getElementById(p + '-counter');
     if (counter) counter.style.display = 'none';
+    markReadBibleBootComplete(p);
   }
 
   function collectGeneratorStateSnapshot() {
@@ -12327,11 +12625,12 @@ function applyTranslationRtl(version) {
   function setReadDisplayLoading(p, hard) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
+    if (isReadBibleBootLocked()) return;
     if (!hard && hasReadPassageContent(display)) {
       display.classList.add('read-updating');
       return;
     }
-    display.classList.remove('read-updating');
+    display.classList.remove('read-updating', 'read-bible-boot-loading');
     display.classList.add('loading');
     if (p === 'd') display.classList.remove('read-display-active');
     const isDesk = p === 'd';
@@ -12339,6 +12638,7 @@ function applyTranslationRtl(version) {
   }
 
   async function loadReadPassage(p, reference, filterStart, filterEnd) {
+    if (!isReadBibleMode(p)) return;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     const display = document.getElementById(p + '-verseDisplay');
     setReadDisplayLoading(p, !hasReadPassageContent(display));
@@ -12349,10 +12649,22 @@ function applyTranslationRtl(version) {
       const chSelEl   = document.getElementById(p + '-read-chapter');
       const bookEn = bookSelEl?.value || null;
       const chapter = chSelEl ? (parseInt(chSelEl.value, 10) || 1) : 1;
-      if (bookEn && getAvailableBookIds(version).includes(BOOK_NUM[bookEn])) {
-        data = await withTimeout(fetchGhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null), passageTimeout, null);
-      } else {
-        data = await withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
+      const fetchPassage = async () => {
+        if (bookEn && getAvailableBookIds(version).includes(BOOK_NUM[bookEn])) {
+          return withTimeout(
+            fetchGhPassageVerses(version, bookEn, chapter, filterStart || null, filterEnd || null),
+            passageTimeout,
+            null
+          );
+        }
+        return withTimeout(fetchBssPassageVerses(version, reference, filterStart, filterEnd), passageTimeout, null);
+      };
+      await loadGhTranslationData(version);
+      data = await fetchPassage();
+      if (!data) {
+        await delay(350);
+        await loadGhTranslationData(version);
+        data = await fetchPassage();
       }
       if (data) {
         renderReadPassage(p, data);
@@ -12478,6 +12790,7 @@ function applyTranslationRtl(version) {
   }
 
   async function initReadBiblePanel(p, resetToGenesis = false) {
+    applyDefaultTranslationToUi(resolveDefaultTranslationForBoot());
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     await ensureGhBooksDiscovered(version);
     const langCode = getTranslationLang(version);
@@ -12756,20 +13069,26 @@ function applyTranslationRtl(version) {
         if (!stillCurrent()) return;
         await ensureGhBooksDiscovered(version);
         if (!stillCurrent()) return;
-        if (prevTest !== 'read' || options.forceReadInit) {
+        if ((prevTest !== 'read' || options.forceReadInit) && !options.skipReadInit) {
           await initReadBiblePanel(p, true);
         } else if (options.refreshReadLabels) {
           await refreshReadBibleLabels(p);
         }
       } catch {
         if (!stillCurrent()) return;
+        if (isReadBibleBootLocked()) return;
         const display = document.getElementById(p + '-verseDisplay');
         if (display) display.innerHTML = passageLoadErrorHtml(p);
       }
     } else {
       setReadModeActions(p, false);
-      if (prevTest === 'read' && !options.skipGeneratorRestore) {
+      if (prevTest === 'read' && testament === 'custom' && !options.skipGeneratorRestore) {
         await restoreGeneratorViewFromRead();
+      } else if (testament === 'custom') {
+        const display = document.getElementById(p + '-verseDisplay');
+        if (display?.querySelector('.read-passage-text, .read-verse-segment') || !current[p]) {
+          showGeneratorPlaceholder(p);
+        }
       } else if (prevTest === 'hbv' && testament === 'custom') {
         current[p] = null;
         showGeneratorPlaceholder(p);
@@ -13069,7 +13388,7 @@ function applyTranslationRtl(version) {
       else ensureStandardTestamentOptions(pl);
     }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, forceReadInit: inRead, changeGen });
+    await updateBooks(active, { refreshReadLabels: inRead, changeGen });
     if (isStale()) return;
     await loadVotdAndWeekly(version);
     if (isStale()) return;
@@ -13083,8 +13402,14 @@ function applyTranslationRtl(version) {
 
     if (inRead) {
       const currentVersion = normalizeGhModuleId(document.getElementById(active + '-version').value);
-      const firstBook = getFirstAvailableBook(currentVersion);
-      await loadReadChapterAt(active, firstBook, 1, { scrollToTop: false });
+      const bookSel = document.getElementById(active + '-read-book');
+      const chSel = document.getElementById(active + '-read-chapter');
+      const loc = resolveReadLocationForVersion(
+        currentVersion,
+        bookSel?.value,
+        chSel?.value
+      );
+      await loadReadChapterAt(active, loc.bookEn, loc.chapter, { scrollToTop: false });
     } else if (current[active]) {
       await retranslateCurrentVerse(active, version);
     }
@@ -13985,6 +14310,9 @@ function applyTranslationRtl(version) {
 
     const pendingGeneratorRestore = consumePassageErrorRefreshRestore();
 
+    // Apply saved defaults before layout init so the first render uses the correct mode.
+    applySavedDefaultsOnLoad();
+
     // Layout first — never block the UI shell on network or book-list work.
     await initLayout();
     initVerseSize();
@@ -14010,10 +14338,13 @@ function applyTranslationRtl(version) {
       indexWeeklyVersesCatalog();
     }
 
+    applySavedDefaultsOnLoad();
     applySavedDefaultTranslation();
-    const version = normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    const version = resolveDefaultTranslationForBoot();
+    applyDefaultTranslationToUi(version);
     applyInstantBookIdsFromMeta(version);
     applyTranslationRtl(version);
+    if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) showEarlyReadBibleBootLoader();
 
     initDevotionalTextSize();
     initThemeSystem();
@@ -14023,7 +14354,6 @@ function applyTranslationRtl(version) {
     initLegalTextSize();
     initPanelMagnifyPrefs();
     initDefaultPreferencesUI();
-    scheduleDefaultReadBibleBoot();
 
     // Background work — must not block taps on Generate or social links.
     void loadWeeklyVersesCatalog();
@@ -14053,25 +14383,43 @@ function applyTranslationRtl(version) {
     const otherPanels = activePanels[0] === 'm' ? ['d'] : ['m'];
     populateTranslationSelects(activePanels);
     applySavedDefaultsOnLoad();
+    refreshDefaultPreferenceSelectValues();
+    const defaultVer = resolveDefaultTranslationForBoot();
+    applyDefaultTranslationToUi(defaultVer);
     activePanels.forEach(p => {
       const sel = document.getElementById(p + '-version');
-      if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
+      if (!sel) return;
+      const savedTrans = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
+      if (savedTrans && optionValueExists(sel, savedTrans)) sel.value = savedTrans;
+      else if (!optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
     });
-    const defaultVer = applySavedDefaultTranslation({ syncPrefs: false })
-      || normalizeGhModuleId(document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+    const defaultMode = getEffectiveDefaultMode();
     applyInstantBookIdsFromMeta(defaultVer);
-    activePanels.forEach(p => { void updateBooks(p, { skipFetch: true }); });
-    prefetchGhTranslation(defaultVer, () => {
-      activePanels.forEach(p => { void updateBooks(p, { silent: true }); });
-      scheduleDefaultReadBibleBoot();
+    activePanels.forEach(p => {
+      void updateBooks(p, { skipFetch: true, skipReadInit: defaultMode !== 'read' });
     });
-    scheduleDefaultReadBibleBoot();
+    if (defaultMode === 'read') {
+      showEarlyReadBibleBootLoader();
+      scheduleDefaultReadBibleBoot();
+    } else {
+      cancelReadBibleBootForNonReadMode();
+      activePanels.forEach(p => showGeneratorPlaceholder(p));
+    }
+    prefetchGhTranslation(defaultVer, () => {
+      activePanels.forEach(p => {
+        void updateBooks(p, { silent: true, skipReadInit: defaultMode !== 'read' });
+      });
+    });
     const fillOther = () => {
       populateTranslationSelects(otherPanels);
       otherPanels.forEach(p => {
         const sel = document.getElementById(p + '-version');
-        if (sel && !optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
+        if (!sel) return;
+        const savedTrans = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
+        if (savedTrans && optionValueExists(sel, savedTrans)) sel.value = savedTrans;
+        else if (!optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
       });
+      refreshDefaultPreferenceSelectValues();
       void updateBooks(otherPanels[0], { skipFetch: true, silent: true });
     };
     if (typeof requestIdleCallback === 'function') requestIdleCallback(fillOther, { timeout: 2500 });
@@ -14129,76 +14477,55 @@ function applyTranslationRtl(version) {
     if (e.target === this) closeImageShare();
   });
 
-  /* ══ Background music (GitHub MP3 JSON shuffle player with preload + crossfade) ══ */
+  /* ══ Background music (Random Opus player with MP3 fallback — silent until user starts) ══ */
   (function initBackgroundMusic() {
-    const MUSIC_JSON_URL = 'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/music/music.json';
+    const OPUS_TRACKS = [
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/1.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/2.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/3.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/4.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/6.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/7.opus'
+    ];
+
+    // MP3 fallback uses the same file numbers from the GitHub music folder.
+    // Example: /opus/1.opus -> /music/1.mp3
+    const MP3_FALLBACK_TRACKS = OPUS_TRACKS.map(url => url.replace('/opus/', '/music/').replace(/\.opus(\?.*)?$/i, '.mp3$1'));
+
     const DEFAULT_VOLUME = 20;
+    const FADE_IN_MS = 5000;
     const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
     const LEGACY_PREFS_KEY = 'vg-bg-music-prefs';
-    const NORMAL_FADE_MS = 5000;
-    const MANUAL_FADE_MS = 5000;
-    const AUTO_PRELOAD_BEFORE_END = 18;
-    const AUTO_CROSSFADE_BEFORE_END = 5.2;
 
-    let tracks = [];
-    let history = [];
-    let historyIndex = -1;
-    let currentIndex = -1;
-    let nextIndex = -1;
     let savedVolume = DEFAULT_VOLUME;
-    let userPaused = true;
-    let hasUserInteracted = false;
-    let currentAudio = document.getElementById('bg-music-audio-current');
-    let nextAudio = document.getElementById('bg-music-audio-next');
-    let activeAudio = currentAudio;
-    let preloadedAudio = nextAudio;
+    let userMuted = true;
+    let isToggling = false;
+    let currentAudio = null;
+    let preloadAudio = null;
+    let activeTrackUrl = '';
+    let fallbackAttemptedForCurrentTrack = false;
     let fadeTimer = 0;
-    let watchdogTimer = 0;
-    let autoTransitioning = false;
-    let isManualTransitioning = false;
-    let loadPromise = null;
-    let listLoaded = false;
+    let volumeRafId = 0;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
-    const playBtns = Array.from(document.querySelectorAll('[data-bg-music-play]'));
-    const prevBtns = Array.from(document.querySelectorAll('[data-bg-music-prev]'));
-    const nextBtns = Array.from(document.querySelectorAll('[data-bg-music-next]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
+    const playerHost = document.getElementById('bg-music-player');
 
-    if (!currentAudio || !nextAudio) {
-      const wrap = document.getElementById('bg-music-wrap') || document.body;
-      currentAudio = document.createElement('audio');
-      currentAudio.id = 'bg-music-audio-current';
-      currentAudio.preload = 'auto';
-      currentAudio.muted = true;
-      currentAudio.setAttribute('muted', '');
-      currentAudio.setAttribute('playsinline', '');
-      nextAudio = document.createElement('audio');
-      nextAudio.id = 'bg-music-audio-next';
-      nextAudio.preload = 'auto';
-      nextAudio.muted = true;
-      nextAudio.setAttribute('muted', '');
-      nextAudio.setAttribute('playsinline', '');
-      wrap.appendChild(currentAudio);
-      wrap.appendChild(nextAudio);
-      activeAudio = currentAudio;
-      preloadedAudio = nextAudio;
+    function canPlayOpus() {
+      const audio = document.createElement('audio');
+      const checks = [
+        'audio/ogg; codecs="opus"',
+        'audio/opus',
+        'audio/webm; codecs="opus"'
+      ];
+      return checks.some(type => {
+        try { return !!audio.canPlayType(type).replace(/^no$/, ''); }
+        catch { return false; }
+      });
     }
 
-    [currentAudio, nextAudio].forEach(audio => {
-      audio.preload = 'auto';
-      audio.crossOrigin = 'anonymous';
-      audio.muted = true;
-      audio.setAttribute('muted', '');
-      audio.volume = 0;
-      audio.addEventListener('ended', () => {
-        if (!userPaused) transitionToPreloaded(NORMAL_FADE_MS, true);
-      });
-      audio.addEventListener('error', () => {
-        if (!userPaused && audio === activeAudio) setTimeout(() => skipToRandom(MANUAL_FADE_MS), 350);
-      });
-    });
+    const preferOpus = canPlayOpus();
 
     function readSavedVolume() {
       try {
@@ -14223,8 +14550,10 @@ function applyTranslationRtl(version) {
       } catch { /* private mode */ }
     }
 
-    function getTargetVolume() {
-      return Math.max(0, Math.min(1, savedVolume / 100));
+    function loadMusicSettings() {
+      userMuted = true;
+      const vol = readSavedVolume();
+      savedVolume = vol != null ? vol : DEFAULT_VOLUME;
     }
 
     function syncVolumeUI(vol) {
@@ -14238,359 +14567,254 @@ function applyTranslationRtl(version) {
       });
     }
 
-    function updateMusicUI() {
-      const mutedLike = userPaused;
+    function updateMuteUI() {
       muteBtns.forEach(btn => {
-        btn.classList.toggle('is-muted', mutedLike);
-        btn.setAttribute('aria-label', mutedLike ? 'Play background music' : 'Pause background music');
-        btn.title = mutedLike ? 'Play music' : 'Pause music';
+        btn.classList.toggle('is-muted', userMuted);
+        btn.setAttribute('aria-label', userMuted ? 'Unmute background music' : 'Mute background music');
+        btn.title = userMuted ? 'Unmute music' : 'Mute music';
       });
-      playBtns.forEach(btn => {
-        btn.textContent = userPaused ? 'Play' : 'Pause';
-        btn.setAttribute('aria-label', userPaused ? 'Play background music' : 'Pause background music');
-      });
-      musicPanels.forEach(panel => panel.classList.toggle('is-muted-panel', mutedLike));
-      const disabled = listLoaded && !tracks.length;
-      [...prevBtns, ...nextBtns, ...playBtns, ...muteBtns].forEach(btn => { btn.disabled = disabled; });
+      musicPanels.forEach(panel => panel.classList.toggle('is-muted-panel', userMuted));
     }
 
-    function extractMp3Links(payload) {
-      const found = [];
-      const seen = new Set();
-      const add = value => {
-        if (typeof value !== 'string') return;
-        const clean = value.trim();
-        if (!/^https?:\/\//i.test(clean) || !/\.mp3(?:$|[?#])/i.test(clean)) return;
-        if (!seen.has(clean)) {
-          seen.add(clean);
-          found.push(clean);
-        }
-      };
-      const walk = value => {
-        if (typeof value === 'string') {
-          add(value);
-          return;
-        }
-        if (Array.isArray(value)) {
-          value.forEach(walk);
-          return;
-        }
-        if (value && typeof value === 'object') {
-          ['url', 'raw', 'raw_url', 'rawUrl', 'src', 'href', 'link', 'file', 'mp3'].forEach(key => add(value[key]));
-          Object.keys(value).forEach(key => walk(value[key]));
-        }
-      };
-      walk(payload);
-      return found;
+    function normalizeVolume(vol) {
+      return Math.max(0, Math.min(100, Math.round(vol))) / 100;
     }
 
-    async function loadTrackList() {
-      if (loadPromise) return loadPromise;
-      loadPromise = fetch(MUSIC_JSON_URL, { cache: 'no-store' })
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(data => {
-          tracks = extractMp3Links(data);
-          listLoaded = true;
-          if (!tracks.length) {
-            console.info('Background music: no valid MP3 links were found in the GitHub JSON file.');
-            return [];
-          }
-          updateMusicUI();
-          prepareInitialTracks();
-          return tracks;
-        })
-        .catch(err => {
-          console.info('Background music: could not load MP3 list from GitHub JSON.', err);
-          tracks = [];
-          listLoaded = true;
-          updateMusicUI();
-          return [];
-        });
-      return loadPromise;
+    function randomIndex(max) {
+      return Math.floor(Math.random() * max);
     }
 
-    function pickRandomIndex(exclude) {
-      if (!tracks.length) return -1;
-      if (tracks.length === 1) return 0;
-      let idx = Math.floor(Math.random() * tracks.length);
-      let tries = 0;
-      while ((idx === exclude || idx === currentIndex) && tries < 20) {
-        idx = Math.floor(Math.random() * tracks.length);
-        tries++;
+    function getMatchingFallbackUrl(url) {
+      const opusIndex = OPUS_TRACKS.indexOf(url);
+      if (opusIndex >= 0) return MP3_FALLBACK_TRACKS[opusIndex];
+      return url.replace('/opus/', '/music/').replace(/\.opus(\?.*)?$/i, '.mp3$1');
+    }
+
+    function pickRandomTrack(excludeUrl) {
+      const primaryList = preferOpus ? OPUS_TRACKS : MP3_FALLBACK_TRACKS;
+      if (!primaryList.length) return '';
+      if (primaryList.length === 1) return primaryList[0];
+
+      let chosen = primaryList[randomIndex(primaryList.length)];
+      let guard = 0;
+      while (chosen === excludeUrl && guard < 10) {
+        chosen = primaryList[randomIndex(primaryList.length)];
+        guard++;
       }
-      return idx;
+      return chosen;
     }
 
-    function setAudioSource(audio, index) {
-      if (!audio || index < 0 || !tracks[index]) return;
-      if (audio.dataset.trackIndex === String(index) && audio.src) return;
-      audio.pause();
-      audio.src = tracks[index];
-      audio.dataset.trackIndex = String(index);
-      audio.currentTime = 0;
+    function createAudio(trackUrl, shouldPreload) {
+      const audio = new Audio();
+      audio.preload = shouldPreload ? 'auto' : 'metadata';
+      audio.crossOrigin = 'anonymous';
+      audio.loop = false;
+      audio.muted = true;
       audio.volume = 0;
+      audio.src = trackUrl;
+      audio.addEventListener('ended', () => {
+        if (!userMuted && audio === currentAudio) playNextRandomTrack();
+      });
+      audio.addEventListener('error', () => handleAudioError(audio));
       try { audio.load(); } catch { /* ignore */ }
+      return audio;
     }
 
-    function preloadIndex(index) {
-      if (index < 0) return;
-      setAudioSource(preloadedAudio, index);
-      nextIndex = index;
+    function attachAudioToHiddenHost(audio) {
+      if (!playerHost || !audio) return;
+      playerHost.innerHTML = '';
+      playerHost.appendChild(audio);
     }
 
-    function prepareNext(exclude) {
-      const idx = pickRandomIndex(exclude == null ? currentIndex : exclude);
-      preloadIndex(idx);
+    function preloadRandomTrack() {
+      if (preloadAudio) return preloadAudio;
+      const trackUrl = pickRandomTrack(activeTrackUrl);
+      if (!trackUrl) return null;
+      preloadAudio = createAudio(trackUrl, true);
+      return preloadAudio;
     }
 
-    function prepareInitialTracks() {
-      if (!tracks.length || currentIndex >= 0) return;
-      currentIndex = pickRandomIndex(-1);
-      setAudioSource(activeAudio, currentIndex);
-      history = [currentIndex];
-      historyIndex = 0;
-      prepareNext(currentIndex);
+    function prepareNextPreload() {
+      if (preloadAudio) return;
+      setTimeout(() => preloadRandomTrack(), 120);
     }
 
     function clearFade() {
-      if (fadeTimer) cancelAnimationFrame(fadeTimer);
-      fadeTimer = 0;
+      if (fadeTimer) {
+        clearInterval(fadeTimer);
+        fadeTimer = 0;
+      }
     }
 
-    function applyLiveVolume() {
-      const target = getTargetVolume();
-      if (userPaused) return;
-      if (activeAudio && !isManualTransitioning && !autoTransitioning) activeAudio.volume = target;
-    }
-
-    function fadeBetween(fromAudio, toAudio, durationMs, done) {
+    function fadeInAudio(audio) {
       clearFade();
-      const target = getTargetVolume();
-      const startFrom = fromAudio ? fromAudio.volume : 0;
-      const startTime = performance.now();
-      if (toAudio) toAudio.volume = 0;
-      const step = now => {
-        const pct = Math.min(1, (now - startTime) / durationMs);
-        const liveTarget = getTargetVolume();
-        if (fromAudio) fromAudio.volume = Math.max(0, startFrom * (1 - pct));
-        if (toAudio) toAudio.volume = Math.min(liveTarget, liveTarget * pct);
-        if (pct < 1) {
-          fadeTimer = requestAnimationFrame(step);
-        } else {
-          if (fromAudio) {
-            fromAudio.pause();
-            fromAudio.volume = 0;
-          }
-          if (toAudio && !userPaused) toAudio.volume = getTargetVolume();
-          fadeTimer = 0;
-          if (typeof done === 'function') done();
+      if (!audio) return;
+      const targetVolume = normalizeVolume(savedVolume);
+      const startedAt = performance.now();
+      audio.volume = 0;
+      audio.muted = false;
+
+      fadeTimer = setInterval(() => {
+        if (!audio || audio !== currentAudio || userMuted) {
+          clearFade();
+          return;
         }
+        const progress = Math.min(1, (performance.now() - startedAt) / FADE_IN_MS);
+        audio.volume = targetVolume * progress;
+        if (progress >= 1) clearFade();
+      }, 80);
+    }
+
+    function applyCurrentVolume(immediate) {
+      if (!currentAudio || userMuted) return;
+      const apply = () => {
+        if (!currentAudio || userMuted) return;
+        currentAudio.muted = false;
+        currentAudio.volume = normalizeVolume(savedVolume);
       };
-      fadeTimer = requestAnimationFrame(step);
-    }
-
-    async function safePlay(audio) {
-      if (!audio) return false;
-      try {
-        audio.muted = false;
-        audio.removeAttribute('muted');
-        const promise = audio.play();
-        if (promise && typeof promise.then === 'function') await promise;
-        return true;
-      } catch (err) {
-        userPaused = true;
-        updateMusicUI();
-        return false;
-      }
-    }
-
-    function swapPlayers() {
-      const oldActive = activeAudio;
-      activeAudio = preloadedAudio;
-      preloadedAudio = oldActive;
-    }
-
-    async function transitionToPreloaded(durationMs, fromAuto) {
-      if (!tracks.length || userPaused || isManualTransitioning || autoTransitioning) return;
-      if (nextIndex < 0) prepareNext(currentIndex);
-      if (nextIndex < 0) return;
-      autoTransitioning = !!fromAuto;
-      const outgoing = activeAudio;
-      const incoming = preloadedAudio;
-      incoming.currentTime = 0;
-      const started = await safePlay(incoming);
-      if (!started) {
-        autoTransitioning = false;
+      if (immediate) {
+        cancelAnimationFrame(volumeRafId);
+        apply();
         return;
       }
-      const incomingIndex = nextIndex;
-      fadeBetween(outgoing, incoming, durationMs, () => {
-        swapPlayers();
-        currentIndex = incomingIndex;
-        if (history[historyIndex] !== currentIndex) {
-          history = history.slice(0, historyIndex + 1);
-          history.push(currentIndex);
-          historyIndex = history.length - 1;
-        }
-        nextIndex = -1;
-        prepareNext(currentIndex);
-        autoTransitioning = false;
-      });
+      cancelAnimationFrame(volumeRafId);
+      volumeRafId = requestAnimationFrame(apply);
     }
 
-    async function startPlayback() {
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (!tracks.length) return;
-      prepareInitialTracks();
-      userPaused = false;
-      updateMusicUI();
-      activeAudio.volume = 0;
-      const started = await safePlay(activeAudio);
-      if (!started) return;
-      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
-      startWatchdog();
+    function setVolumeLevel(vol, options) {
+      options = options || {};
+      const v = Math.max(0, Math.min(100, Math.round(vol)));
+      savedVolume = v;
+      syncVolumeUI(v);
+      if (options.save !== false) persistVolume(v);
+      if (!userMuted) applyCurrentVolume(!!options.immediate);
     }
 
-    function pausePlayback() {
-      userPaused = true;
-      updateMusicUI();
+    function stopCurrentAudio() {
       clearFade();
-      try { activeAudio.pause(); activeAudio.muted = true; activeAudio.setAttribute('muted', ''); } catch { /* ignore */ }
-      try { preloadedAudio.pause(); preloadedAudio.currentTime = 0; preloadedAudio.volume = 0; preloadedAudio.muted = true; preloadedAudio.setAttribute('muted', ''); } catch { /* ignore */ }
+      if (!currentAudio) return;
+      try {
+        currentAudio.pause();
+        currentAudio.muted = true;
+        currentAudio.volume = 0;
+      } catch { /* ignore */ }
     }
 
-    async function resumePlayback() {
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (!tracks.length) return;
-      prepareInitialTracks();
-      userPaused = false;
-      updateMusicUI();
-      const started = await safePlay(activeAudio);
-      if (!started) return;
-      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
-      startWatchdog();
+    function usePreloadedOrCreateTrack() {
+      const audio = preloadAudio || createAudio(pickRandomTrack(activeTrackUrl), true);
+      preloadAudio = null;
+      fallbackAttemptedForCurrentTrack = false;
+      activeTrackUrl = audio ? audio.src : '';
+      return audio;
     }
 
-    function togglePlayback() {
-      if (userPaused) resumePlayback();
-      else pausePlayback();
+    function startAudio(audio) {
+      if (!audio) return;
+      stopCurrentAudio();
+      currentAudio = audio;
+      attachAudioToHiddenHost(audio);
+      activeTrackUrl = audio.src;
+      userMuted = false;
+      updateMuteUI();
+
+      audio.muted = false;
+      audio.volume = 0;
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(() => {
+          fadeInAudio(audio);
+          prepareNextPreload();
+        }).catch(() => {
+          userMuted = true;
+          updateMuteUI();
+          stopCurrentAudio();
+          prepareNextPreload();
+        });
+      } else {
+        fadeInAudio(audio);
+        prepareNextPreload();
+      }
     }
 
-    async function skipToIndex(index, durationMs, addToHistory) {
-      if (!tracks.length || index < 0) return;
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (isManualTransitioning) return;
-      isManualTransitioning = true;
-      userPaused = false;
-      updateMusicUI();
-      setAudioSource(preloadedAudio, index);
-      const outgoing = activeAudio;
-      const incoming = preloadedAudio;
-      incoming.currentTime = 0;
-      const started = await safePlay(incoming);
-      if (!started) {
-        isManualTransitioning = false;
+    function unmuteAndPlay() {
+      const audio = (currentAudio && currentAudio.paused && currentAudio.currentTime > 0) ? currentAudio : usePreloadedOrCreateTrack();
+      startAudio(audio);
+    }
+
+    function muteAndStop() {
+      userMuted = true;
+      updateMuteUI();
+      stopCurrentAudio();
+      prepareNextPreload();
+    }
+
+    function toggleMute() {
+      if (isToggling) return;
+      isToggling = true;
+      setTimeout(() => { isToggling = false; }, 420);
+      if (userMuted) unmuteAndPlay();
+      else muteAndStop();
+    }
+
+    function playNextRandomTrack() {
+      if (userMuted) return;
+      const next = preloadAudio || createAudio(pickRandomTrack(activeTrackUrl), true);
+      preloadAudio = null;
+      startAudio(next);
+    }
+
+    function handleAudioError(audio) {
+      if (!audio) return;
+      const currentUrl = audio.src || '';
+      const shouldTryFallback = preferOpus && currentUrl.includes('/opus/') && !fallbackAttemptedForCurrentTrack;
+
+      if (shouldTryFallback) {
+        fallbackAttemptedForCurrentTrack = true;
+        const fallback = createAudio(getMatchingFallbackUrl(currentUrl), true);
+        if (audio === preloadAudio) preloadAudio = fallback;
+        if (audio === currentAudio && !userMuted) startAudio(fallback);
         return;
       }
-      fadeBetween(outgoing, incoming, durationMs, () => {
-        swapPlayers();
-        currentIndex = index;
-        if (addToHistory) {
-          history = history.slice(0, historyIndex + 1);
-          history.push(currentIndex);
-          historyIndex = history.length - 1;
-        }
-        nextIndex = -1;
-        prepareNext(currentIndex);
-        isManualTransitioning = false;
-      });
-    }
 
-    function skipToRandom(durationMs) {
-      const idx = pickRandomIndex(currentIndex);
-      skipToIndex(idx, durationMs, true);
-    }
-
-    function goPrevious() {
-      // Previous must not start hidden music from a fresh paused/muted visit.
-      if (userPaused || !tracks.length) return;
-      if (historyIndex > 0) {
-        historyIndex--;
-        skipToIndex(history[historyIndex], MANUAL_FADE_MS, false);
-      } else {
-        skipToRandom(MANUAL_FADE_MS);
+      if (audio === currentAudio && !userMuted) {
+        playNextRandomTrack();
+      } else if (audio === preloadAudio) {
+        preloadAudio = null;
+        prepareNextPreload();
       }
     }
 
-    function startWatchdog() {
-      clearInterval(watchdogTimer);
-      watchdogTimer = setInterval(() => {
-        if (userPaused || !tracks.length || !activeAudio || !Number.isFinite(activeAudio.duration)) return;
-        const remaining = activeAudio.duration - activeAudio.currentTime;
-        if (remaining <= AUTO_PRELOAD_BEFORE_END && nextIndex < 0) prepareNext(currentIndex);
-        if (remaining <= AUTO_CROSSFADE_BEFORE_END && !autoTransitioning && !isManualTransitioning) {
-          transitionToPreloaded(NORMAL_FADE_MS, true);
-        }
-      }, 700);
-    }
+    muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
 
-    function onVolumeSliderChange(sl) {
+    function onVolumeSliderChange(sl, immediate) {
       const v = parseInt(sl.value, 10);
       if (Number.isNaN(v)) return;
-      savedVolume = Math.max(0, Math.min(100, Math.round(v)));
-      persistVolume(savedVolume);
-      syncVolumeUI(savedVolume);
-      applyLiveVolume();
-      // Volume changes must only save/apply the volume. They must not start music.
-      // Fresh visits and refreshes stay silent until the dedicated unmute/play button is tapped.
-      updateMusicUI();
-    }
-
-    function firstInteractionStart() {
-      // Music must never start from normal page taps, scrolling, or key presses.
-      // Fresh visits and refreshes stay paused/muted until the music controls are used.
-      if (hasUserInteracted || !userPaused) return;
-      hasUserInteracted = true;
-      resumePlayback();
+      if (userMuted) {
+        savedVolume = Math.max(0, Math.min(100, Math.round(v)));
+        syncVolumeUI(savedVolume);
+        persistVolume(savedVolume);
+        unmuteAndPlay();
+        return;
+      }
+      setVolumeLevel(v, { save: true, immediate: !!immediate });
     }
 
     volumeSliders.forEach(sl => {
-      sl.addEventListener('input', () => onVolumeSliderChange(sl));
-      sl.addEventListener('change', () => onVolumeSliderChange(sl));
+      sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
+      sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
     });
-    muteBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
-    playBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
-    prevBtns.forEach(btn => btn.addEventListener('click', goPrevious));
-    nextBtns.forEach(btn => btn.addEventListener('click', () => {
-      // Next must not start hidden music from a fresh paused/muted visit.
-      if (userPaused) return;
-      skipToRandom(MANUAL_FADE_MS);
-    }));
 
-    // Do not attach page-wide interaction listeners here. Only the dedicated
-    // music unmute/play buttons may start music from a paused/muted fresh visit.
-
-    const vol = readSavedVolume();
-    savedVolume = vol != null ? vol : DEFAULT_VOLUME;
-    userPaused = true;
-    hasUserInteracted = false;
-    [currentAudio, nextAudio].forEach(audio => {
-      try {
-        audio.pause();
-        audio.muted = true;
-        audio.setAttribute('muted', '');
-        audio.volume = 0;
-      } catch { /* ignore */ }
-    });
+    loadMusicSettings();
     syncVolumeUI(savedVolume);
-    updateMusicUI();
-    loadTrackList();
+    updateMuteUI();
+
+    // Preload one random track silently. This does not autoplay and should stay silent on fresh visits/refresh.
+    const preloadWhenIdle = () => preloadRandomTrack();
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(preloadWhenIdle, { timeout: 2500 });
+    } else {
+      setTimeout(preloadWhenIdle, 900);
+    }
   })();
 </script>
 
