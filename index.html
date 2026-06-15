@@ -1464,7 +1464,6 @@
     }
     .bg-music-controls {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 12px;
       margin-top: 6px;
@@ -1547,47 +1546,8 @@
     .bg-music-controls.is-muted-panel .bg-music-volume {
       opacity: 0.45;
     }
-    .bg-music-transport {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .bg-music-transport-btn {
-      min-width: 0;
-      padding: 9px 8px;
-      border-radius: 6px;
-      border: 1px solid rgba(201,168,76,0.34);
-      background: rgba(201,168,76,0.10);
-      color: var(--gold-light);
-      font-family: 'Cinzel', serif;
-      font-size: 0.62rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: transform 0.18s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease, opacity 0.22s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .bg-music-transport-btn:hover,
-    .bg-music-transport-btn:focus-visible {
-      transform: translateY(-1px);
-      background: rgba(201,168,76,0.18);
-      border-color: rgba(201,168,76,0.58);
-      color: var(--gold);
-      outline: none;
-    }
-    .bg-music-transport-btn:active {
-      transform: translateY(0) scale(0.97);
-    }
-    .bg-music-transport-btn:disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
     #mobile-view .bg-music-controls {
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 10px;
       padding: 10px 12px;
     }
@@ -3728,11 +3688,6 @@
               <input type="range" id="d-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
               <span class="bg-music-volume-value" id="d-bg-music-volume-value">20%</span>
             </div>
-            <div class="bg-music-transport" role="group" aria-label="Background music track controls">
-              <button type="button" class="bg-music-transport-btn" data-bg-music-prev aria-label="Previous background music track">Previous</button>
-              <button type="button" class="bg-music-transport-btn" data-bg-music-play aria-label="Pause background music">Pause</button>
-              <button type="button" class="bg-music-transport-btn" data-bg-music-next aria-label="Next background music track">Next</button>
-            </div>
           </div>
         </div>
       </div>
@@ -4058,11 +4013,6 @@
                 <label class="bg-music-volume-label" for="m-bg-music-volume">Vol</label>
                 <input type="range" id="m-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
                 <span class="bg-music-volume-value" id="m-bg-music-volume-value">20%</span>
-              </div>
-              <div class="bg-music-transport" role="group" aria-label="Background music track controls">
-                <button type="button" class="bg-music-transport-btn" data-bg-music-prev aria-label="Previous background music track">Previous</button>
-                <button type="button" class="bg-music-transport-btn" data-bg-music-play aria-label="Pause background music">Pause</button>
-                <button type="button" class="bg-music-transport-btn" data-bg-music-next aria-label="Next background music track">Next</button>
               </div>
             </div>
           </div>
@@ -4433,10 +4383,9 @@ Upon receiving a valid copyright notice, the website owner will promptly investi
 
 The website owner respects legitimate copyright claims and aims to resolve such matters quickly and professionally.</script>
 
-<!-- Hidden background music (GitHub MP3 shuffle player) -->
+<!-- Hidden background music (YouTube IFrame API) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
-  <audio id="bg-music-audio-current" preload="auto" playsinline muted></audio>
-  <audio id="bg-music-audio-next" preload="auto" playsinline muted></audio>
+  <div id="bg-music-player"></div>
 </div>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
@@ -14128,76 +14077,29 @@ function applyTranslationRtl(version) {
     if (e.target === this) closeImageShare();
   });
 
-  /* ══ Background music (GitHub MP3 JSON shuffle player with preload + crossfade) ══ */
+  /* ══ Background music (YouTube playlist, hidden player — muted until user unmutes) ══ */
   (function initBackgroundMusic() {
-    const MUSIC_JSON_URL = 'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/music/music.json';
+    const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
     const DEFAULT_VOLUME = 20;
     const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
     const LEGACY_PREFS_KEY = 'vg-bg-music-prefs';
-    const NORMAL_FADE_MS = 5000;
-    const MANUAL_FADE_MS = 5000;
-    const AUTO_PRELOAD_BEFORE_END = 18;
-    const AUTO_CROSSFADE_BEFORE_END = 5.2;
+    const QUALITY_144 = 'tiny';
 
-    let tracks = [];
-    let history = [];
-    let historyIndex = -1;
-    let currentIndex = -1;
-    let nextIndex = -1;
+    let ytPlayer = null;
+    let playerReady = false;
+    let playlistPicked = false;
     let savedVolume = DEFAULT_VOLUME;
-    let userPaused = true;
-    let hasUserInteracted = false;
-    let currentAudio = document.getElementById('bg-music-audio-current');
-    let nextAudio = document.getElementById('bg-music-audio-next');
-    let activeAudio = currentAudio;
-    let preloadedAudio = nextAudio;
-    let fadeTimer = 0;
-    let watchdogTimer = 0;
-    let autoTransitioning = false;
-    let isManualTransitioning = false;
-    let loadPromise = null;
-    let listLoaded = false;
+    let userMuted = true;
+    let isToggling = false;
+    let preloadDone = false;
+    let volumeRafId = 0;
+    let lastAppliedVolume = -1;
+    let pendingPlayAfterReady = false;
+    let ytApiLoading = false;
 
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
-    const playBtns = Array.from(document.querySelectorAll('[data-bg-music-play]'));
-    const prevBtns = Array.from(document.querySelectorAll('[data-bg-music-prev]'));
-    const nextBtns = Array.from(document.querySelectorAll('[data-bg-music-next]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
-
-    if (!currentAudio || !nextAudio) {
-      const wrap = document.getElementById('bg-music-wrap') || document.body;
-      currentAudio = document.createElement('audio');
-      currentAudio.id = 'bg-music-audio-current';
-      currentAudio.preload = 'auto';
-      currentAudio.muted = true;
-      currentAudio.setAttribute('muted', '');
-      currentAudio.setAttribute('playsinline', '');
-      nextAudio = document.createElement('audio');
-      nextAudio.id = 'bg-music-audio-next';
-      nextAudio.preload = 'auto';
-      nextAudio.muted = true;
-      nextAudio.setAttribute('muted', '');
-      nextAudio.setAttribute('playsinline', '');
-      wrap.appendChild(currentAudio);
-      wrap.appendChild(nextAudio);
-      activeAudio = currentAudio;
-      preloadedAudio = nextAudio;
-    }
-
-    [currentAudio, nextAudio].forEach(audio => {
-      audio.preload = 'auto';
-      audio.crossOrigin = 'anonymous';
-      audio.muted = true;
-      audio.setAttribute('muted', '');
-      audio.volume = 0;
-      audio.addEventListener('ended', () => {
-        if (!userPaused) transitionToPreloaded(NORMAL_FADE_MS, true);
-      });
-      audio.addEventListener('error', () => {
-        if (!userPaused && audio === activeAudio) setTimeout(() => skipToRandom(MANUAL_FADE_MS), 350);
-      });
-    });
 
     function readSavedVolume() {
       try {
@@ -14222,8 +14124,10 @@ function applyTranslationRtl(version) {
       } catch { /* private mode */ }
     }
 
-    function getTargetVolume() {
-      return Math.max(0, Math.min(1, savedVolume / 100));
+    function loadMusicSettings() {
+      userMuted = true;
+      const vol = readSavedVolume();
+      savedVolume = vol != null ? vol : DEFAULT_VOLUME;
     }
 
     function syncVolumeUI(vol) {
@@ -14237,359 +14141,315 @@ function applyTranslationRtl(version) {
       });
     }
 
-    function updateMusicUI() {
-      const mutedLike = userPaused;
+    function applyVolumeToPlayer(vol) {
+      if (!ytPlayer || typeof ytPlayer.setVolume !== 'function') return;
+      const v = Math.max(0, Math.min(100, Math.round(vol)));
+      if (v === lastAppliedVolume) return;
+      lastAppliedVolume = v;
+      try { ytPlayer.setVolume(v); } catch { /* ignore */ }
+    }
+
+    function setVolumeLevel(vol, options) {
+      options = options || {};
+      const v = Math.max(0, Math.min(100, Math.round(vol)));
+      savedVolume = v;
+      syncVolumeUI(v);
+      if (options.save !== false) persistVolume(v);
+      if (userMuted) return;
+      if (options.immediate) {
+        cancelAnimationFrame(volumeRafId);
+        applyVolumeToPlayer(v);
+        return;
+      }
+      cancelAnimationFrame(volumeRafId);
+      volumeRafId = requestAnimationFrame(() => applyVolumeToPlayer(v));
+    }
+
+    function updateMuteUI() {
       muteBtns.forEach(btn => {
-        btn.classList.toggle('is-muted', mutedLike);
-        btn.setAttribute('aria-label', mutedLike ? 'Play background music' : 'Pause background music');
-        btn.title = mutedLike ? 'Play music' : 'Pause music';
+        btn.classList.toggle('is-muted', userMuted);
+        btn.setAttribute('aria-label', userMuted ? 'Unmute background music' : 'Mute background music');
+        btn.title = userMuted ? 'Unmute music' : 'Mute music';
       });
-      playBtns.forEach(btn => {
-        btn.textContent = userPaused ? 'Play' : 'Pause';
-        btn.setAttribute('aria-label', userPaused ? 'Play background music' : 'Pause background music');
-      });
-      musicPanels.forEach(panel => panel.classList.toggle('is-muted-panel', mutedLike));
-      const disabled = listLoaded && !tracks.length;
-      [...prevBtns, ...nextBtns, ...playBtns, ...muteBtns].forEach(btn => { btn.disabled = disabled; });
+      musicPanels.forEach(panel => panel.classList.toggle('is-muted-panel', userMuted));
     }
 
-    function extractMp3Links(payload) {
-      const found = [];
-      const seen = new Set();
-      const add = value => {
-        if (typeof value !== 'string') return;
-        const clean = value.trim();
-        if (!/^https?:\/\//i.test(clean) || !/\.mp3(?:$|[?#])/i.test(clean)) return;
-        if (!seen.has(clean)) {
-          seen.add(clean);
-          found.push(clean);
-        }
-      };
-      const walk = value => {
-        if (typeof value === 'string') {
-          add(value);
-          return;
-        }
-        if (Array.isArray(value)) {
-          value.forEach(walk);
-          return;
-        }
-        if (value && typeof value === 'object') {
-          ['url', 'raw', 'raw_url', 'rawUrl', 'src', 'href', 'link', 'file', 'mp3'].forEach(key => add(value[key]));
-          Object.keys(value).forEach(key => walk(value[key]));
-        }
-      };
-      walk(payload);
-      return found;
-    }
-
-    async function loadTrackList() {
-      if (loadPromise) return loadPromise;
-      loadPromise = fetch(MUSIC_JSON_URL, { cache: 'no-store' })
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(data => {
-          tracks = extractMp3Links(data);
-          listLoaded = true;
-          if (!tracks.length) {
-            console.info('Background music: no valid MP3 links were found in the GitHub JSON file.');
-            return [];
-          }
-          updateMusicUI();
-          prepareInitialTracks();
-          return tracks;
-        })
-        .catch(err => {
-          console.info('Background music: could not load MP3 list from GitHub JSON.', err);
-          tracks = [];
-          listLoaded = true;
-          updateMusicUI();
-          return [];
-        });
-      return loadPromise;
-    }
-
-    function pickRandomIndex(exclude) {
-      if (!tracks.length) return -1;
-      if (tracks.length === 1) return 0;
-      let idx = Math.floor(Math.random() * tracks.length);
-      let tries = 0;
-      while ((idx === exclude || idx === currentIndex) && tries < 20) {
-        idx = Math.floor(Math.random() * tracks.length);
-        tries++;
-      }
-      return idx;
-    }
-
-    function setAudioSource(audio, index) {
-      if (!audio || index < 0 || !tracks[index]) return;
-      if (audio.dataset.trackIndex === String(index) && audio.src) return;
-      audio.pause();
-      audio.src = tracks[index];
-      audio.dataset.trackIndex = String(index);
-      audio.currentTime = 0;
-      audio.volume = 0;
-      try { audio.load(); } catch { /* ignore */ }
-    }
-
-    function preloadIndex(index) {
-      if (index < 0) return;
-      setAudioSource(preloadedAudio, index);
-      nextIndex = index;
-    }
-
-    function prepareNext(exclude) {
-      const idx = pickRandomIndex(exclude == null ? currentIndex : exclude);
-      preloadIndex(idx);
-    }
-
-    function prepareInitialTracks() {
-      if (!tracks.length || currentIndex >= 0) return;
-      currentIndex = pickRandomIndex(-1);
-      setAudioSource(activeAudio, currentIndex);
-      history = [currentIndex];
-      historyIndex = 0;
-      prepareNext(currentIndex);
-    }
-
-    function clearFade() {
-      if (fadeTimer) cancelAnimationFrame(fadeTimer);
-      fadeTimer = 0;
-    }
-
-    function applyLiveVolume() {
-      const target = getTargetVolume();
-      if (userPaused) return;
-      if (activeAudio && !isManualTransitioning && !autoTransitioning) activeAudio.volume = target;
-    }
-
-    function fadeBetween(fromAudio, toAudio, durationMs, done) {
-      clearFade();
-      const target = getTargetVolume();
-      const startFrom = fromAudio ? fromAudio.volume : 0;
-      const startTime = performance.now();
-      if (toAudio) toAudio.volume = 0;
-      const step = now => {
-        const pct = Math.min(1, (now - startTime) / durationMs);
-        const liveTarget = getTargetVolume();
-        if (fromAudio) fromAudio.volume = Math.max(0, startFrom * (1 - pct));
-        if (toAudio) toAudio.volume = Math.min(liveTarget, liveTarget * pct);
-        if (pct < 1) {
-          fadeTimer = requestAnimationFrame(step);
-        } else {
-          if (fromAudio) {
-            fromAudio.pause();
-            fromAudio.volume = 0;
-          }
-          if (toAudio && !userPaused) toAudio.volume = getTargetVolume();
-          fadeTimer = 0;
-          if (typeof done === 'function') done();
-        }
-      };
-      fadeTimer = requestAnimationFrame(step);
-    }
-
-    async function safePlay(audio) {
-      if (!audio) return false;
+    function forceQuality144() {
+      if (!ytPlayer || typeof ytPlayer.setPlaybackQuality !== 'function') return;
       try {
-        audio.muted = false;
-        audio.removeAttribute('muted');
-        const promise = audio.play();
-        if (promise && typeof promise.then === 'function') await promise;
-        return true;
-      } catch (err) {
-        userPaused = true;
-        updateMusicUI();
-        return false;
+        const q = ytPlayer.getPlaybackQuality && ytPlayer.getPlaybackQuality();
+        if (q !== QUALITY_144) ytPlayer.setPlaybackQuality(QUALITY_144);
+      } catch (e) { /* ignore */ }
+    }
+
+    function ensureMutedSilent() {
+      if (!ytPlayer) return;
+      try {
+        ytPlayer.setVolume(savedVolume);
+        ytPlayer.mute();
+      } catch (e) { /* ignore */ }
+    }
+
+    function applyAudiblePlaybackToPlayer() {
+      if (!ytPlayer || userMuted) return;
+      try {
+        lastAppliedVolume = -1;
+        ytPlayer.setVolume(savedVolume);
+        ytPlayer.unMute();
+        applyVolumeToPlayer(savedVolume);
+      } catch (e) { /* ignore */ }
+    }
+
+    function pickRandomPlaylistVideo(andPlay) {
+      if (!ytPlayer) return false;
+      const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+      if (!list || !list.length) return false;
+      playlistPicked = true;
+      const idx = Math.floor(Math.random() * list.length);
+      try {
+        ytPlayer.playVideoAt(idx);
+      } catch (e) {
+        try { ytPlayer.playVideo(); } catch (e2) { /* ignore */ }
       }
-    }
-
-    function swapPlayers() {
-      const oldActive = activeAudio;
-      activeAudio = preloadedAudio;
-      preloadedAudio = oldActive;
-    }
-
-    async function transitionToPreloaded(durationMs, fromAuto) {
-      if (!tracks.length || userPaused || isManualTransitioning || autoTransitioning) return;
-      if (nextIndex < 0) prepareNext(currentIndex);
-      if (nextIndex < 0) return;
-      autoTransitioning = !!fromAuto;
-      const outgoing = activeAudio;
-      const incoming = preloadedAudio;
-      incoming.currentTime = 0;
-      const started = await safePlay(incoming);
-      if (!started) {
-        autoTransitioning = false;
-        return;
-      }
-      const incomingIndex = nextIndex;
-      fadeBetween(outgoing, incoming, durationMs, () => {
-        swapPlayers();
-        currentIndex = incomingIndex;
-        if (history[historyIndex] !== currentIndex) {
-          history = history.slice(0, historyIndex + 1);
-          history.push(currentIndex);
-          historyIndex = history.length - 1;
-        }
-        nextIndex = -1;
-        prepareNext(currentIndex);
-        autoTransitioning = false;
-      });
-    }
-
-    async function startPlayback() {
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (!tracks.length) return;
-      prepareInitialTracks();
-      userPaused = false;
-      updateMusicUI();
-      activeAudio.volume = 0;
-      const started = await safePlay(activeAudio);
-      if (!started) return;
-      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
-      startWatchdog();
-    }
-
-    function pausePlayback() {
-      userPaused = true;
-      updateMusicUI();
-      clearFade();
-      try { activeAudio.pause(); activeAudio.muted = true; activeAudio.setAttribute('muted', ''); } catch { /* ignore */ }
-      try { preloadedAudio.pause(); preloadedAudio.currentTime = 0; preloadedAudio.volume = 0; preloadedAudio.muted = true; preloadedAudio.setAttribute('muted', ''); } catch { /* ignore */ }
-    }
-
-    async function resumePlayback() {
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (!tracks.length) return;
-      prepareInitialTracks();
-      userPaused = false;
-      updateMusicUI();
-      const started = await safePlay(activeAudio);
-      if (!started) return;
-      fadeBetween(null, activeAudio, NORMAL_FADE_MS);
-      startWatchdog();
-    }
-
-    function togglePlayback() {
-      if (userPaused) resumePlayback();
-      else pausePlayback();
-    }
-
-    async function skipToIndex(index, durationMs, addToHistory) {
-      if (!tracks.length || index < 0) return;
-      hasUserInteracted = true;
-      await loadTrackList();
-      if (isManualTransitioning) return;
-      isManualTransitioning = true;
-      userPaused = false;
-      updateMusicUI();
-      setAudioSource(preloadedAudio, index);
-      const outgoing = activeAudio;
-      const incoming = preloadedAudio;
-      incoming.currentTime = 0;
-      const started = await safePlay(incoming);
-      if (!started) {
-        isManualTransitioning = false;
-        return;
-      }
-      fadeBetween(outgoing, incoming, durationMs, () => {
-        swapPlayers();
-        currentIndex = index;
-        if (addToHistory) {
-          history = history.slice(0, historyIndex + 1);
-          history.push(currentIndex);
-          historyIndex = history.length - 1;
-        }
-        nextIndex = -1;
-        prepareNext(currentIndex);
-        isManualTransitioning = false;
-      });
-    }
-
-    function skipToRandom(durationMs) {
-      const idx = pickRandomIndex(currentIndex);
-      skipToIndex(idx, durationMs, true);
-    }
-
-    function goPrevious() {
-      // Previous must not start hidden music from a fresh paused/muted visit.
-      if (userPaused || !tracks.length) return;
-      if (historyIndex > 0) {
-        historyIndex--;
-        skipToIndex(history[historyIndex], MANUAL_FADE_MS, false);
+      if (userMuted) {
+        ensureMutedSilent();
       } else {
-        skipToRandom(MANUAL_FADE_MS);
+        applyAudiblePlaybackToPlayer();
+      }
+      forceQuality144();
+      if ((!andPlay && userMuted) || userMuted) {
+        setTimeout(() => {
+          if (!ytPlayer) return;
+          if (userMuted) {
+            try { ytPlayer.pauseVideo(); } catch (e) { /* ignore */ }
+          }
+        }, 80);
+      }
+      return true;
+    }
+
+    function tryPickRandomPreload(attempt, andPlay) {
+      if (playlistPicked || !ytPlayer) return;
+      if (pickRandomPlaylistVideo(!!andPlay)) return;
+      if (attempt < 12) setTimeout(() => tryPickRandomPreload(attempt + 1, andPlay), 350);
+    }
+
+    function loadPlaylistIntoPlayer() {
+      try {
+        ytPlayer.loadPlaylist({
+          listType: 'playlist',
+          list: PLAYLIST_ID,
+          index: 0,
+          startSeconds: 0,
+          suggestedQuality: QUALITY_144
+        });
+      } catch (e) { /* ignore */ }
+    }
+
+    function preloadPlaylist() {
+      if (!ytPlayer || !playerReady || preloadDone) return;
+      preloadDone = true;
+      playlistPicked = false;
+      ensureMutedSilent();
+      loadPlaylistIntoPlayer();
+      setTimeout(() => tryPickRandomPreload(0, !userMuted), 400);
+    }
+
+    function muteAndStop() {
+      userMuted = true;
+      pendingPlayAfterReady = false;
+      updateMuteUI();
+      if (!ytPlayer) return;
+      try {
+        ytPlayer.mute();
+        ytPlayer.pauseVideo();
+      } catch (e) { /* ignore */ }
+    }
+
+    function unmuteAndPlay() {
+      userMuted = false;
+      pendingPlayAfterReady = true;
+      updateMuteUI();
+      if (!ytPlayer || !playerReady) {
+        injectYouTubeApi();
+        return;
+      }
+
+      const startPlayback = () => {
+        if (!ytPlayer || userMuted) return;
+        pendingPlayAfterReady = false;
+        try {
+          lastAppliedVolume = -1;
+          ytPlayer.setVolume(savedVolume);
+          ytPlayer.unMute();
+          forceQuality144();
+          const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+          if (!playlistPicked || state === YT.PlayerState.ENDED || state === YT.PlayerState.UNSTARTED) {
+            playlistPicked = false;
+            if (!pickRandomPlaylistVideo(true)) ytPlayer.playVideo();
+          } else if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+            ytPlayer.playVideo();
+          }
+        } catch (e) { /* ignore */ }
+      };
+
+      if (playerReady) {
+        if (!preloadDone) preloadPlaylist();
+        startPlayback();
+        setTimeout(startPlayback, 450);
+        setTimeout(startPlayback, 1100);
       }
     }
 
-    function startWatchdog() {
-      clearInterval(watchdogTimer);
-      watchdogTimer = setInterval(() => {
-        if (userPaused || !tracks.length || !activeAudio || !Number.isFinite(activeAudio.duration)) return;
-        const remaining = activeAudio.duration - activeAudio.currentTime;
-        if (remaining <= AUTO_PRELOAD_BEFORE_END && nextIndex < 0) prepareNext(currentIndex);
-        if (remaining <= AUTO_CROSSFADE_BEFORE_END && !autoTransitioning && !isManualTransitioning) {
-          transitionToPreloaded(NORMAL_FADE_MS, true);
-        }
-      }, 700);
+    function toggleMute() {
+      if (isToggling) return;
+      isToggling = true;
+      setTimeout(() => { isToggling = false; }, 420);
+      if (userMuted) unmuteAndPlay();
+      else muteAndStop();
     }
 
-    function onVolumeSliderChange(sl) {
+    function onPlayerReady(event) {
+      playerReady = true;
+      ytPlayer = event.target;
+      ensureMutedSilent();
+      preloadPlaylist();
+      if (pendingPlayAfterReady && !userMuted) {
+        setTimeout(() => unmuteAndPlay(), 250);
+      }
+    }
+
+    function onPlayerStateChange(event) {
+      if (!window.YT || !YT.PlayerState) return;
+
+      if (!playlistPicked && (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.PAUSED)) {
+        pickRandomPlaylistVideo(!userMuted);
+      }
+
+      if (event.data === YT.PlayerState.PLAYING) {
+        forceQuality144();
+        if (userMuted) {
+          try {
+            ytPlayer.mute();
+            ytPlayer.pauseVideo();
+          } catch (e) { /* ignore */ }
+        } else {
+          try {
+            ytPlayer.unMute();
+            applyVolumeToPlayer(savedVolume);
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      if (event.data === YT.PlayerState.ENDED && !userMuted) {
+        playlistPicked = false;
+        pickRandomPlaylistVideo(true);
+      }
+    }
+
+    muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
+
+    function onVolumeSliderChange(sl, immediate) {
       const v = parseInt(sl.value, 10);
       if (Number.isNaN(v)) return;
-      savedVolume = Math.max(0, Math.min(100, Math.round(v)));
-      persistVolume(savedVolume);
-      syncVolumeUI(savedVolume);
-      applyLiveVolume();
-      // Volume changes must only save/apply the volume. They must not start music.
-      // Fresh visits and refreshes stay silent until the dedicated unmute/play button is tapped.
-      updateMusicUI();
-    }
-
-    function firstInteractionStart() {
-      // Music must never start from normal page taps, scrolling, or key presses.
-      // Fresh visits and refreshes stay paused/muted until the music controls are used.
-      if (hasUserInteracted || !userPaused) return;
-      hasUserInteracted = true;
-      resumePlayback();
+      if (userMuted) {
+        savedVolume = Math.max(0, Math.min(100, Math.round(v)));
+        syncVolumeUI(savedVolume);
+        persistVolume(savedVolume);
+        unmuteAndPlay();
+        return;
+      }
+      setVolumeLevel(v, { save: true, immediate: !!immediate });
     }
 
     volumeSliders.forEach(sl => {
-      sl.addEventListener('input', () => onVolumeSliderChange(sl));
-      sl.addEventListener('change', () => onVolumeSliderChange(sl));
+      sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
+      sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
     });
-    muteBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
-    playBtns.forEach(btn => btn.addEventListener('click', togglePlayback));
-    prevBtns.forEach(btn => btn.addEventListener('click', goPrevious));
-    nextBtns.forEach(btn => btn.addEventListener('click', () => {
-      // Next must not start hidden music from a fresh paused/muted visit.
-      if (userPaused) return;
-      skipToRandom(MANUAL_FADE_MS);
-    }));
 
-    // Do not attach page-wide interaction listeners here. Only the dedicated
-    // music unmute/play buttons may start music from a paused/muted fresh visit.
-
-    const vol = readSavedVolume();
-    savedVolume = vol != null ? vol : DEFAULT_VOLUME;
-    userPaused = true;
-    hasUserInteracted = false;
-    [currentAudio, nextAudio].forEach(audio => {
-      try {
-        audio.pause();
-        audio.muted = true;
-        audio.setAttribute('muted', '');
-        audio.volume = 0;
-      } catch { /* ignore */ }
-    });
+    loadMusicSettings();
     syncVolumeUI(savedVolume);
-    updateMusicUI();
-    loadTrackList();
+    updateMuteUI();
+
+    function createPlayer() {
+      ytApiLoading = false;
+      if (ytPlayer) return;
+      const origin = window.location.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : undefined;
+      ytPlayer = new YT.Player('bg-music-player', {
+        height: '1',
+        width: '1',
+        playerVars: {
+          autoplay: 0,
+          mute: 1,
+          controls: 0,
+          disablekb: 1,
+          enablejsapi: 1,
+          fs: 0,
+          iv_load_policy: 3,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          list: PLAYLIST_ID,
+          listType: 'playlist',
+          origin: origin
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+          onPlaybackQualityChange: forceQuality144
+        }
+      });
+    }
+
+    const prevYtReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function() {
+      if (typeof prevYtReady === 'function') prevYtReady();
+      createPlayer();
+    };
+
+    function injectYouTubeApi() {
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+        return;
+      }
+      if (ytApiLoading || document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        let tries = 0;
+        const waitForApi = setInterval(() => {
+          tries++;
+          if (window.YT && window.YT.Player) {
+            clearInterval(waitForApi);
+            createPlayer();
+          } else if (tries > 40) {
+            clearInterval(waitForApi);
+          }
+        }, 250);
+        return;
+      }
+      ytApiLoading = true;
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.async = true;
+      const first = document.getElementsByTagName('script')[0];
+      first.parentNode.insertBefore(tag, first);
+    }
+
+    function scheduleYouTubeApi() {
+      const run = () => injectYouTubeApi();
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(run, { timeout: 8000 });
+      } else {
+        setTimeout(run, 2500);
+      }
+    }
+
+    // Defer YouTube on phones — it competes with first interaction on slow CPUs.
+    if ((typeof getLayoutMode === 'function' && getLayoutMode() === 'mobile') || window.innerWidth <= 768 || (typeof isRestrictedMobileBrowser === 'function' && isRestrictedMobileBrowser())) {
+      scheduleYouTubeApi();
+    } else {
+      injectYouTubeApi();
+    }
   })();
 </script>
 
