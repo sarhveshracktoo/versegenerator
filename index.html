@@ -4383,9 +4383,9 @@ Upon receiving a valid copyright notice, the website owner will promptly investi
 
 The website owner respects legitimate copyright claims and aims to resolve such matters quickly and professionally.</script>
 
-<!-- Hidden background music (YouTube IFrame API) -->
+<!-- Hidden background music (JSON Opus/MP3 audio player) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
-  <div id="bg-music-player"></div>
+  <audio id="bg-music-player" preload="auto" playsinline></audio>
 </div>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
@@ -14077,29 +14077,34 @@ function applyTranslationRtl(version) {
     if (e.target === this) closeImageShare();
   });
 
-  /* ══ Background music (YouTube playlist, hidden player — muted until user unmutes) ══ */
+  /* ══ Background music (GitHub JSON Opus/MP3 player — muted until user unmutes) ══ */
   (function initBackgroundMusic() {
-    const PLAYLIST_ID = 'PLHaStyVnkRrNYoC_WxUXbCgyROPLSjqQT';
+    const MUSIC_JSON_URL = 'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/opus/music.json';
     const DEFAULT_VOLUME = 20;
+    const FADE_IN_MS = 5000;
     const VOLUME_STORAGE_KEY = 'vg-bg-music-volume';
     const LEGACY_PREFS_KEY = 'vg-bg-music-prefs';
-    const QUALITY_144 = 'tiny';
 
-    let ytPlayer = null;
-    let playerReady = false;
-    let playlistPicked = false;
-    let savedVolume = DEFAULT_VOLUME;
-    let userMuted = true;
-    let isToggling = false;
-    let preloadDone = false;
-    let volumeRafId = 0;
-    let lastAppliedVolume = -1;
-    let pendingPlayAfterReady = false;
-    let ytApiLoading = false;
-
+    const audio = document.getElementById('bg-music-player');
     const muteBtns = Array.from(document.querySelectorAll('[data-bg-music-toggle]'));
     const volumeSliders = Array.from(document.querySelectorAll('.bg-music-volume'));
     const musicPanels = Array.from(document.querySelectorAll('.bg-music-controls'));
+
+    if (!audio || !muteBtns.length) return;
+
+    let savedVolume = DEFAULT_VOLUME;
+    let userMuted = true;
+    let isToggling = false;
+    let catalogPromise = null;
+    let musicCatalog = [];
+    let currentTrackUrl = '';
+    let fadeRafId = 0;
+    let fetchController = null;
+
+    audio.preload = 'auto';
+    audio.loop = false;
+    audio.muted = true;
+    audio.volume = 0;
 
     function readSavedVolume() {
       try {
@@ -14141,30 +14146,6 @@ function applyTranslationRtl(version) {
       });
     }
 
-    function applyVolumeToPlayer(vol) {
-      if (!ytPlayer || typeof ytPlayer.setVolume !== 'function') return;
-      const v = Math.max(0, Math.min(100, Math.round(vol)));
-      if (v === lastAppliedVolume) return;
-      lastAppliedVolume = v;
-      try { ytPlayer.setVolume(v); } catch { /* ignore */ }
-    }
-
-    function setVolumeLevel(vol, options) {
-      options = options || {};
-      const v = Math.max(0, Math.min(100, Math.round(vol)));
-      savedVolume = v;
-      syncVolumeUI(v);
-      if (options.save !== false) persistVolume(v);
-      if (userMuted) return;
-      if (options.immediate) {
-        cancelAnimationFrame(volumeRafId);
-        applyVolumeToPlayer(v);
-        return;
-      }
-      cancelAnimationFrame(volumeRafId);
-      volumeRafId = requestAnimationFrame(() => applyVolumeToPlayer(v));
-    }
-
     function updateMuteUI() {
       muteBtns.forEach(btn => {
         btn.classList.toggle('is-muted', userMuted);
@@ -14174,131 +14155,194 @@ function applyTranslationRtl(version) {
       musicPanels.forEach(panel => panel.classList.toggle('is-muted-panel', userMuted));
     }
 
-    function forceQuality144() {
-      if (!ytPlayer || typeof ytPlayer.setPlaybackQuality !== 'function') return;
+    function supportsOpus() {
       try {
-        const q = ytPlayer.getPlaybackQuality && ytPlayer.getPlaybackQuality();
-        if (q !== QUALITY_144) ytPlayer.setPlaybackQuality(QUALITY_144);
-      } catch (e) { /* ignore */ }
-    }
-
-    function ensureMutedSilent() {
-      if (!ytPlayer) return;
-      try {
-        ytPlayer.setVolume(savedVolume);
-        ytPlayer.mute();
-      } catch (e) { /* ignore */ }
-    }
-
-    function applyAudiblePlaybackToPlayer() {
-      if (!ytPlayer || userMuted) return;
-      try {
-        lastAppliedVolume = -1;
-        ytPlayer.setVolume(savedVolume);
-        ytPlayer.unMute();
-        applyVolumeToPlayer(savedVolume);
-      } catch (e) { /* ignore */ }
-    }
-
-    function pickRandomPlaylistVideo(andPlay) {
-      if (!ytPlayer) return false;
-      const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
-      if (!list || !list.length) return false;
-      playlistPicked = true;
-      const idx = Math.floor(Math.random() * list.length);
-      try {
-        ytPlayer.playVideoAt(idx);
-      } catch (e) {
-        try { ytPlayer.playVideo(); } catch (e2) { /* ignore */ }
+        return !!(
+          audio.canPlayType('audio/ogg; codecs="opus"') ||
+          audio.canPlayType('audio/opus') ||
+          audio.canPlayType('audio/webm; codecs="opus"')
+        );
+      } catch {
+        return false;
       }
-      if (userMuted) {
-        ensureMutedSilent();
-      } else {
-        applyAudiblePlaybackToPlayer();
+    }
+
+    function supportsMp3() {
+      try {
+        return !!audio.canPlayType('audio/mpeg');
+      } catch {
+        return true;
       }
-      forceQuality144();
-      if ((!andPlay && userMuted) || userMuted) {
-        setTimeout(() => {
-          if (!ytPlayer) return;
-          if (userMuted) {
-            try { ytPlayer.pauseVideo(); } catch (e) { /* ignore */ }
-          }
-        }, 80);
+    }
+
+    function toMp3Fallback(url) {
+      if (!url || typeof url !== 'string') return '';
+      return url
+        .replace('/refs/heads/main/opus/', '/refs/heads/main/music/')
+        .replace('/main/opus/', '/main/music/')
+        .replace(/\.opus(\?.*)?$/i, '.mp3$1')
+        .replace(/\.ogg(\?.*)?$/i, '.mp3$1')
+        .replace(/\.webm(\?.*)?$/i, '.mp3$1');
+    }
+
+    function normalizeTrack(item) {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        const url = item.trim();
+        if (!url) return null;
+        if (/\.opus(\?|$)/i.test(url) || /\/opus\//i.test(url)) {
+          return { opus: url, mp3: toMp3Fallback(url) };
+        }
+        if (/\.mp3(\?|$)/i.test(url)) return { opus: '', mp3: url };
+        return { opus: url, mp3: toMp3Fallback(url) };
+      }
+      if (typeof item === 'object') {
+        const opus = String(item.opus || item.opusUrl || item.ogg || item.webm || item.url || item.src || '').trim();
+        const mp3 = String(item.mp3 || item.mp3Url || item.fallback || item.fallbackMp3 || '').trim() || toMp3Fallback(opus);
+        if (!opus && !mp3) return null;
+        return { opus, mp3 };
+      }
+      return null;
+    }
+
+    function extractTracks(data) {
+      let list = data;
+      if (data && !Array.isArray(data) && typeof data === 'object') {
+        list = data.tracks || data.music || data.files || data.songs || data.items || [];
+      }
+      if (!Array.isArray(list)) return [];
+      const canOpus = supportsOpus();
+      const canMp3 = supportsMp3();
+      const seen = new Set();
+      return list
+        .map(normalizeTrack)
+        .map(track => {
+          if (!track) return '';
+          const chosen = canOpus && track.opus ? track.opus : (canMp3 && track.mp3 ? track.mp3 : track.opus || track.mp3 || '');
+          return String(chosen || '').trim();
+        })
+        .filter(url => {
+          if (!url || seen.has(url)) return false;
+          seen.add(url);
+          return /^https?:\/\//i.test(url) || /^\.\/?/i.test(url) || /^\//.test(url);
+        });
+    }
+
+    async function loadMusicCatalog(forceRefresh) {
+      if (catalogPromise && !forceRefresh) return catalogPromise;
+      if (fetchController) fetchController.abort();
+      fetchController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const url = MUSIC_JSON_URL + (MUSIC_JSON_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
+      catalogPromise = fetch(url, {
+        cache: 'no-store',
+        signal: fetchController ? fetchController.signal : undefined,
+        headers: { 'Accept': 'application/json,text/plain,*/*' }
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Music JSON failed: ' + res.status);
+          return res.json();
+        })
+        .then(data => {
+          const tracks = extractTracks(data);
+          if (tracks.length) musicCatalog = tracks;
+          return musicCatalog;
+        })
+        .catch(err => {
+          if (err && err.name !== 'AbortError') console.warn('Background music catalog unavailable:', err);
+          return musicCatalog;
+        })
+        .finally(() => { fetchController = null; });
+      return catalogPromise;
+    }
+
+    function pickRandomTrack() {
+      if (!musicCatalog.length) return '';
+      if (musicCatalog.length === 1) return musicCatalog[0];
+      let next = currentTrackUrl;
+      let guard = 0;
+      while (next === currentTrackUrl && guard < 12) {
+        next = musicCatalog[Math.floor(Math.random() * musicCatalog.length)];
+        guard++;
+      }
+      return next || musicCatalog[0];
+    }
+
+    function stopFade() {
+      if (fadeRafId) cancelAnimationFrame(fadeRafId);
+      fadeRafId = 0;
+    }
+
+    function targetVolume() {
+      return Math.max(0, Math.min(1, savedVolume / 100));
+    }
+
+    function fadeInAudio() {
+      stopFade();
+      const target = targetVolume();
+      const startTime = performance.now();
+      audio.volume = 0;
+      function tick(now) {
+        if (userMuted || audio.paused) {
+          stopFade();
+          return;
+        }
+        const progress = Math.min(1, (now - startTime) / FADE_IN_MS);
+        audio.volume = Math.min(target, target * progress);
+        if (progress < 1) fadeRafId = requestAnimationFrame(tick);
+        else fadeRafId = 0;
+      }
+      fadeRafId = requestAnimationFrame(tick);
+    }
+
+    function applyCurrentVolume(immediate) {
+      if (userMuted) return;
+      if (immediate) {
+        stopFade();
+        audio.volume = targetVolume();
+      }
+    }
+
+    async function prepareRandomTrack(forceRefresh) {
+      await loadMusicCatalog(!!forceRefresh);
+      const next = pickRandomTrack();
+      if (!next) return false;
+      if (audio.src !== next) {
+        currentTrackUrl = next;
+        audio.src = next;
+        audio.load();
       }
       return true;
     }
 
-    function tryPickRandomPreload(attempt, andPlay) {
-      if (playlistPicked || !ytPlayer) return;
-      if (pickRandomPlaylistVideo(!!andPlay)) return;
-      if (attempt < 12) setTimeout(() => tryPickRandomPreload(attempt + 1, andPlay), 350);
-    }
-
-    function loadPlaylistIntoPlayer() {
+    async function playRandomTrack(forceRefresh) {
+      const ready = await prepareRandomTrack(!!forceRefresh);
+      if (!ready || userMuted) return;
       try {
-        ytPlayer.loadPlaylist({
-          listType: 'playlist',
-          list: PLAYLIST_ID,
-          index: 0,
-          startSeconds: 0,
-          suggestedQuality: QUALITY_144
-        });
-      } catch (e) { /* ignore */ }
-    }
-
-    function preloadPlaylist() {
-      if (!ytPlayer || !playerReady || preloadDone) return;
-      preloadDone = true;
-      playlistPicked = false;
-      ensureMutedSilent();
-      loadPlaylistIntoPlayer();
-      setTimeout(() => tryPickRandomPreload(0, !userMuted), 400);
+        audio.muted = false;
+        audio.volume = 0;
+        await audio.play();
+        fadeInAudio();
+      } catch (err) {
+        console.warn('Background music playback blocked or unavailable:', err);
+        muteAndStop();
+      }
     }
 
     function muteAndStop() {
       userMuted = true;
-      pendingPlayAfterReady = false;
+      stopFade();
       updateMuteUI();
-      if (!ytPlayer) return;
       try {
-        ytPlayer.mute();
-        ytPlayer.pauseVideo();
-      } catch (e) { /* ignore */ }
+        audio.pause();
+        audio.muted = true;
+        audio.volume = 0;
+      } catch { /* ignore */ }
     }
 
     function unmuteAndPlay() {
       userMuted = false;
-      pendingPlayAfterReady = true;
       updateMuteUI();
-      if (!ytPlayer || !playerReady) {
-        injectYouTubeApi();
-        return;
-      }
-
-      const startPlayback = () => {
-        if (!ytPlayer || userMuted) return;
-        pendingPlayAfterReady = false;
-        try {
-          lastAppliedVolume = -1;
-          ytPlayer.setVolume(savedVolume);
-          ytPlayer.unMute();
-          forceQuality144();
-          const state = ytPlayer.getPlayerState && ytPlayer.getPlayerState();
-          if (!playlistPicked || state === YT.PlayerState.ENDED || state === YT.PlayerState.UNSTARTED) {
-            playlistPicked = false;
-            if (!pickRandomPlaylistVideo(true)) ytPlayer.playVideo();
-          } else if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
-            ytPlayer.playVideo();
-          }
-        } catch (e) { /* ignore */ }
-      };
-
-      if (playerReady) {
-        if (!preloadDone) preloadPlaylist();
-        startPlayback();
-        setTimeout(startPlayback, 450);
-        setTimeout(startPlayback, 1100);
-      }
+      void playRandomTrack(true);
     }
 
     function toggleMute() {
@@ -14309,146 +14353,43 @@ function applyTranslationRtl(version) {
       else muteAndStop();
     }
 
-    function onPlayerReady(event) {
-      playerReady = true;
-      ytPlayer = event.target;
-      ensureMutedSilent();
-      preloadPlaylist();
-      if (pendingPlayAfterReady && !userMuted) {
-        setTimeout(() => unmuteAndPlay(), 250);
-      }
-    }
-
-    function onPlayerStateChange(event) {
-      if (!window.YT || !YT.PlayerState) return;
-
-      if (!playlistPicked && (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.PAUSED)) {
-        pickRandomPlaylistVideo(!userMuted);
-      }
-
-      if (event.data === YT.PlayerState.PLAYING) {
-        forceQuality144();
-        if (userMuted) {
-          try {
-            ytPlayer.mute();
-            ytPlayer.pauseVideo();
-          } catch (e) { /* ignore */ }
-        } else {
-          try {
-            ytPlayer.unMute();
-            applyVolumeToPlayer(savedVolume);
-          } catch (e) { /* ignore */ }
-        }
-      }
-
-      if (event.data === YT.PlayerState.ENDED && !userMuted) {
-        playlistPicked = false;
-        pickRandomPlaylistVideo(true);
-      }
-    }
-
-    muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
-
     function onVolumeSliderChange(sl, immediate) {
       const v = parseInt(sl.value, 10);
       if (Number.isNaN(v)) return;
+      savedVolume = Math.max(0, Math.min(100, Math.round(v)));
+      syncVolumeUI(savedVolume);
+      persistVolume(savedVolume);
       if (userMuted) {
-        savedVolume = Math.max(0, Math.min(100, Math.round(v)));
-        syncVolumeUI(savedVolume);
-        persistVolume(savedVolume);
         unmuteAndPlay();
         return;
       }
-      setVolumeLevel(v, { save: true, immediate: !!immediate });
+      applyCurrentVolume(!!immediate);
     }
 
+    muteBtns.forEach(btn => btn.addEventListener('click', toggleMute));
     volumeSliders.forEach(sl => {
       sl.addEventListener('input', () => onVolumeSliderChange(sl, false));
       sl.addEventListener('change', () => onVolumeSliderChange(sl, true));
+    });
+
+    audio.addEventListener('ended', () => {
+      if (!userMuted) void playRandomTrack(true);
+    });
+
+    audio.addEventListener('error', () => {
+      if (!userMuted) setTimeout(() => { void playRandomTrack(true); }, 700);
     });
 
     loadMusicSettings();
     syncVolumeUI(savedVolume);
     updateMuteUI();
 
-    function createPlayer() {
-      ytApiLoading = false;
-      if (ytPlayer) return;
-      const origin = window.location.origin && window.location.origin !== 'null'
-        ? window.location.origin
-        : undefined;
-      ytPlayer = new YT.Player('bg-music-player', {
-        height: '1',
-        width: '1',
-        playerVars: {
-          autoplay: 0,
-          mute: 1,
-          controls: 0,
-          disablekb: 1,
-          enablejsapi: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-          list: PLAYLIST_ID,
-          listType: 'playlist',
-          origin: origin
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-          onPlaybackQualityChange: forceQuality144
-        }
-      });
-    }
-
-    const prevYtReady = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = function() {
-      if (typeof prevYtReady === 'function') prevYtReady();
-      createPlayer();
-    };
-
-    function injectYouTubeApi() {
-      if (window.YT && window.YT.Player) {
-        createPlayer();
-        return;
-      }
-      if (ytApiLoading || document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        let tries = 0;
-        const waitForApi = setInterval(() => {
-          tries++;
-          if (window.YT && window.YT.Player) {
-            clearInterval(waitForApi);
-            createPlayer();
-          } else if (tries > 40) {
-            clearInterval(waitForApi);
-          }
-        }, 250);
-        return;
-      }
-      ytApiLoading = true;
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      tag.async = true;
-      const first = document.getElementsByTagName('script')[0];
-      first.parentNode.insertBefore(tag, first);
-    }
-
-    function scheduleYouTubeApi() {
-      const run = () => injectYouTubeApi();
-      if (typeof requestIdleCallback === 'function') {
-        requestIdleCallback(run, { timeout: 8000 });
-      } else {
-        setTimeout(run, 2500);
-      }
-    }
-
-    // Defer YouTube on phones — it competes with first interaction on slow CPUs.
-    if ((typeof getLayoutMode === 'function' && getLayoutMode() === 'mobile') || window.innerWidth <= 768 || (typeof isRestrictedMobileBrowser === 'function' && isRestrictedMobileBrowser())) {
-      scheduleYouTubeApi();
+    // Preload the JSON link list only. This does not play audio and it refetches with
+    // cache-busting before playback/next song so newly added GitHub links start working.
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(() => { void loadMusicCatalog(true); }, { timeout: 6000 });
     } else {
-      injectYouTubeApi();
+      setTimeout(() => { void loadMusicCatalog(true); }, 2500);
     }
   })();
 </script>
