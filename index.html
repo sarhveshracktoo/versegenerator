@@ -2249,6 +2249,8 @@
       .btn-generate { padding: 14px; font-size: 0.9rem; margin-bottom: 18px; }
       .btn-action { min-height: 44px; padding: 10px 14px; }
       #d-verseDisplay { padding: 18px 14px; min-height: 100px; }
+      #d-verseDisplay.read-swipeable { touch-action: pan-y; }
+      #d-verseDisplay.read-display-active .read-display-scroll-btn { display: none !important; }
       #d-imageCanvas { max-width: min(460px, 78vw); max-height: 78vh; }
       .image-action-row { gap: 10px; }
       .fav-panel { max-height: 220px; }
@@ -2269,6 +2271,19 @@
       .controls { grid-template-columns: 1fr; }
       .control-group.full-width { grid-column: 1; }
       .read-bible-row { grid-template-columns: 1fr; }
+      /* Tablet portrait Read Bible should behave like mobile: full vertical passage, no inner passage scroller/button. */
+      #d-verseDisplay.read-display-active {
+        max-height: none !important;
+        overflow: visible !important;
+        overscroll-behavior: auto !important;
+      }
+      #d-verseDisplay.read-display-active::after {
+        display: none !important;
+        content: none !important;
+      }
+      #d-verseDisplay.read-display-active .read-display-scroll-btn {
+        display: none !important;
+      }
     }
     body.layout-tablet .btn-generate,
     body.layout-tablet .btn-action,
@@ -11290,10 +11305,41 @@ function applyTranslationRtl(version) {
     setTimeout(updateDesktopReadScrollButtonState, 260);
   }
 
+  function isTabletLayout() {
+    const layout = document.documentElement.getAttribute('data-layout') || '';
+    if (layout === 'tablet' || document.body?.classList?.contains('layout-tablet')) return true;
+    return !!(window.matchMedia && window.matchMedia('(min-width: 769px) and (max-width: 1100px)').matches);
+  }
+
+  function isTabletPortraitLayout() {
+    return isTabletLayout() && !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
+  }
+
+  function applyTabletReadDisplayBehavior(display) {
+    if (!display) return;
+    display.classList.add('read-display-active', 'read-swipeable');
+    const tabletBtn = display.querySelector('.read-display-scroll-btn');
+    if (tabletBtn) tabletBtn.remove();
+    if (isTabletPortraitLayout()) {
+      display.style.maxHeight = 'none';
+      display.style.overflow = 'visible';
+      display.style.overscrollBehavior = 'auto';
+    } else {
+      display.style.maxHeight = '';
+      display.style.overflow = '';
+      display.style.overscrollBehavior = '';
+    }
+  }
+
   function ensureDesktopReadDisplayScrollButton() {
     const display = document.getElementById('d-verseDisplay');
     if (!display) return;
     display.classList.add('read-display-active');
+
+    if (isTabletLayout()) {
+      applyTabletReadDisplayBehavior(display);
+      return;
+    }
 
     // Compact desktop mode must keep the original Backup-style reading panel:
     // no floating scroll button and no internal scrolling limit.
@@ -13416,28 +13462,54 @@ function applyTranslationRtl(version) {
   }
 
   function initReadSwipe() {
-    const el = document.getElementById('m-verseDisplay');
-    if (!el || el.dataset.swipeBound) return;
+    bindReadSwipeForDisplay('m');
+    bindReadSwipeForDisplay('d');
+  }
+
+  function bindReadSwipeForDisplay(p) {
+    const el = document.getElementById(p + '-verseDisplay');
+    if (!el || el.dataset.swipeBound === '1') return;
     el.dataset.swipeBound = '1';
     let startX = 0, startY = 0, tracking = false;
     const SWIPE_MIN = 56;
     const VERT_MAX = 72;
 
+    const isSwipeAllowed = () => {
+      if (!isReadBibleMode(p)) return false;
+      // Mobile uses m-verseDisplay. Tablets use the desktop shell, so allow d-verseDisplay
+      // swipes only on tablet sizes, including portrait and landscape.
+      return p === 'm' || (p === 'd' && isTabletLayout());
+    };
+
     el.addEventListener('touchstart', (e) => {
-      if (!isReadBibleMode('m') || e.touches.length !== 1) return;
+      if (!isSwipeAllowed() || e.touches.length !== 1) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       tracking = true;
     }, { passive: true });
 
+    el.addEventListener('touchmove', (e) => {
+      if (!tracking || !isSwipeAllowed() || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.15) {
+        // Keep horizontal chapter swipes from being treated like page scrolling.
+        e.preventDefault();
+      }
+    }, { passive: false });
+
     el.addEventListener('touchend', (e) => {
-      if (!tracking || !isReadBibleMode('m')) return;
+      if (!tracking || !isSwipeAllowed()) return;
       tracking = false;
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dy) > VERT_MAX || Math.abs(dx) < SWIPE_MIN) return;
-      if (dx < 0) navigateReadChapter('m', 1);
-      else navigateReadChapter('m', -1);
+      if (dx < 0) navigateReadChapter(p, 1);
+      else navigateReadChapter(p, -1);
+    }, { passive: true });
+
+    el.addEventListener('touchcancel', () => {
+      tracking = false;
     }, { passive: true });
   }
 
