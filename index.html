@@ -3519,6 +3519,62 @@
         font-size: clamp(1.18rem, 1.75vw, 1.75rem);
       }
 
+      /* Hardest Bible Verse Generator — large centered image on desktop */
+      .desktop-right-column #d-verseDisplay.hbv-display-active,
+      .desktop-right-column #d-verseDisplay:has(.hbv-viewport) {
+        justify-content: center;
+        align-items: center;
+      }
+
+      .desktop-right-column #d-verseDisplay .hbv-viewport {
+        flex: 0 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .desktop-right-column #d-verseDisplay.hbv-nav-transitioning {
+        overflow: hidden;
+      }
+
+      .desktop-right-column #d-verseDisplay.hbv-nav-transitioning .hbv-viewport {
+        flex: 0 0 auto;
+      }
+
+      .desktop-right-column #d-verseDisplay .hbv-stage {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .desktop-right-column #d-verseDisplay .hbv-image-wrap {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .desktop-right-column #d-verseDisplay .hbv-frame {
+        display: inline-block;
+        width: auto;
+        max-width: min(100%, 960px);
+        margin: 0 auto;
+        padding: 12px;
+      }
+
+      .desktop-right-column #d-verseDisplay .hbv-image {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: min(100%, 920px);
+        max-height: min(78vh, 860px);
+        object-fit: contain;
+        margin: 0 auto;
+      }
+
       .desktop-left-column #d-verseDisplay-placeholder {
         display: none !important;
       }
@@ -10532,7 +10588,7 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (display) {
-      display.classList.remove('loading', 'read-updating');
+      display.classList.remove('loading', 'read-updating', 'hbv-display-active');
       display.querySelector('.hbv-viewport')?.classList.remove('is-hbv-loading');
       display.querySelectorAll('.hbv-viewport').forEach(vp => { vp.style.minHeight = ''; });
       display.innerHTML = isDesk
@@ -10618,6 +10674,15 @@ function applyTranslationRtl(version) {
     if (next?.url) void preloadHbvImage(next.url).catch(() => {});
   }
 
+  function measureHbvContentHeight(display) {
+    const stage = display?.querySelector('.hbv-stage');
+    if (stage) return Math.ceil(stage.getBoundingClientRect().height);
+    const img = display?.querySelector('.hbv-image');
+    if (img) return Math.ceil(img.getBoundingClientRect().height);
+    const vp = display?.querySelector('.hbv-viewport');
+    return vp?.offsetHeight || 140;
+  }
+
   function setHbvDisplayLoading(p, loading) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
@@ -10625,7 +10690,8 @@ function applyTranslationRtl(version) {
     if (!vp) return;
     ensureHbvLoader(display);
     if (loading) {
-      const h = Math.max(vp.offsetHeight, 80);
+      const held = parseFloat(vp.style.minHeight) || 0;
+      const h = Math.max(measureHbvContentHeight(display), held, 140);
       vp.style.minHeight = h + 'px';
       vp.classList.add('is-hbv-loading');
     } else {
@@ -10646,13 +10712,17 @@ function applyTranslationRtl(version) {
     return prefersReducedMotion() ? 'hbv-reveal-instant' : 'hbv-reveal';
   }
 
-  function hbvStageHtml(url, revealMode) {
+  function hbvStageInnerHtml(url, revealMode) {
     const safeUrl = escapeHtml(url);
     let reveal = '';
     if (revealMode === 'nav') reveal = ' hbv-nav-reveal';
     else if (revealMode === 'instant') reveal = ' hbv-reveal-instant';
     else if (revealMode !== false) reveal = ' ' + hbvRevealClass();
-    return `<div class="hbv-viewport"><div class="hbv-stage${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div></div>`;
+    return `<div class="hbv-stage${reveal}"><div class="hbv-image-wrap"><div class="hbv-frame"><img class="hbv-image" src="${safeUrl}" alt="Hardest Bible Verse" referrerpolicy="no-referrer"></div></div></div>`;
+  }
+
+  function hbvStageHtml(url, revealMode) {
+    return `<div class="hbv-viewport">${hbvStageInnerHtml(url, revealMode)}</div>`;
   }
 
   function waitMs(ms) {
@@ -10673,42 +10743,80 @@ function applyTranslationRtl(version) {
     stage.remove();
   }
 
+  function waitForHbvImageLayout(img) {
+    return new Promise(resolve => {
+      if (!img) {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+        return;
+      }
+      if (img.complete) {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+        return;
+      }
+      const done = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+  }
+
+  function syncHbvViewportHeight(vp, display) {
+    if (!vp) return;
+    const stage = vp.querySelector('.hbv-stage');
+    const h = stage ? Math.ceil(stage.getBoundingClientRect().height) : measureHbvContentHeight(display);
+    vp.style.minHeight = h > 0 ? h + 'px' : '';
+  }
+
   async function renderHbvNavTransition(p, display, entry) {
     const fadeOutMs = prefersReducedMotion() ? 0 : HBV_NAV_FADE_OUT_MS;
     const loadMs = prefersReducedMotion() ? 150 : HBV_NAV_LOAD_MS;
     const fadeInMs = prefersReducedMotion() ? 0 : HBV_NAV_FADE_IN_MS;
 
     const vp = getOrCreateHbvViewport(display);
-    const holdH = Math.max(vp?.offsetHeight || 0, display.offsetHeight || 0, 140);
-    if (vp) vp.style.minHeight = holdH + 'px';
-
-    if (fadeOutMs) {
-      await fadeOutHbvStage(display, fadeOutMs);
-    } else {
-      display.querySelector('.hbv-stage')?.remove();
-    }
-
     ensureHbvLoader(display);
-    setHbvDisplayLoading(p, true);
+    const holdH = Math.max(measureHbvContentHeight(display), 140);
+    if (vp) vp.style.minHeight = holdH + 'px';
+    display.classList.add('hbv-nav-transitioning');
 
     try {
-      await Promise.all([
-        preloadHbvImage(entry.url),
-        waitMs(loadMs)
-      ]);
+      if (fadeOutMs) {
+        await fadeOutHbvStage(display, fadeOutMs);
+      } else {
+        display.querySelector('.hbv-stage')?.remove();
+      }
+
+      vp.classList.add('is-hbv-loading');
+      setHbvGenerateButtonsDisabled(true);
+
+      try {
+        await Promise.all([
+          preloadHbvImage(entry.url),
+          waitMs(loadMs)
+        ]);
+      } catch (err) {
+        vp.classList.remove('is-hbv-loading');
+        setHbvGenerateButtonsDisabled(false);
+        throw err;
+      }
+
+      vp.classList.remove('is-hbv-loading');
+      setHbvGenerateButtonsDisabled(false);
+      display.classList.remove('loading');
+
+      const reveal = prefersReducedMotion() ? 'instant' : 'nav';
+      const wrap = document.createElement('div');
+      wrap.innerHTML = hbvStageInnerHtml(entry.url, reveal);
+      const newStage = wrap.firstElementChild;
+      vp.appendChild(newStage);
+
+      await waitForHbvImageLayout(newStage.querySelector('.hbv-image'));
+      if (fadeInMs) await waitMs(fadeInMs);
+      syncHbvViewportHeight(vp, display);
     } catch (err) {
-      setHbvDisplayLoading(p, false);
       if (vp) vp.style.minHeight = '';
       throw err;
+    } finally {
+      display.classList.remove('hbv-nav-transitioning');
     }
-
-    setHbvDisplayLoading(p, false);
-    display.classList.remove('loading');
-    display.innerHTML = hbvStageHtml(entry.url, prefersReducedMotion() ? 'instant' : 'nav');
-    const newVp = display.querySelector('.hbv-viewport');
-    if (newVp) newVp.style.minHeight = holdH + 'px';
-    if (fadeInMs) await waitMs(fadeInMs);
-    if (newVp) newVp.style.minHeight = '';
   }
 
   async function renderHbvImage(p, entry, options) {
@@ -10756,6 +10864,11 @@ function applyTranslationRtl(version) {
 
     setHbvActionsVisible(p, true);
     updateHbvNav(p);
+    if (p === 'd' && !document.body.classList.contains('layout-mobile')) {
+      display.classList.add('hbv-display-active');
+      const vp = display.querySelector('.hbv-viewport');
+      syncHbvViewportHeight(vp, display);
+    }
     const counter = document.getElementById(p + '-counter');
     if (counter) counter.style.display = 'none';
     const imgWrap = document.getElementById(p + '-imageWrap');
@@ -10788,6 +10901,7 @@ function applyTranslationRtl(version) {
       scrollToHbvMobileLayout();
       return;
     }
+    if (p === 'd' && !isMobile) return;
     const display = document.getElementById(p + '-verseDisplay');
     const img = display?.querySelector('.hbv-image');
     if (img) {
@@ -11055,7 +11169,7 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const isDesk = p === 'd';
     if (display) {
-      display.classList.remove('loading', 'read-updating', 'read-display-active', 'generator-image-overflow');
+      display.classList.remove('loading', 'read-updating', 'read-display-active', 'generator-image-overflow', 'hbv-display-active');
       display.innerHTML = isDesk
         ? '<p class="verse-placeholder">Tap ✦ Reveal a Verse ✦ button to randomly reveal a bible verse…</p>'
         : '<p class="mob-placeholder">Tap the button below to receive the Word…</p>';
