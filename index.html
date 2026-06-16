@@ -11,6 +11,9 @@
         var dm = localStorage.getItem('vg-display-mode') || 'full';
         if (dm !== 'compact') dm = 'full';
         document.documentElement.setAttribute('data-display-mode', dm);
+        if (localStorage.getItem('vg-justify-reading-text') === '1') {
+          document.documentElement.classList.add('justify-reading-enabled');
+        }
 
         // Keep real phones on the mobile shell when rotated sideways.
         // Tablets still use the tablet/desktop shell.
@@ -3193,6 +3196,94 @@
     }
   
 
+    /* Optional justified text for Read Bible passage only */
+    .justify-reading-pref-grid {
+      grid-template-columns: 1fr;
+    }
+    .justify-reading-pref-field {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.16);
+    }
+    .justify-reading-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 32px;
+      flex-shrink: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .justify-reading-toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+    .justify-reading-toggle-ui {
+      position: relative;
+      width: 58px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.38);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
+      transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+    .justify-reading-toggle-ui::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--parchment);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+      transition: transform 0.22s ease, background 0.22s ease;
+    }
+    .justify-reading-toggle input:checked + .justify-reading-toggle-ui {
+      background: rgba(var(--accent-rgb), 0.34);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14), inset 0 0 10px rgba(var(--accent-rgb), 0.16);
+    }
+    .justify-reading-toggle input:checked + .justify-reading-toggle-ui::before {
+      transform: translateX(26px);
+      background: var(--gold-light);
+    }
+    .justify-reading-toggle input:focus-visible + .justify-reading-toggle-ui {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28), inset 0 0 10px rgba(0, 0, 0, 0.18);
+    }
+    html.justify-reading-enabled #d-verseDisplay.read-display-active .read-passage-text,
+    html.justify-reading-enabled #m-verseDisplay.read-display-active .read-passage-text {
+      text-align: justify !important;
+      text-justify: inter-word;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+      overflow-wrap: break-word;
+    }
+    html.justify-reading-enabled #d-verseDisplay.read-display-active .read-passage-text .verse-num,
+    html.justify-reading-enabled #m-verseDisplay.read-display-active .read-passage-text .verse-num {
+      white-space: nowrap;
+      text-align: initial;
+    }
+    @media (max-width: 768px) {
+      .justify-reading-pref-field {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+    }
+
+
 
 
     /* Desktop display mode setting + modal */
@@ -3852,6 +3943,17 @@
               </select>
             </div>
           </div>
+          <h3 class="control-section-title" style="margin-top:18px;">Reading Text</h3>
+          <p class="control-section-hint">Optionally justify only the Read Bible passage text. Your choice is saved automatically.</p>
+          <div class="control-pref-grid justify-reading-pref-grid" role="group" aria-label="Justify reading text setting">
+            <div class="control-pref-field justify-reading-pref-field">
+              <label class="control-pref-label" for="d-justify-reading-text">Justify Reading Text</label>
+              <label class="justify-reading-toggle" aria-label="Justify Reading Text">
+                <input type="checkbox" id="d-justify-reading-text" data-justify-reading-toggle>
+                <span class="justify-reading-toggle-ui" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
           <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
           <p class="control-section-hint">Choose an appearance. Your selection is saved automatically.</p>
           <div class="theme-grid" id="d-theme-grid" role="radiogroup" aria-label="Website themes"></div>
@@ -4176,6 +4278,17 @@
               <div class="control-pref-field">
                 <label class="control-pref-label" for="m-default-translation">Default Bible Versions</label>
                 <select id="m-default-translation" class="control-pref-select" data-default-translation-select aria-label="Default translation"></select>
+              </div>
+            </div>
+            <h3 class="control-section-title" style="margin-top:18px;">Reading Text</h3>
+            <p class="control-section-hint">Optionally justify only the Read Bible passage text. Your choice is saved automatically.</p>
+            <div class="control-pref-grid justify-reading-pref-grid" role="group" aria-label="Justify reading text setting">
+              <div class="control-pref-field justify-reading-pref-field">
+                <label class="control-pref-label" for="m-justify-reading-text">Justify Reading Text</label>
+                <label class="justify-reading-toggle" aria-label="Justify Reading Text">
+                  <input type="checkbox" id="m-justify-reading-text" data-justify-reading-toggle>
+                  <span class="justify-reading-toggle-ui" aria-hidden="true"></span>
+                </label>
               </div>
             </div>
             <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
@@ -12640,7 +12753,10 @@ function applyTranslationRtl(version) {
     if (!isReadBibleMode(p)) return;
     prepareReadDisplayForReadMode(p);
     const display = document.getElementById(p + '-verseDisplay');
-    if (display) display.classList.remove('read-bible-boot-loading');
+    if (display) {
+      display.classList.remove('read-bible-boot-loading');
+      display.classList.add('read-display-active');
+    }
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const bookEn = document.getElementById(p + '-read-book')?.value;
@@ -15565,6 +15681,58 @@ function iabFallbackCopy(url, callback) {
     }
   })();
 </script>
+
+<script>
+  /* Optional Justified Reading Text setting for Read Bible mode */
+  (function initJustifiedReadingTextSetting() {
+    var STORAGE_KEY = 'vg-justify-reading-text';
+
+    function getSavedValue() {
+      try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch (_) { return false; }
+    }
+
+    function setSavedValue(enabled) {
+      try { localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0'); } catch (_) { /* private mode */ }
+    }
+
+    function syncToggles(enabled) {
+      document.querySelectorAll('[data-justify-reading-toggle]').forEach(function (toggle) {
+        toggle.checked = !!enabled;
+        toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
+      });
+    }
+
+    function applyJustifiedReadingText(enabled, save) {
+      document.documentElement.classList.toggle('justify-reading-enabled', !!enabled);
+      syncToggles(!!enabled);
+      if (save !== false) setSavedValue(!!enabled);
+    }
+
+    function bindToggles() {
+      document.querySelectorAll('[data-justify-reading-toggle]').forEach(function (toggle) {
+        if (toggle.dataset.bound === '1') return;
+        toggle.dataset.bound = '1';
+        toggle.addEventListener('change', function () {
+          applyJustifiedReadingText(toggle.checked, true);
+        });
+      });
+    }
+
+    function init() {
+      bindToggles();
+      applyJustifiedReadingText(getSavedValue(), false);
+    }
+
+    window.applyJustifiedReadingText = applyJustifiedReadingText;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+      init();
+    }
+  })();
+</script>
+
 
 
 
