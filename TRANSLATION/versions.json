@@ -1,0 +1,459 @@
+{
+    "_meta": {
+        "name": "Bible Versions Master Index",
+        "version": "1.0.0",
+        "created": "2026-06-17",
+        "description": "Master index for Bible translation JSON files in the versegenerator TRANSLATION folder. Use this file to avoid hardcoding every raw JSON link inside the HTML.",
+        "repository": "https://github.com/sarhveshracktoo/versegenerator",
+        "translationRoot": "TRANSLATION",
+        "defaultTranslation": "KJV",
+        "recommendedCache": "IndexedDB for Bible JSON, localStorage only for settings",
+        "cacheKeyPrefix": "bible_version_",
+        "cacheVersion": "2026-06-17"
+    },
+    "sources": {
+        "githubPagesBase": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/",
+        "rawGitHubBase": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/",
+        "githubTreeApi": "https://api.github.com/repos/sarhveshracktoo/versegenerator/git/trees/main?recursive=1"
+    },
+    "loadingStrategy": {
+        "firstLoad": [
+            "Load this versions.json file first",
+            "Build the language/version selector from this index",
+            "Fetch only the selected Bible JSON when the user chooses a version",
+            "Cache loaded Bible JSON in IndexedDB",
+            "When cacheVersion changes, refresh old cached Bible data"
+        ],
+        "doNotLoadOnStartup": [
+            "Do not load every Bible version on page load",
+            "Do not store large Bible JSON in localStorage",
+            "Do not hardcode every raw GitHub link inside the HTML"
+        ]
+    },
+    "autoDiscovery": {
+        "enabled": true,
+        "mode": "github-tree-api",
+        "includeOnly": "TRANSLATION/**/*.json",
+        "exclude": [
+            "TRANSLATION/versions.json",
+            "TRANSLATION/Translations_api.json",
+            "TRANSLATION/Bible API.json"
+        ],
+        "instructions": "Your HTML can fetch sources.githubTreeApi, filter paths beginning with TRANSLATION/ and ending with .json, remove excluded files, then create raw URLs using sources.rawGitHubBase + relative path after TRANSLATION/. This means new Bible JSON files uploaded later can be detected without editing the HTML."
+    },
+    "languages": [
+        {
+            "id": "Afrikaans",
+            "name": "Afrikaans",
+            "path": "Afrikaans/"
+        },
+        {
+            "id": "Albanian",
+            "name": "Albanian",
+            "path": "Albanian/"
+        },
+        {
+            "id": "Amharic",
+            "name": "Amharic",
+            "path": "Amharic/"
+        },
+        {
+            "id": "Arabic",
+            "name": "Arabic",
+            "path": "Arabic/",
+            "rtl": true
+        },
+        {
+            "id": "Bengali",
+            "name": "Bengali",
+            "path": "Bengali/"
+        },
+        {
+            "id": "Burmese",
+            "name": "Burmese",
+            "path": "Burmese/"
+        },
+        {
+            "id": "Chinese",
+            "name": "Chinese",
+            "path": "Chinese/"
+        },
+        {
+            "id": "Czech",
+            "name": "Czech",
+            "path": "Czech/"
+        },
+        {
+            "id": "Dutch",
+            "name": "Dutch",
+            "path": "Dutch/"
+        },
+        {
+            "id": "English",
+            "name": "English",
+            "path": "English/"
+        },
+        {
+            "id": "Filipino",
+            "name": "Filipino",
+            "path": "Filipino/"
+        },
+        {
+            "id": "Finnish",
+            "name": "Finnish",
+            "path": "Finnish/"
+        },
+        {
+            "id": "French",
+            "name": "French",
+            "path": "French/"
+        },
+        {
+            "id": "German",
+            "name": "German",
+            "path": "German/"
+        },
+        {
+            "id": "Greek",
+            "name": "Greek",
+            "path": "Greek/"
+        },
+        {
+            "id": "Gujarati",
+            "name": "Gujarati",
+            "path": "Gujarati/"
+        },
+        {
+            "id": "Haitian, Haitian Creole",
+            "name": "Haitian, Haitian Creole",
+            "path": "Haitian, Haitian Creole/"
+        },
+        {
+            "id": "Hausa",
+            "name": "Hausa",
+            "path": "Hausa/"
+        },
+        {
+            "id": "Hebrew",
+            "name": "Hebrew",
+            "path": "Hebrew/",
+            "rtl": true
+        },
+        {
+            "id": "Hindi",
+            "name": "Hindi",
+            "path": "Hindi/"
+        },
+        {
+            "id": "Hungarian",
+            "name": "Hungarian",
+            "path": "Hungarian/"
+        },
+        {
+            "id": "Indonesian",
+            "name": "Indonesian",
+            "path": "Indonesian/"
+        },
+        {
+            "id": "Italian",
+            "name": "Italian",
+            "path": "Italian/"
+        },
+        {
+            "id": "Japanese",
+            "name": "Japanese",
+            "path": "Japanese/"
+        },
+        {
+            "id": "Javanese",
+            "name": "Javanese",
+            "path": "Javanese/"
+        },
+        {
+            "id": "Kannada",
+            "name": "Kannada",
+            "path": "Kannada/"
+        },
+        {
+            "id": "Korean",
+            "name": "Korean",
+            "path": "Korean/"
+        },
+        {
+            "id": "Latvian",
+            "name": "Latvian",
+            "path": "Latvian/"
+        },
+        {
+            "id": "Lithuanian",
+            "name": "Lithuanian",
+            "path": "Lithuanian/"
+        },
+        {
+            "id": "Maori",
+            "name": "Maori",
+            "path": "Maori/"
+        },
+        {
+            "id": "Marathi",
+            "name": "Marathi",
+            "path": "Marathi/"
+        },
+        {
+            "id": "Mauritian",
+            "name": "Mauritian",
+            "path": "Mauritian/"
+        },
+        {
+            "id": "Nepali",
+            "name": "Nepali",
+            "path": "Nepali/"
+        },
+        {
+            "id": "Persian",
+            "name": "Persian",
+            "path": "Persian/",
+            "rtl": true
+        },
+        {
+            "id": "Polish",
+            "name": "Polish",
+            "path": "Polish/"
+        },
+        {
+            "id": "Portuguese",
+            "name": "Portuguese",
+            "path": "Portuguese/"
+        },
+        {
+            "id": "Punjabi, Panjabi",
+            "name": "Punjabi, Panjabi",
+            "path": "Punjabi, Panjabi/"
+        },
+        {
+            "id": "Romanian",
+            "name": "Romanian",
+            "path": "Romanian/"
+        },
+        {
+            "id": "Russian",
+            "name": "Russian",
+            "path": "Russian/"
+        },
+        {
+            "id": "Somali",
+            "name": "Somali",
+            "path": "Somali/"
+        },
+        {
+            "id": "Spanish",
+            "name": "Spanish",
+            "path": "Spanish/"
+        },
+        {
+            "id": "Swahili",
+            "name": "Swahili",
+            "path": "Swahili/"
+        },
+        {
+            "id": "Tagalog",
+            "name": "Tagalog",
+            "path": "Tagalog/"
+        },
+        {
+            "id": "Tajik",
+            "name": "Tajik",
+            "path": "Tajik/"
+        },
+        {
+            "id": "Tamil",
+            "name": "Tamil",
+            "path": "Tamil/"
+        },
+        {
+            "id": "Telugu",
+            "name": "Telugu",
+            "path": "Telugu/"
+        },
+        {
+            "id": "Thai",
+            "name": "Thai",
+            "path": "Thai/"
+        },
+        {
+            "id": "Tibetan",
+            "name": "Tibetan",
+            "path": "Tibetan/"
+        },
+        {
+            "id": "Turkish",
+            "name": "Turkish",
+            "path": "Turkish/"
+        },
+        {
+            "id": "Uighur, Uyghur",
+            "name": "Uighur, Uyghur",
+            "path": "Uighur, Uyghur/",
+            "rtl": true
+        },
+        {
+            "id": "Vietnamese",
+            "name": "Vietnamese",
+            "path": "Vietnamese/"
+        },
+        {
+            "id": "Wolof",
+            "name": "Wolof",
+            "path": "Wolof/"
+        }
+    ],
+    "featuredVersions": [
+        {
+            "id": "KJV",
+            "abbr": "KJV",
+            "name": "King James Version",
+            "language": "English",
+            "file": "English/KJV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/KJV.json",
+            "copyright": false,
+            "priority": 1
+        },
+        {
+            "id": "WEB",
+            "abbr": "WEB",
+            "name": "World English Bible",
+            "language": "English",
+            "file": "English/WEB.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/WEB.json",
+            "copyright": false,
+            "priority": 2
+        },
+        {
+            "id": "ASV",
+            "abbr": "ASV",
+            "name": "American Standard Version",
+            "language": "English",
+            "file": "English/ASV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ASV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/ASV.json",
+            "copyright": false,
+            "priority": 3
+        },
+        {
+            "id": "BSB",
+            "abbr": "BSB",
+            "name": "Berean Standard Bible",
+            "language": "English",
+            "file": "English/BSB.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BSB.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/BSB.json",
+            "copyright": true,
+            "priority": 4
+        },
+        {
+            "id": "NKJV",
+            "abbr": "NKJV",
+            "name": "New King James Version",
+            "language": "English",
+            "file": "English/NKJV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NKJV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NKJV.json",
+            "copyright": true,
+            "priority": 5
+        },
+        {
+            "id": "ESV",
+            "abbr": "ESV",
+            "name": "English Standard Version",
+            "language": "English",
+            "file": "English/ESV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ESV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/ESV.json",
+            "copyright": true,
+            "priority": 6
+        },
+        {
+            "id": "NIV",
+            "abbr": "NIV",
+            "name": "New International Version",
+            "language": "English",
+            "file": "English/NIV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NIV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NIV.json",
+            "copyright": true,
+            "priority": 7
+        },
+        {
+            "id": "NRSV",
+            "abbr": "NRSV",
+            "name": "New Revised Standard Version",
+            "language": "English",
+            "file": "English/NRSV.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NRSV.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NRSV.json",
+            "copyright": true,
+            "priority": 8
+        },
+        {
+            "id": "CSB",
+            "abbr": "CSB",
+            "name": "Christian Standard Bible",
+            "language": "English",
+            "file": "English/CSB.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/CSB.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/CSB.json",
+            "copyright": true,
+            "priority": 9
+        },
+        {
+            "id": "NET",
+            "abbr": "NET",
+            "name": "New English Translation",
+            "language": "English",
+            "file": "English/NET.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NET.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NET.json",
+            "copyright": true,
+            "priority": 10
+        },
+        {
+            "id": "NASB",
+            "abbr": "NASB",
+            "name": "New American Standard Bible",
+            "language": "English",
+            "file": "English/NASB.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NASB.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NASB.json",
+            "copyright": true,
+            "priority": 11
+        },
+        {
+            "id": "NLT",
+            "abbr": "NLT",
+            "name": "New Living Translation",
+            "language": "English",
+            "file": "English/NLT.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NLT.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/NLT.json",
+            "copyright": true,
+            "priority": 12
+        },
+        {
+            "id": "YLT",
+            "abbr": "YLT",
+            "name": "Young's Literal Translation",
+            "language": "English",
+            "file": "English/YLT.json",
+            "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/YLT.json",
+            "pagesUrl": "https://sarhveshracktoo.github.io/versegenerator/TRANSLATION/English/YLT.json",
+            "copyright": false,
+            "priority": 13
+        }
+    ],
+    "copyrightMessages": {
+        "defaultCopyrighted": "This Bible translation is copyrighted. Scripture quotations are used respectfully for reading and study. Please check the official publisher permission and copyright notice before public redistribution.",
+        "publicDomain": "This Bible translation is public domain or marked as non-copyrighted in this index. Please still verify the source before large redistribution."
+    }
+}
