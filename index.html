@@ -10583,6 +10583,29 @@ function applyTranslationRtl(version) {
     });
   }
 
+  function cleanupHbvDisplayState(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    display.classList.remove('hbv-display-active', 'hbv-nav-transitioning', 'loading');
+    display.querySelectorAll('.hbv-viewport').forEach(vp => { vp.style.minHeight = ''; });
+  }
+
+  function resetReadDisplayScroll(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    display.scrollTop = 0;
+  }
+
+  function prepareReadDisplayForReadMode(p) {
+    cleanupHbvDisplayState(p);
+    resetReadDisplayScroll(p);
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    display.style.overflow = '';
+    display.style.maxHeight = '';
+    display.style.overscrollBehavior = '';
+  }
+
   function showHbvPlaceholder(p) {
     setHbvGenerateButtonsDisabled(false);
     const display = document.getElementById(p + '-verseDisplay');
@@ -10865,6 +10888,7 @@ function applyTranslationRtl(version) {
     setHbvActionsVisible(p, true);
     updateHbvNav(p);
     if (p === 'd' && !document.body.classList.contains('layout-mobile')) {
+      display.classList.remove('read-display-active');
       display.classList.add('hbv-display-active');
       const vp = display.querySelector('.hbv-viewport');
       syncHbvViewportHeight(vp, display);
@@ -11402,6 +11426,8 @@ function applyTranslationRtl(version) {
     const display = document.getElementById('d-verseDisplay');
     const btn = display?.querySelector('.read-display-scroll-btn');
     if (!display || !btn) return;
+    const maxScroll = Math.max(0, display.scrollHeight - display.clientHeight);
+    if (display.scrollTop > maxScroll) display.scrollTop = maxScroll;
     const nearBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 24;
     btn.setAttribute('aria-label', nearBottom ? 'Scroll to top' : 'Scroll reading panel');
     btn.setAttribute('title', nearBottom ? 'Scroll to top' : 'Scroll reading panel');
@@ -11413,8 +11439,16 @@ function applyTranslationRtl(version) {
   function scrollDesktopReadDisplay() {
     const display = document.getElementById('d-verseDisplay');
     if (!display) return;
+    const maxScroll = Math.max(0, display.scrollHeight - display.clientHeight);
+    if (maxScroll <= 0) {
+      display.scrollTop = 0;
+      updateDesktopReadScrollButtonState();
+      return;
+    }
     const nearBottom = display.scrollTop + display.clientHeight >= display.scrollHeight - 24;
-    const nextTop = nearBottom ? 0 : display.scrollTop + Math.max(160, display.clientHeight * 0.72);
+    const nextTop = nearBottom
+      ? 0
+      : Math.min(display.scrollTop + Math.max(160, display.clientHeight * 0.72), maxScroll);
     display.scrollTo({ top: nextTop, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     setTimeout(updateDesktopReadScrollButtonState, 260);
   }
@@ -11448,7 +11482,9 @@ function applyTranslationRtl(version) {
   function ensureDesktopReadDisplayScrollButton() {
     const display = document.getElementById('d-verseDisplay');
     if (!display) return;
+    display.classList.remove('hbv-display-active', 'hbv-nav-transitioning');
     display.classList.add('read-display-active');
+    resetReadDisplayScroll('d');
 
     if (isTabletLayout()) {
       applyTabletReadDisplayBehavior(display);
@@ -12602,6 +12638,7 @@ function applyTranslationRtl(version) {
     // Guard against stale Read Bible requests finishing after the user/default mode
     // has already switched back to Verse Generator or HBV.
     if (!isReadBibleMode(p)) return;
+    prepareReadDisplayForReadMode(p);
     const display = document.getElementById(p + '-verseDisplay');
     if (display) display.classList.remove('read-bible-boot-loading');
     const isDesk = p === 'd';
@@ -13057,6 +13094,11 @@ function applyTranslationRtl(version) {
           _preReadGeneratorState = null;
         }
         if (prevTest !== 'hbv') {
+          if (prevTest === 'read') {
+            resetReadDisplayScroll(p);
+            setDesktopReadDisplayScrollButton(false);
+          }
+          cleanupHbvDisplayState(p);
           current[p] = null;
           history[p] = [];
           future[p] = [];
@@ -13220,7 +13262,8 @@ function applyTranslationRtl(version) {
     updateCustomSearchUI(p);
 
     if (readMode) {
-      if (prevTest !== 'read' && !options.skipReadInit) {
+      if (prevTest === 'hbv') prepareReadDisplayForReadMode(p);
+      if (prevTest !== 'read' && prevTest !== 'hbv' && !options.skipReadInit) {
         saveGeneratorStateBeforeRead();
       }
       setReadModeActions(p, true);
@@ -13229,7 +13272,15 @@ function applyTranslationRtl(version) {
         if (!stillCurrent()) return;
         await ensureGhBooksDiscovered(version);
         if (!stillCurrent()) return;
-        if ((prevTest !== 'read' || options.forceReadInit) && !options.skipReadInit) {
+        if (prevTest === 'hbv' && !options.skipReadInit) {
+          await refreshReadBibleLabels(p);
+          const bookEn = document.getElementById(p + '-read-book').value || getFirstAvailableBook(version);
+          const chRaw = document.getElementById(p + '-read-chapter').value;
+          const chapter = usesCatalogChapterKeys(version)
+            ? (chRaw || getDefaultReadChapter(version, bookEn))
+            : (parseInt(chRaw, 10) || 1);
+          await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true });
+        } else if ((prevTest !== 'read' || options.forceReadInit) && !options.skipReadInit) {
           await initReadBiblePanel(p, true);
         } else if (options.refreshReadLabels) {
           await refreshReadBibleLabels(p);
@@ -14670,6 +14721,7 @@ function applyTranslationRtl(version) {
       'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/2.opus',
       'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/3.opus',
       'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/4.opus',
+      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/5.opus',
       'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/6.opus',
       'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/7.opus'
     ];
