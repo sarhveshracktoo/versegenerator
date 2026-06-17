@@ -1189,6 +1189,12 @@
       user-select: text;
       -webkit-user-select: text;
     }
+    html.translation-rtl-active .read-passage-text,
+    html.translation-rtl-active .verse-text,
+    html.translation-rtl-active .verse-ref {
+      direction: rtl;
+      text-align: right !important;
+    }
     .read-passage-ref-top {
       display: block;
       font-size: clamp(1.08rem, 1.55vw, 1.55rem);
@@ -1680,6 +1686,133 @@
         font-size: 0.55rem;
         min-width: 2.2em;
       }
+    }
+
+    .rain-effect-row {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.22);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .rain-effect-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--card-text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .rain-effect-toggle-btn {
+      position: relative;
+      flex: 0 0 auto;
+      width: 62px;
+      height: 34px;
+      padding: 0;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    .rain-effect-toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.16), 0 0 0 rgba(var(--accent-rgb), 0);
+      transition: background 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+    }
+    .rain-effect-toggle-knob {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(var(--accent-rgb), 0.18));
+      border: 1px solid rgba(var(--accent-rgb), 0.32);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), background 0.24s ease, border-color 0.24s ease;
+    }
+    .rain-effect-toggle-btn:hover .rain-effect-toggle-track,
+    .rain-effect-toggle-btn:focus-visible .rain-effect-toggle-track {
+      border-color: rgba(var(--accent-rgb), 0.55);
+      background: rgba(var(--accent-rgb), 0.10);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12), inset 0 2px 8px rgba(0, 0, 0, 0.16);
+    }
+    .rain-effect-toggle-btn:active .rain-effect-toggle-knob {
+      transform: scale(0.94);
+    }
+    .rain-effect-toggle-btn.is-on .rain-effect-toggle-track {
+      border-color: rgba(var(--accent-rgb), 0.72);
+      background: rgba(var(--accent-rgb), 0.34);
+      box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.24), inset 0 2px 8px rgba(0, 0, 0, 0.10);
+    }
+    .rain-effect-toggle-btn.is-on .rain-effect-toggle-knob {
+      transform: translateX(28px);
+      background: linear-gradient(135deg, var(--gold-light), var(--gold));
+      border-color: rgba(var(--accent-rgb), 0.82);
+    }
+    .rain-effect-toggle-btn.is-on:active .rain-effect-toggle-knob {
+      transform: translateX(28px) scale(0.94);
+    }
+    .rain-effect-toggle-btn.is-loading {
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    .rain-effect-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 15px;
+      height: 15px;
+      margin: -7.5px 0 0 -7.5px;
+      border-radius: 50%;
+      border: 2px solid rgba(var(--accent-rgb), 0.22);
+      border-top-color: var(--gold-light);
+      display: none;
+      z-index: 2;
+      animation: rainEffectSpin 0.82s linear infinite;
+    }
+    .rain-effect-toggle-btn.is-loading .rain-effect-spinner {
+      display: block;
+    }
+    .rain-effect-toggle-btn.is-loading .rain-effect-toggle-knob {
+      opacity: 0.35;
+    }
+    @keyframes rainEffectSpin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .rain-effect-spinner,
+      .rain-effect-toggle-track,
+      .rain-effect-toggle-knob { animation: none !important; transition: none !important; }
+    }
+    #mobile-view .rain-effect-row {
+      padding: 9px 10px;
+      gap: 10px;
+    }
+    #mobile-view .rain-effect-toggle-btn {
+      width: 58px;
+      height: 32px;
+    }
+    #mobile-view .rain-effect-toggle-knob {
+      width: 24px;
+      height: 24px;
+    }
+    #mobile-view .rain-effect-toggle-btn.is-on .rain-effect-toggle-knob {
+      transform: translateX(26px);
+    }
+    #mobile-view .rain-effect-toggle-btn.is-on:active .rain-effect-toggle-knob {
+      transform: translateX(26px) scale(0.94);
     }
     /* ══ MOBILE LAYOUT ══ */
     #mobile-view { display:none; flex-direction:column; min-height:100vh; position:relative; z-index:1; }
@@ -3969,6 +4102,14 @@
               <span class="bg-music-volume-value" id="d-bg-music-volume-value">20%</span>
             </div>
           </div>
+          <div class="rain-effect-row" id="d-rain-effect-row" role="group" aria-label="Rain effect setting">
+            <span class="rain-effect-title">Rain Effect</span>
+            <button type="button" class="rain-effect-toggle-btn" data-rain-effect-toggle aria-pressed="false" aria-label="Turn on rain effect">
+              <span class="rain-effect-toggle-track" aria-hidden="true"></span>
+              <span class="rain-effect-toggle-knob" aria-hidden="true"></span>
+              <span class="rain-effect-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -4305,6 +4446,14 @@
                 <input type="range" id="m-bg-music-volume" class="bg-music-volume" min="0" max="100" value="20" step="1" aria-label="Background music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
                 <span class="bg-music-volume-value" id="m-bg-music-volume-value">20%</span>
               </div>
+            </div>
+            <div class="rain-effect-row" id="m-rain-effect-row" role="group" aria-label="Rain effect setting">
+              <span class="rain-effect-title">Rain Effect</span>
+              <button type="button" class="rain-effect-toggle-btn" data-rain-effect-toggle aria-pressed="false" aria-label="Turn on rain effect">
+                <span class="rain-effect-toggle-track" aria-hidden="true"></span>
+                <span class="rain-effect-toggle-knob" aria-hidden="true"></span>
+                <span class="rain-effect-spinner" aria-hidden="true"></span>
+              </button>
             </div>
           </div>
         </div>
@@ -4677,6 +4826,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
 <!-- Hidden background music (YouTube IFrame API) -->
 <div id="bg-music-wrap" class="bg-music-wrap" aria-hidden="true">
   <div id="bg-music-player"></div>
+  <div id="rain-effect-player"></div>
 </div>
 
 <!-- ══════════ CREATED BY MODAL ══════════ -->
@@ -4927,1723 +5077,11 @@ The website owner respects legitimate copyright claims and aims to resolve such 
 <script type="application/json" id="translations-api-index">
 {
   "_meta": {
-    "name": "Bible Translations API Index",
-    "version": "1.0.1",
-    "description": "Central translation API/index generated from TRANSLATION.txt. Each translation fetches its full Bible JSON from rawUrl; the website reads books/chapters/verses dynamically from the fetched file.",
-    "baseRepo": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/",
-    "defaultTranslation": "NIV",
-    "cacheStrategy": "localStorage",
-    "cacheKeyPrefix": "bible_tx_",
-    "instructions": {
-      "loadTranslation": "Fetch the translation's rawUrl to get the full Bible JSON. Cache it under cacheKeyPrefix + abbreviation.",
-      "bookList": "After fetching, read the top-level keys of the JSON to build the book list dynamically.",
-      "chapters": "Read the keys inside books[bookName] to get chapter numbers.",
-      "verses": "Read the keys inside books[bookName][chapter] to get verse numbers.",
-      "verseOfDay": "Pick a random book → random chapter → random verse from the loaded translation.",
-      "verseOfWeek": "Same as verseOfDay but seed with ISO week number for consistency.",
-      "search": "Iterate all books/chapters/verses of the loaded translation and match the query string.",
-      "missingContent": "If a book/chapter/verse key does not exist in the fetched data, show: 'This content is not available in [translationName].'",
-      "duplicateGuard": "Before adding a translation to the cache, check cacheKeyPrefix + abbreviation first.",
-      "rtl": "Set dir='rtl' on the reading container when isRTL is true.",
-      "voiceReading": "Use the language BCP-47 tag from the voiceLang field for SpeechSynthesis.lang.",
-      "imageGeneration": "Use translationName + abbreviation as the watermark/credit line on generated verse images."
-    }
+    "name": "External Bible Versions Master Index",
+    "description": "Translations are loaded from TRANSLATION/versions.json to avoid hardcoding Bible JSON links inside this HTML.",
+    "source": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/versions.json"
   },
-  "translations": [
-    {
-      "id": "afri",
-      "language": "Afrikaans",
-      "languageCode": "af",
-      "voiceLang": "af-ZA",
-      "translationName": "Afrikaanse Bybel",
-      "abbreviation": "AFRI",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Afrikaans/afri.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "albanian",
-      "language": "Albanian",
-      "languageCode": "sq",
-      "voiceLang": "sq-AL",
-      "translationName": "Albanian Bible",
-      "abbreviation": "ALB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Albanian/albanian.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "am_amh",
-      "language": "Amharic",
-      "languageCode": "am",
-      "voiceLang": "am-ET",
-      "translationName": "Amharic Bible",
-      "abbreviation": "AMH",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Amharic/am_amh.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "svd",
-      "language": "Arabic",
-      "languageCode": "ar",
-      "voiceLang": "ar-SA",
-      "translationName": "Smith & Van Dyke Arabic Bible",
-      "abbreviation": "SVD",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Arabic/svd.json",
-      "testament": "both",
-      "isRTL": true,
-      "hasApocrypha": false
-    },
-    {
-      "id": "bn_irv",
-      "language": "Bengali",
-      "languageCode": "bn",
-      "voiceLang": "bn-BD",
-      "translationName": "Bengali IRV Bible",
-      "abbreviation": "BNIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Bengali/bn_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "my_judson",
-      "language": "Burmese",
-      "languageCode": "my",
-      "voiceLang": "my-MM",
-      "translationName": "Judson Burmese Bible",
-      "abbreviation": "JUDSON",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Burmese/my_judson.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "chinese_union_simp",
-      "language": "Chinese",
-      "languageCode": "zh-Hans",
-      "voiceLang": "zh-CN",
-      "translationName": "Chinese Union Version (Simplified)",
-      "abbreviation": "CUVS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/chinese_union_simp.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "chinese_union_trad",
-      "language": "Chinese",
-      "languageCode": "zh-Hant",
-      "voiceLang": "zh-TW",
-      "translationName": "Chinese Union Version (Traditional)",
-      "abbreviation": "CUVT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/chinese_union_trad.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ckjv_sds",
-      "language": "Chinese",
-      "languageCode": "zh-Hans",
-      "voiceLang": "zh-CN",
-      "translationName": "Chinese KJV Simplified (Shen)",
-      "abbreviation": "CKJVS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/ckjv_sds.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ckjv_sdt",
-      "language": "Chinese",
-      "languageCode": "zh-Hant",
-      "voiceLang": "zh-TW",
-      "translationName": "Chinese KJV Traditional (Shen)",
-      "abbreviation": "CKJVT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Chinese/ckjv_sdt.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "bkr",
-      "language": "Czech",
-      "languageCode": "cs",
-      "voiceLang": "cs-CZ",
-      "translationName": "Bible Kralická (Czech)",
-      "abbreviation": "BKR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Czech/bkr.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "stve",
-      "language": "Dutch",
-      "languageCode": "nl",
-      "voiceLang": "nl-NL",
-      "translationName": "Statenvertaling (Dutch)",
-      "abbreviation": "STVE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Dutch/stve.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Apocrypha",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Apocrypha",
-      "abbreviation": "Apocrypha",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Apocrypha.json",
-      "testament": "apocrypha",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "All Apocrypha",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "All Apocrypha",
-      "abbreviation": "All Apocrypha",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/55%20Book%20of%20Apocrypha.json",
-      "testament": "apocrypha",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ABPE",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Aramaic Bible in Plain English",
-      "abbreviation": "ABPE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ABPE.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "AMP",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Amplified Bible",
-      "abbreviation": "AMP",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/AMP.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ANT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Authentic New Testament",
-      "abbreviation": "ANT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ANT.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ASV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "American Standard Version",
-      "abbreviation": "ASV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ASV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "BAB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Bible in Basic English (BAB)",
-      "abbreviation": "BAB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BAB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "BLB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Berean Literal Bible",
-      "abbreviation": "BLB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BLB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "BSB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Berean Standard Bible",
-      "abbreviation": "BSB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BSB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "BST",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Bible in Simple Terms",
-      "abbreviation": "BST",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/BST.json",
-      "testament": "old",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Bishops",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Bishops Bible (1568)",
-      "abbreviation": "BISHOPS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Bishops.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "CEV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Contemporary English Version",
-      "abbreviation": "CEV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/CEV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "CPDV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Catholic Public Domain Version",
-      "abbreviation": "CPDV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/CPDV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": true
-    },
-    {
-      "id": "CSB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Christian Standard Bible",
-      "abbreviation": "CSB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/CSB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Coverdale",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Coverdale Bible (1535)",
-      "abbreviation": "COVER",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Coverdale.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "DRB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Douay-Rheims Bible",
-      "abbreviation": "DRB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/DRB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": true
-    },
-    {
-      "id": "ERV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Easy-to-Read Version",
-      "abbreviation": "ERV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ERV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ESV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "English Standard Version",
-      "abbreviation": "ESV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ESV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "GNT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Good News Translation",
-      "abbreviation": "GNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/GNT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "GW",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "God's Word Translation",
-      "abbreviation": "GW",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/GW.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Godbey NT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-EN",
-      "translationName": "GODBEY NT",
-      "abbreviation": "GODBEYNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Godbey%20NT.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "HCSB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Holman Christian Standard Bible",
-      "abbreviation": "HCSB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/HCSB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "HNT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Hoole New Testament",
-      "abbreviation": "HNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/HNT.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ISV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "International Standard Version",
-      "abbreviation": "ISV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/ISV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "JPS",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Jewish Publication Society (Tanakh)",
-      "abbreviation": "JPS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/JPS.json",
-      "testament": "old",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Apocrypha KJV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "King James Version with Apocrypha",
-      "abbreviation": "KJVA",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Apocrypha%20.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": true
-    },
-    {
-      "id": "KJV PCE",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-EN",
-      "translationName": "KJV PCE",
-      "abbreviation": "KJVPCE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20PCE.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "KJV Strongs",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-EN",
-      "translationName": "KJV STRONGS",
-      "abbreviation": "KJVSTRONGS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Strongs.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "KJV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "King James Version",
-      "abbreviation": "KJV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "LAMS",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Literal Accurate Message Standard",
-      "abbreviation": "LAMS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/LAMS.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "LSB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Legacy Standard Bible",
-      "abbreviation": "LSB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/LSB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "LSV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Literal Standard Version",
-      "abbreviation": "LSV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/LSV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "MNT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Moffatt New Translation",
-      "abbreviation": "MNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/MNT.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "MSB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Modern Spelling Bible",
-      "abbreviation": "MSB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/MSB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NAB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New American Bible",
-      "abbreviation": "NAB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NAB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": true
-    },
-    {
-      "id": "NASB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New American Standard Bible (2020)",
-      "abbreviation": "NASB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NASB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NASB77",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New American Standard Bible (1977)",
-      "abbreviation": "NASB77",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NASB77.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NASB95",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New American Standard Bible (1995)",
-      "abbreviation": "NASB95",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NASB95.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NET",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New English Translation",
-      "abbreviation": "NET",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NET.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NHEB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New Heart English Bible",
-      "abbreviation": "NHEB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NHEB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NIV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New International Version",
-      "abbreviation": "NIV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NIV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NKJV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New King James Version",
-      "abbreviation": "NKJV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NKJV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NLT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New Living Translation",
-      "abbreviation": "NLT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NLT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "NRSV",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "New Revised Standard Version",
-      "abbreviation": "NRSV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/NRSV.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "SLT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Smith's Literal Translation",
-      "abbreviation": "SLT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/SLT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Tyndale",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Tyndale Bible (1526)",
-      "abbreviation": "TYNDALE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Tyndale.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "WBT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Webster's Bible Translation",
-      "abbreviation": "WBT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WBT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "Apocrypha WEB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "World English Bible with Apocrypha",
-      "abbreviation": "WEBA",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB%20Apocrypha%20.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": true
-    },
-    {
-      "id": "WEB",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "World English Bible",
-      "abbreviation": "WEB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "WNT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-GB",
-      "translationName": "Weymouth New Testament",
-      "abbreviation": "WNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WNT.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "WOR",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Worrell New Testament",
-      "abbreviation": "WOR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WOR.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "WORS",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Worsley New Testament",
-      "abbreviation": "WORS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WORS.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "YLT",
-      "language": "English",
-      "languageCode": "en",
-      "voiceLang": "en-US",
-      "translationName": "Young's Literal Translation",
-      "abbreviation": "YLT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/YLT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ASD",
-      "language": "Filipino (Tagalog)",
-      "languageCode": "tl",
-      "voiceLang": "fil-PH",
-      "translationName": "Ang Salita ng Diyos",
-      "abbreviation": "ASD",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/ASD.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "TLAB",
-      "language": "Filipino (Tagalog)",
-      "languageCode": "tl",
-      "voiceLang": "fil-PH",
-      "translationName": "Ang Biblia",
-      "abbreviation": "TLAB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/TLAB.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "epee",
-      "language": "French",
-      "languageCode": "fr",
-      "voiceLang": "fr-FR",
-      "translationName": "Bible de l'Épée",
-      "abbreviation": "EPEE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/French/epee.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "martin",
-      "language": "French",
-      "languageCode": "fr",
-      "voiceLang": "fr-FR",
-      "translationName": "Bible Martin (1744)",
-      "abbreviation": "MARTIN",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/French/martin.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "oster",
-      "language": "French",
-      "languageCode": "fr",
-      "voiceLang": "fr-FR",
-      "translationName": "Bible Osterwald",
-      "abbreviation": "OSTER",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/French/oster.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "segond_1910",
-      "language": "French",
-      "languageCode": "fr",
-      "voiceLang": "fr-FR",
-      "translationName": "Bible Segond (1910)",
-      "abbreviation": "SEG1910",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/French/segond_1910.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "elberfelder_1871",
-      "language": "German",
-      "languageCode": "de",
-      "voiceLang": "de-DE",
-      "translationName": "Elberfelder Bibel (1871)",
-      "abbreviation": "ELB1871",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/German/elberfelder_1871.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "elberfelder_1905",
-      "language": "German",
-      "languageCode": "de",
-      "voiceLang": "de-DE",
-      "translationName": "Elberfelder Bibel (1905)",
-      "abbreviation": "ELB1905",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/German/elberfelder_1905.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "luther",
-      "language": "German",
-      "languageCode": "de",
-      "voiceLang": "de-DE",
-      "translationName": "Lutherbibel",
-      "abbreviation": "LUTHER",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/German/luther.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "luther_1912",
-      "language": "German",
-      "languageCode": "de",
-      "voiceLang": "de-DE",
-      "translationName": "Lutherbibel (1912)",
-      "abbreviation": "LUT1912",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/German/luther_1912.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "schlachter",
-      "language": "German",
-      "languageCode": "de",
-      "voiceLang": "de-DE",
-      "translationName": "Schlachter Bibel",
-      "abbreviation": "SCHLACHT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/German/schlachter.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "tr",
-      "language": "Greek",
-      "languageCode": "el",
-      "voiceLang": "el-GR",
-      "translationName": "Textus Receptus (Greek)",
-      "abbreviation": "TR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Greek/tr.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "trparsed",
-      "language": "Greek",
-      "languageCode": "el",
-      "voiceLang": "el-GR",
-      "translationName": "Textus Receptus Parsed (Greek)",
-      "abbreviation": "TRPARSED",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Greek/trparsed.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "gu_irv",
-      "language": "Gujarati",
-      "languageCode": "gu",
-      "voiceLang": "gu-IN",
-      "translationName": "Gujarati IRV Bible",
-      "abbreviation": "GUIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Gujarati/gu_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "hcv",
-      "language": "Haitian Creole",
-      "languageCode": "ht",
-      "voiceLang": "fr-HT",
-      "translationName": "Haitian Creole Version",
-      "abbreviation": "HCV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Haitian%2C%20Haitian%20Creole/hcv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ha_con",
-      "language": "Hausa",
-      "languageCode": "ha",
-      "voiceLang": "ha-NG",
-      "translationName": "Hausa Bible (Contemporary)",
-      "abbreviation": "HACON",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hausa/ha_con.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ha_lit",
-      "language": "Hausa",
-      "languageCode": "ha",
-      "voiceLang": "ha-NG",
-      "translationName": "Hausa Bible (Literal)",
-      "abbreviation": "HALIT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hausa/ha_lit.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "he_modern",
-      "language": "Hebrew (Modern)",
-      "languageCode": "he",
-      "voiceLang": "he-IL",
-      "translationName": "Modern Hebrew Bible",
-      "abbreviation": "HEMOD",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hebrew/he_modern.json",
-      "testament": "both",
-      "isRTL": true,
-      "hasApocrypha": false
-    },
-    {
-      "id": "wlc",
-      "language": "Hebrew (Biblical)",
-      "languageCode": "he",
-      "voiceLang": "he-IL",
-      "translationName": "Westminster Leningrad Codex (Hebrew)",
-      "abbreviation": "WLC",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hebrew/wlc.json",
-      "testament": "old",
-      "isRTL": true,
-      "hasApocrypha": false
-    },
-    {
-      "id": "irv",
-      "language": "Hindi",
-      "languageCode": "hi",
-      "voiceLang": "hi-IN",
-      "translationName": "Indian Revised Version (Hindi)",
-      "abbreviation": "IRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hindi/irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "karoli",
-      "language": "Hungarian",
-      "languageCode": "hu",
-      "voiceLang": "hu-HU",
-      "translationName": "Károli Biblia (Hungarian)",
-      "abbreviation": "KAROLI",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Hungarian/karoli.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "indo_tb",
-      "language": "Indonesian",
-      "languageCode": "id",
-      "voiceLang": "id-ID",
-      "translationName": "Terjemahan Baru (Indonesian)",
-      "abbreviation": "INDOTB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Indonesian/indo_tb.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "indo_tm",
-      "language": "Indonesian",
-      "languageCode": "id",
-      "voiceLang": "id-ID",
-      "translationName": "Terjemahan Mudah (Indonesian)",
-      "abbreviation": "INDOTM",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Indonesian/indo_tm.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "diodati",
-      "language": "Italian",
-      "languageCode": "it",
-      "voiceLang": "it-IT",
-      "translationName": "Bibbia Diodati (Italian)",
-      "abbreviation": "DIODATI",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Italian/diodati.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "bungo",
-      "language": "Japanese (Classical)",
-      "languageCode": "ja",
-      "voiceLang": "ja-JP",
-      "translationName": "Meiji Bungo Bible (Japanese)",
-      "abbreviation": "BUNGO",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Japanese/bungo.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "kougo",
-      "language": "Japanese (Modern)",
-      "languageCode": "ja",
-      "voiceLang": "ja-JP",
-      "translationName": "Kougo-yaku Bible (Japanese)",
-      "abbreviation": "KOUGO",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Japanese/kougo.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "jv_jvn",
-      "language": "Javanese",
-      "languageCode": "jv",
-      "voiceLang": "jv-ID",
-      "translationName": "Javanese New Testament",
-      "abbreviation": "JVJVN",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Javanese/jv_jvn.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "kn_irv",
-      "language": "Kannada",
-      "languageCode": "kn",
-      "voiceLang": "kn-IN",
-      "translationName": "Kannada IRV Bible",
-      "abbreviation": "KNIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Kannada/kn_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "kn_kjv",
-      "language": "Kannada",
-      "languageCode": "kn",
-      "voiceLang": "kn-IN",
-      "translationName": "Kannada KJV Bible",
-      "abbreviation": "KNKJV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Kannada/kn_kjv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "korean",
-      "language": "Korean",
-      "languageCode": "ko",
-      "voiceLang": "ko-KR",
-      "translationName": "Korean Bible",
-      "abbreviation": "KOR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Korean/korean.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "lv_gluck_8",
-      "language": "Latvian",
-      "languageCode": "lv",
-      "voiceLang": "lv-LV",
-      "translationName": "Glück Latvian Bible (8th Ed.)",
-      "abbreviation": "LVGLUCK",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Latvian/lv_gluck_8.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "lt_heritage",
-      "language": "Lithuanian",
-      "languageCode": "lt",
-      "voiceLang": "lt-LT",
-      "translationName": "Lithuanian Heritage Bible",
-      "abbreviation": "LTHER",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Lithuanian/lt_heritage.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "maori",
-      "language": "Maori",
-      "languageCode": "mi",
-      "voiceLang": "mi-NZ",
-      "translationName": "Maori Bible",
-      "abbreviation": "MAORI",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Maori/maori.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "mr_irv",
-      "language": "Marathi",
-      "languageCode": "mr",
-      "voiceLang": "mr-IN",
-      "translationName": "Marathi IRV Bible",
-      "abbreviation": "MRIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Marathi/mr_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "KMOTPOR",
-      "language": "Mauritian",
-      "languageCode": "mu",
-      "voiceLang": "mfe",
-      "translationName": "Kreol Morisyen OT Portions",
-      "abbreviation": "KMOTPOR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/KMOTPOR.json",
-      "testament": "old",
-      "isRTL": false,
-      "hasApocrypha": false,
-      "partialCanon": true
-    },
-    {
-      "id": "KMNT",
-      "language": "Mauritian",
-      "languageCode": "mu",
-      "voiceLang": "mfe",
-      "translationName": "Nouvo Testaman Kreol Morisien Harmonisation NTPS KM",
-      "abbreviation": "KMNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/KMNT.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false,
-      "partialCanon": true
-    },
-    {
-      "id": "NTKM2009",
-      "language": "Mauritian",
-      "languageCode": "mu",
-      "voiceLang": "mfe",
-      "translationName": "Nouvo Testaman dan Kreol Morisien",
-      "abbreviation": "NTKM2009",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/NTKM2009.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false,
-      "partialCanon": true
-    },
-    {
-      "id": "ne_ulb",
-      "language": "Nepali",
-      "languageCode": "ne",
-      "voiceLang": "ne-NP",
-      "translationName": "Nepali Unfoldingword Literal Bible",
-      "abbreviation": "NEULB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Nepali/ne_ulb.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "opt",
-      "language": "Persian",
-      "languageCode": "fa",
-      "voiceLang": "fa-IR",
-      "translationName": "Old Persian Translation",
-      "abbreviation": "OPT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Persian/opt.json",
-      "testament": "both",
-      "isRTL": true,
-      "hasApocrypha": false
-    },
-    {
-      "id": "pol_nbg",
-      "language": "Polish",
-      "languageCode": "pl",
-      "voiceLang": "pl-PL",
-      "translationName": "Nowe Przymierze (Polish NBG)",
-      "abbreviation": "POLNBG",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Polish/pol_nbg.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "pol_ubg",
-      "language": "Polish",
-      "languageCode": "pl",
-      "voiceLang": "pl-PL",
-      "translationName": "Uwspółcześniona Biblia Gdańska (Polish)",
-      "abbreviation": "POLUBG",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Polish/pol_ubg.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "polbg",
-      "language": "Polish",
-      "languageCode": "pl",
-      "voiceLang": "pl-PL",
-      "translationName": "Biblia Gdańska (Polish)",
-      "abbreviation": "POLBG",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Polish/polbg.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "almeida_ra",
-      "language": "Portuguese",
-      "languageCode": "pt",
-      "voiceLang": "pt-BR",
-      "translationName": "Almeida Revista e Atualizada (Portuguese)",
-      "abbreviation": "ALMRA",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Portuguese/almeida_ra.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "almeida_rc",
-      "language": "Portuguese",
-      "languageCode": "pt",
-      "voiceLang": "pt-PT",
-      "translationName": "Almeida Revista e Corrigida (Portuguese)",
-      "abbreviation": "ALMRC",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Portuguese/almeida_rc.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "blivre",
-      "language": "Portuguese",
-      "languageCode": "pt",
-      "voiceLang": "pt-BR",
-      "translationName": "Bíblia Livre (Portuguese)",
-      "abbreviation": "BLIVRE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Portuguese/blivre.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "pa_irv",
-      "language": "Punjabi",
-      "languageCode": "pa",
-      "voiceLang": "pa-IN",
-      "translationName": "Punjabi IRV Bible",
-      "abbreviation": "PAIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Punjabi%2C%20Panjabi/pa_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "cornilescu",
-      "language": "Romanian",
-      "languageCode": "ro",
-      "voiceLang": "ro-RO",
-      "translationName": "Biblia Cornilescu (Romanian)",
-      "abbreviation": "CORN",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Romanian/cornilescu.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "fidela",
-      "language": "Romanian",
-      "languageCode": "ro",
-      "voiceLang": "ro-RO",
-      "translationName": "Biblia Fidelă (Romanian)",
-      "abbreviation": "FIDELA",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Romanian/fidela.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "synodal",
-      "language": "Russian",
-      "languageCode": "ru",
-      "voiceLang": "ru-RU",
-      "translationName": "Synodal Bible (Russian)",
-      "abbreviation": "SYNODAL",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Russian/synodal.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "so_jimale",
-      "language": "Somali",
-      "languageCode": "so",
-      "voiceLang": "so-SO",
-      "translationName": "Jimale Somali Bible",
-      "abbreviation": "SOJIMALE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Somali/so_jimale.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "rv_1858",
-      "language": "Spanish",
-      "languageCode": "es",
-      "voiceLang": "es-ES",
-      "translationName": "Reina-Valera (1858)",
-      "abbreviation": "RV1858",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/rv_1858.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "rv_1909",
-      "language": "Spanish",
-      "languageCode": "es",
-      "voiceLang": "es-ES",
-      "translationName": "Reina-Valera (1909)",
-      "abbreviation": "RV1909",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/rv_1909.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "rv_1909_strongs",
-      "language": "Spanish",
-      "languageCode": "es",
-      "voiceLang": "es-ES",
-      "translationName": "Reina-Valera 1909 with Strong's Numbers",
-      "abbreviation": "RV1909STR",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/rv_1909_strongs.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "rvg",
-      "language": "Spanish",
-      "languageCode": "es",
-      "voiceLang": "es-ES",
-      "translationName": "Reina-Valera Gómez",
-      "abbreviation": "RVG",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/rvg.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "sagradas",
-      "language": "Spanish",
-      "languageCode": "es",
-      "voiceLang": "es-ES",
-      "translationName": "Sagradas Escrituras (Spanish)",
-      "abbreviation": "SAGRADAS",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Spanish/sagradas.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "swahili",
-      "language": "Swahili",
-      "languageCode": "sw",
-      "voiceLang": "sw-KE",
-      "translationName": "Swahili Bible",
-      "abbreviation": "SWAHILI",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Swahili/swahili.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "tagab",
-      "language": "Tagalog",
-      "languageCode": "tl",
-      "voiceLang": "fil-PH",
-      "translationName": "Tagalog Bible (Ang Biblia)",
-      "abbreviation": "TAGAB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Tagalog/tagab.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "tg_tgk",
-      "language": "Tajik",
-      "languageCode": "tg",
-      "voiceLang": "tg-TJ",
-      "translationName": "Tajik Bible",
-      "abbreviation": "TGTGK",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Tajik/tg_tgk.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ta_irv",
-      "language": "Tamil",
-      "languageCode": "ta",
-      "voiceLang": "ta-IN",
-      "translationName": "Tamil IRV Bible",
-      "abbreviation": "TAIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Tamil/ta_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ta_oitce",
-      "language": "Tamil",
-      "languageCode": "ta",
-      "voiceLang": "ta-IN",
-      "translationName": "Tamil Old & New Testament (OITCE)",
-      "abbreviation": "TAOITCE",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Tamil/ta_oitce.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "te_irv",
-      "language": "Telugu",
-      "languageCode": "te",
-      "voiceLang": "te-IN",
-      "translationName": "Telugu IRV Bible",
-      "abbreviation": "TEIRV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Telugu/te_irv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "thaikjv",
-      "language": "Thai",
-      "languageCode": "th",
-      "voiceLang": "th-TH",
-      "translationName": "Thai KJV Bible",
-      "abbreviation": "THAIKJV",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Thai/thaikjv.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "bo_ntb",
-      "language": "Tibetan",
-      "languageCode": "bo",
-      "voiceLang": "bo-CN",
-      "translationName": "Tibetan New Testament Bible",
-      "abbreviation": "BONTB",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Tibetan/bo_ntb.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "turkish",
-      "language": "Turkish",
-      "languageCode": "tr",
-      "voiceLang": "tr-TR",
-      "translationName": "Turkish Bible",
-      "abbreviation": "TURKISH",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Turkish/turkish.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "ug_ara",
-      "language": "Uyghur",
-      "languageCode": "ug",
-      "voiceLang": "ug-CN",
-      "translationName": "Uyghur Arabic Script Bible",
-      "abbreviation": "UGARA",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Uighur%2C%20Uyghur/ug_ara.json",
-      "testament": "both",
-      "isRTL": true,
-      "hasApocrypha": false
-    },
-    {
-      "id": "cadman",
-      "language": "Vietnamese",
-      "languageCode": "vi",
-      "voiceLang": "vi-VN",
-      "translationName": "Cadman Vietnamese Bible",
-      "abbreviation": "CADMAN",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Vietnamese/cadman.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "wo_kyg",
-      "language": "Wolof",
-      "languageCode": "wo",
-      "voiceLang": "wo-SN",
-      "translationName": "Wolof KYG Bible",
-      "abbreviation": "WOKYG",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Wolof/wo_kyg.json",
-      "testament": "both",
-      "isRTL": false,
-      "hasApocrypha": false
-    },
-    {
-      "id": "wo_wol_nt_2010",
-      "language": "Wolof",
-      "languageCode": "wo",
-      "voiceLang": "wo-SN",
-      "translationName": "Wolof New Testament (2010)",
-      "abbreviation": "WOWOLNT",
-      "rawUrl": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Wolof/wo_wol_nt_2010.json",
-      "testament": "new",
-      "isRTL": false,
-      "hasApocrypha": false
-    }
-  ],
-  "canonicalBooks": {
-    "oldTestament": [
-      "Genesis",
-      "Exodus",
-      "Leviticus",
-      "Numbers",
-      "Deuteronomy",
-      "Joshua",
-      "Judges",
-      "Ruth",
-      "1 Samuel",
-      "2 Samuel",
-      "1 Kings",
-      "2 Kings",
-      "1 Chronicles",
-      "2 Chronicles",
-      "Ezra",
-      "Nehemiah",
-      "Esther",
-      "Job",
-      "Psalms",
-      "Proverbs",
-      "Ecclesiastes",
-      "Song of Solomon",
-      "Isaiah",
-      "Jeremiah",
-      "Lamentations",
-      "Ezekiel",
-      "Daniel",
-      "Hosea",
-      "Joel",
-      "Amos",
-      "Obadiah",
-      "Jonah",
-      "Micah",
-      "Nahum",
-      "Habakkuk",
-      "Zephaniah",
-      "Haggai",
-      "Zechariah",
-      "Malachi"
-    ],
-    "newTestament": [
-      "Matthew",
-      "Mark",
-      "Luke",
-      "John",
-      "Acts",
-      "Romans",
-      "1 Corinthians",
-      "2 Corinthians",
-      "Galatians",
-      "Ephesians",
-      "Philippians",
-      "Colossians",
-      "1 Thessalonians",
-      "2 Thessalonians",
-      "1 Timothy",
-      "2 Timothy",
-      "Titus",
-      "Philemon",
-      "Hebrews",
-      "James",
-      "1 Peter",
-      "2 Peter",
-      "1 John",
-      "2 John",
-      "3 John",
-      "Jude",
-      "Revelation"
-    ],
-    "apocrypha": [
-      "Tobit",
-      "Judith",
-      "1 Maccabees",
-      "2 Maccabees",
-      "Wisdom of Solomon",
-      "Sirach",
-      "Baruch",
-      "1 Esdras",
-      "2 Esdras",
-      "Prayer of Manasseh",
-      "Psalm 151",
-      "3 Maccabees",
-      "4 Maccabees"
-    ]
-  },
-  "uiMessages": {
-    "notAvailable": "This content is not available in {translation}.",
-    "loading": "Loading {translation}...",
-    "loadError": "Could not load {translation}. Please check your connection and try again.",
-    "cached": "{translation} loaded from cache.",
-    "cacheCleared": "Translation cache cleared."
-  }
+  "translations": []
 }
 </script>
 
@@ -6682,19 +5120,19 @@ The website owner respects legitimate copyright claims and aims to resolve such 
     return { ...UI_LANG.en, ...(UI_LANG[langCode] || {}) };
   }
 
-/* GitHub Bible Translations — replaces BSS / HAO / Bolls */
-const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Translations_api.json';
-const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v5';
-const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt']);
+/* GitHub Bible Translations — external master index (TRANSLATION/versions.json) */
+const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/versions.json';
+const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v8-master-rtl-sorted-apocrypha';
+const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt', 'KJVSTRONGS', 'KJV_STRONGS', 'KJV STRONGS', 'RV1909STRONGS', 'RV_1909_STRONGS', 'RV 1909 STRONGS', 'CHINESE UNION SIMP S', 'CHINESE UNION TRAD S']);
 const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
 const GH_TX_CACHE_PREFIX = 'bible_tx_';
 const GH_BOOK_META_PREFIX = 'bible_tx_meta_';
-const GH_DEFAULT_TRANSLATION = 'NIV';
+const GH_DEFAULT_TRANSLATION = 'KJV';
 const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-13-github-json-fresh';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-17-master-index-rtl-sorted-apocrypha-v8';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
@@ -6761,9 +5199,11 @@ const BOOK_NAME_ALIASES = {
 const GH_LEGACY_ID_MAP = {
   kjv: 'KJV', kjvpce: 'KJV_PCE', kjv_strongs: 'KJV_Strongs', web: 'WEB', asv: 'ASV',
   net: 'NET', nasb: 'NASB', niv: 'NIV', nlt: 'NLT', segond_1910: 'segond_1910',
-  kjva: 'KJV_Apocrypha', weba: 'WEB_Apocrypha',
+  kjva: 'KJV_Apocrypha', kja: 'KJV_Apocrypha', weba: 'WEB_Apocrypha',
   kjvapocrypha: 'KJV_Apocrypha', webapocrypha: 'WEB_Apocrypha',
-  'kjv apocrypha': 'KJV_Apocrypha', 'web apocrypha': 'WEB_Apocrypha',
+  'kjv apocrypha': 'KJV_Apocrypha', 'kjv_apocrypha': 'KJV_Apocrypha', 'apocrypha kjv': 'KJV_Apocrypha', 'apocrypha_kjv': 'KJV_Apocrypha',
+  'web apocrypha': 'WEB_Apocrypha', 'web_apocrypha': 'WEB_Apocrypha', 'apocrypha web': 'WEB_Apocrypha', 'apocrypha_web': 'WEB_Apocrypha',
+  'all apocrypha': 'All Apocrypha', '55 book of apocrypha': 'All Apocrypha', '55_book_of_apocrypha': 'All Apocrypha',
   apocrypha: 'Apocrypha'
 };
 
@@ -7116,11 +5556,58 @@ function writeGhIndexCache(indexData) {
   try { localStorage.setItem(GH_INDEX_CACHE_KEY, JSON.stringify(indexData)); } catch { /* quota */ }
 }
 
+function normalizeTranslationToken(value) {
+  return String(value || '')
+    .replace(/\.json$/i, '')
+    .replace(/%20/g, ' ')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function isHiddenTranslationName(value) {
+  const token = normalizeTranslationToken(value);
+  return token === 'KJV STRONGS' ||
+    token === 'RV 1909 STRONGS' ||
+    token === 'CHINESE UNION SIMP S' ||
+    token === 'CHINESE UNION TRAD S';
+}
+
+function canonicalApocryphaKeyFromEntry(entry) {
+  const values = [entry?.id, entry?.abbr, entry?.abbreviation, entry?.name, entry?.translationName, entry?.file, entry?.path, entry?.rawUrl].map(normalizeTranslationToken);
+  if (values.some(v => v === 'APOCRYPHA')) return 'APOCRYPHA';
+  if (values.some(v => v === 'ALL APOCRYPHA' || v === '55 BOOK OF APOCRYPHA')) return 'ALL';
+  if (values.some(v => v === 'KJV APOCRYPHA' || v === 'APOCRYPHA KJV' || v === 'KJVA' || v === 'KJA')) return 'KJV';
+  if (values.some(v => v === 'WEB APOCRYPHA' || v === 'APOCRYPHA WEB' || v === 'WEBA')) return 'WEB';
+  return '';
+}
+
+function canonicalizeApocryphaEntry(entry) {
+  if (!entry) return entry;
+  const key = canonicalApocryphaKeyFromEntry(entry);
+  if (key === 'APOCRYPHA') {
+    return { ...entry, id: APOCRYPHA_STANDALONE_MODULE, name: 'Apocrypha', translationName: 'Apocrypha', abbr: 'Apocrypha', abbreviation: 'Apocrypha', testament: 'apocrypha', hasApocrypha: false, rawUrl: entry.rawUrl || APOCRYPHA_STANDALONE_INDEX_ENTRY.rawUrl };
+  }
+  if (key === 'ALL') {
+    return { ...entry, id: ALL_APOCRYPHA_MODULE, name: 'All Apocrypha', translationName: 'All Apocrypha', abbr: 'All Apocrypha', abbreviation: 'All Apocrypha', testament: 'apocrypha', hasApocrypha: false, rawUrl: entry.rawUrl || ALL_APOCRYPHA_INDEX_ENTRY.rawUrl };
+  }
+  if (key === 'KJV') {
+    return { ...entry, id: 'KJV_Apocrypha', name: 'KJVA', translationName: 'KJVA', abbr: 'KJVA', abbreviation: 'KJVA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Apocrypha%20.json' };
+  }
+  if (key === 'WEB') {
+    return { ...entry, id: 'WEB_Apocrypha', name: 'WEBA', translationName: 'WEBA', abbr: 'WEBA', abbreviation: 'WEBA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB%20Apocrypha%20.json' };
+  }
+  return entry;
+}
+
 function isExcludedTranslationEntry(t) {
   if (!t) return true;
+  const fields = [t.id, t.abbreviation, t.abbr, t.name, t.translationName, t.file, t.path, t.rawUrl];
+  if (fields.some(isHiddenTranslationName)) return true;
   const id = String(t.id || '');
   const abbr = String(t.abbreviation || '').toUpperCase();
-  if (EXCLUDED_TRANSLATION_IDS.has(id) || EXCLUDED_TRANSLATION_IDS.has(abbr)) return true;
+  if (EXCLUDED_TRANSLATION_IDS.has(id) || EXCLUDED_TRANSLATION_IDS.has(abbr) || EXCLUDED_TRANSLATION_IDS.has(normalizeTranslationToken(id)) || EXCLUDED_TRANSLATION_IDS.has(normalizeTranslationToken(abbr))) return true;
   return false;
 }
 
@@ -7128,14 +5615,171 @@ function filterTranslationsIndex(indexData) {
   if (!indexData?.translations?.length) return indexData;
   return {
     ...indexData,
-    translations: indexData.translations.filter(t => !isExcludedTranslationEntry(t))
+    translations: indexData.translations.map(canonicalizeApocryphaEntry).filter(t => !isExcludedTranslationEntry(t))
   };
+}
+
+function normalizeMasterTranslationPath(path) {
+  return String(path || '')
+    .replace(/^TRANSLATION\//i, '')
+    .replace(/^\/+/, '');
+}
+
+function encodeMasterTranslationPath(path) {
+  return normalizeMasterTranslationPath(path)
+    .split('/')
+    .map(part => encodeURIComponent(part))
+    .join('/');
+}
+
+function titleFromMasterFile(filePath) {
+  const name = decodeURIComponent(String(filePath || '').split('/').pop() || '')
+    .replace(/\.json$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return name || 'Bible Translation';
+}
+
+
+const RTL_LANGUAGE_CODES = new Set(['ar','arc','fa','he','iw','ps','sd','syr','ug','ur','yi','dv','ckb']);
+const RTL_LANGUAGE_MATCHERS = [
+  'arabic', 'hebrew', 'persian', 'farsi', 'uyghur', 'uighur', 'urdu',
+  'aramaic', 'syriac', 'sindhi', 'pashto', 'yiddish', 'divehi', 'kurdish'
+];
+const RTL_PATH_MATCHERS = [
+  '/arabic/', '/hebrew/', '/persian/', '/uighur', '/uyghur', '/urdu/',
+  '/aramaic/', '/syriac/', '/sindhi/', '/pashto/', '/yiddish/'
+];
+
+function inferTranslationRtl(entry, filePath) {
+  if (!entry) return false;
+  if (entry.isRTL === true || entry.rtl === true) return true;
+  const code = String(entry.languageCode || entry.lang_short || entry.langCode || '').toLowerCase().split('-')[0];
+  if (RTL_LANGUAGE_CODES.has(code)) return true;
+  const language = String(entry.language || entry.lang || '').toLowerCase();
+  if (RTL_LANGUAGE_MATCHERS.some(word => language.includes(word))) return true;
+  const raw = decodeURIComponent(String(entry.rawUrl || entry.file || entry.path || entry.pagesUrl || filePath || '')).toLowerCase();
+  if (RTL_PATH_MATCHERS.some(word => raw.includes(word))) return true;
+  const id = String(entry.id || entry.abbr || entry.abbreviation || '').toLowerCase();
+  return ['svd', 'he_modern', 'hemodern', 'wlc', 'opt', 'ug_ara', 'ugara'].includes(id);
+}
+
+function formatBibleVersionListName(value) {
+  return String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function masterEntryToTranslation(entry, indexData, fallbackPriority) {
+  if (!entry) return null;
+  entry = canonicalizeApocryphaEntry(entry);
+  const sources = indexData?.sources || {};
+  const rawBase = sources.rawGitHubBase || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/';
+  const file = normalizeMasterTranslationPath(entry.file || entry.path || '');
+  const language = entry.language || (file.includes('/') ? decodeURIComponent(file.split('/')[0]) : 'Other');
+  const title = entry.name || entry.translationName || titleFromMasterFile(file || entry.rawUrl || entry.pagesUrl);
+  const abbr = String(entry.abbr || entry.abbreviation || entry.id || titleFromMasterFile(file)).trim();
+  const rawUrl = entry.rawUrl || (file ? rawBase + encodeMasterTranslationPath(file) : '');
+  if (!abbr || !rawUrl) return null;
+  return {
+    id: String(entry.id || abbr).trim(),
+    language,
+    languageCode: entry.languageCode || entry.lang_short || entry.langCode || '',
+    voiceLang: entry.voiceLang || entry.languageCode || entry.lang_short || '',
+    translationName: title,
+    abbreviation: abbr,
+    rawUrl,
+    testament: entry.testament || 'both',
+    isRTL: inferTranslationRtl(entry, file),
+    hasApocrypha: !!entry.hasApocrypha,
+    partialCanon: !!entry.partialCanon,
+    copyright: !!entry.copyright,
+    copyrightMessage: entry.copyrightMessage || '' ,
+    priority: entry.priority || fallbackPriority || 9999
+  };
+}
+
+function normalizeMasterVersionsIndex(indexData) {
+  if (!indexData) return null;
+  if (Array.isArray(indexData.translations) && indexData.translations.length) return { ...indexData, translations: indexData.translations.map(canonicalizeApocryphaEntry) };
+  const featured = Array.isArray(indexData.featuredVersions) ? indexData.featuredVersions : [];
+  const translations = featured
+    .map((entry, i) => masterEntryToTranslation(entry, indexData, entry.priority || i + 1))
+    .filter(Boolean);
+  return { ...indexData, translations };
+}
+
+function mergeTranslationEntries(baseEntries, extraEntries) {
+  const merged = [];
+  const seen = new Set();
+  [...(baseEntries || []), ...(extraEntries || [])].forEach(entry => {
+    entry = canonicalizeApocryphaEntry(entry);
+    if (!entry || isExcludedTranslationEntry(entry)) return;
+    const key = String(entry.id || entry.abbreviation || '').toUpperCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    merged.push(entry);
+  });
+  return merged;
+}
+
+async function discoverTranslationsFromMaster(indexData) {
+  const auto = indexData?.autoDiscovery || {};
+  const sources = indexData?.sources || {};
+  if (!auto.enabled || !sources.githubTreeApi) return [];
+  try {
+    const treeData = await apiGetJson(sources.githubTreeApi, Math.min(GH_TRANSLATION_LOAD_TIMEOUT_MS, 30000));
+    const tree = Array.isArray(treeData?.tree) ? treeData.tree : [];
+    const exclude = new Set((auto.exclude || []).map(x => String(x).replace(/^\/+/, '')));
+    ['TRANSLATION/versions.json', 'TRANSLATION/Translations_api.json', 'TRANSLATION/translations_api.json'].forEach(x => exclude.add(x));
+    const entries = [];
+    tree.forEach((item, i) => {
+      const path = String(item?.path || '');
+      if (item?.type !== 'blob') return;
+      if (!/^TRANSLATION\//i.test(path) || !/\.json$/i.test(path)) return;
+      if (exclude.has(path)) return;
+      const rel = normalizeMasterTranslationPath(path);
+      if (!rel) return;
+      const parts = rel.split('/');
+      const language = parts.length > 1 ? decodeURIComponent(parts[0]) : 'Other';
+      const abbr = titleFromMasterFile(rel);
+      entries.push(masterEntryToTranslation({
+        id: abbr,
+        abbr,
+        name: abbr,
+        language,
+        file: rel,
+        priority: 1000 + i
+      }, indexData, 1000 + i));
+    });
+    return entries.filter(Boolean);
+  } catch (_) {
+    return [];
+  }
+}
+
+async function loadRemoteTranslationsIndex() {
+  const master = await apiGetJson(GH_TRANSLATIONS_INDEX_URL, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+  let normalized = normalizeMasterVersionsIndex(master);
+  if (!normalized) return null;
+  const discovered = await discoverTranslationsFromMaster(master);
+  if (discovered.length) {
+    normalized = {
+      ...normalized,
+      translations: mergeTranslationEntries(normalized.translations, discovered)
+    };
+  }
+  return normalized;
 }
 
 function buildGhBiblesFromIndex(indexData) {
   const out = {};
   const seen = new Set();
   (indexData.translations || []).forEach((t, i) => {
+    t = canonicalizeApocryphaEntry(t);
     if (isExcludedTranslationEntry(t)) return;
     const abbr = (t.abbreviation || t.id || '').toUpperCase();
     if (!t.id || !t.rawUrl || seen.has(abbr)) return;
@@ -7150,7 +5794,7 @@ function buildGhBiblesFromIndex(indexData) {
       source: 'github',
       rawUrl: t.rawUrl,
       testament: t.testament || 'both',
-      isRTL: !!t.isRTL,
+      isRTL: inferTranslationRtl(t, t.rawUrl),
       hasApocrypha: !!t.hasApocrypha,
       partialCanon: !!t.partialCanon,
       rank: String((i + 1) * 10)
@@ -7185,17 +5829,46 @@ const ALL_APOCRYPHA_INDEX_ENTRY = {
   hasApocrypha: false
 };
 
+const KJV_APOCRYPHA_INDEX_ENTRY = {
+  id: 'KJV_Apocrypha',
+  language: 'English',
+  languageCode: 'en',
+  voiceLang: 'en-US',
+  translationName: 'KJVA',
+  abbreviation: 'KJVA',
+  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Apocrypha%20.json',
+  testament: 'both',
+  isRTL: false,
+  hasApocrypha: true
+};
+
+const WEB_APOCRYPHA_INDEX_ENTRY = {
+  id: 'WEB_Apocrypha',
+  language: 'English',
+  languageCode: 'en',
+  voiceLang: 'en-US',
+  translationName: 'WEBA',
+  abbreviation: 'WEBA',
+  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB%20Apocrypha%20.json',
+  testament: 'both',
+  isRTL: false,
+  hasApocrypha: true
+};
+
 function ensureApocryphaStandaloneInIndex(indexData) {
   if (!indexData?.translations?.length) return indexData;
-  const translations = [...indexData.translations];
-  const pinned = [];
-  [APOCRYPHA_STANDALONE_MODULE, ALL_APOCRYPHA_MODULE].forEach(moduleId => {
-    const defaults = moduleId === ALL_APOCRYPHA_MODULE ? ALL_APOCRYPHA_INDEX_ENTRY : APOCRYPHA_STANDALONE_INDEX_ENTRY;
-    const existingIdx = translations.findIndex(t => t.id === moduleId);
-    pinned.push(existingIdx >= 0 ? translations.splice(existingIdx, 1)[0] : { ...defaults });
+  const translations = indexData.translations.map(canonicalizeApocryphaEntry);
+  const required = [
+    [APOCRYPHA_STANDALONE_MODULE, APOCRYPHA_STANDALONE_INDEX_ENTRY],
+    [ALL_APOCRYPHA_MODULE, ALL_APOCRYPHA_INDEX_ENTRY],
+    ['KJV_Apocrypha', KJV_APOCRYPHA_INDEX_ENTRY],
+    ['WEB_Apocrypha', WEB_APOCRYPHA_INDEX_ENTRY]
+  ];
+  required.forEach(([moduleId, defaults]) => {
+    const existingIdx = translations.findIndex(t => String(t.id).toUpperCase() === String(moduleId).toUpperCase());
+    if (existingIdx >= 0) translations[existingIdx] = { ...defaults, ...translations[existingIdx], ...canonicalizeApocryphaEntry(translations[existingIdx]) };
+    else translations.push({ ...defaults });
   });
-  const enIdx = translations.findIndex(t => String(t.language || '').toLowerCase() === 'english');
-  translations.splice(enIdx >= 0 ? enIdx : 0, 0, ...pinned);
   return { ...indexData, translations };
 }
 
@@ -8677,7 +7350,7 @@ function isSegondMode(module) {
 
 function getTranslationLabel(module, bookKey) {
   const mod = normalizeGhModuleId(module);
-  if (isAllApocryphaTranslation(mod)) return 'All Apocrypha';
+  if (isAllApocryphaTranslation(mod)) return 'ALL APOCRYPHA';
   if (isApocryphaStandaloneTranslation(mod) && bookKey) {
     const resolvedKey = getApocryphaStandaloneBookKeyForLabel(mod, bookKey);
     const data = GH_MEMORY_CACHE[mod];
@@ -8685,7 +7358,7 @@ function getTranslationLabel(module, bookKey) {
     if (source) return getApocryphaStandaloneTranslationLabel(source);
   }
   const b = GH_BIBLES[mod];
-  return b ? (b.shortname || module) : module;
+  return b ? formatBibleVersionListName(b.shortname || module) : formatBibleVersionListName(module);
 }
 
 function getTranslationLang(module) {
@@ -8715,6 +7388,25 @@ function appendApocryphaBookOptions(frag, allowedSet, langBooks, langCode, ui, v
   if (apG.children.length) frag.appendChild(apG);
 }
 
+
+function getVersionListSortName(b) {
+  return formatBibleVersionListName(b?.shortname || b?.name || b?.module || '');
+}
+
+function getPinnedVersionListRank(b) {
+  const mod = normalizeGhModuleId(b?.module);
+  if (mod === APOCRYPHA_STANDALONE_MODULE) return 0;
+  if (mod === ALL_APOCRYPHA_MODULE) return 1;
+  return 10;
+}
+
+function compareBibleVersionsForList(a, b) {
+  const pa = getPinnedVersionListRank(a);
+  const pb = getPinnedVersionListRank(b);
+  if (pa !== pb) return pa - pb;
+  return getVersionListSortName(a).localeCompare(getVersionListSortName(b), undefined, { sensitivity: 'base', numeric: true });
+}
+
 function populateTranslationSelects(panels) {
   panels = panels || ['d', 'm'];
   const byLang = {};
@@ -8724,7 +7416,7 @@ function populateTranslationSelects(panels) {
     byLang[lang].push(b);
   });
   Object.keys(byLang).forEach(lang => {
-    byLang[lang].sort((a, b) => (+a.rank || 999) - (+b.rank || 999));
+    byLang[lang].sort(compareBibleVersionsForList);
   });
   const langOrder = Object.keys(byLang).sort((a, b) => {
     const pa = translationLangPriority(a);
@@ -8743,8 +7435,8 @@ function populateTranslationSelects(panels) {
       byLang[lang].forEach(b => {
         const o = document.createElement('option');
         o.value = b.module;
-        o.textContent = b.shortname;
-        o.title = b.name;
+        o.textContent = formatBibleVersionListName(b.shortname || b.name);
+        o.title = formatBibleVersionListName(b.name || b.shortname);
         og.appendChild(o);
       });
       frag.appendChild(og);
@@ -8767,7 +7459,7 @@ function populateTranslationSelects(panels) {
 async function backgroundRefreshBibleList() {
   await resetStaleBibleJsonCachesOnce();
   try {
-    const remote = await apiGetJson(GH_TRANSLATIONS_INDEX_URL, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+    const remote = await loadRemoteTranslationsIndex();
     if (remote?.translations?.length) {
       initGhBiblesFromIndex(remote);
       writeGhIndexCache(remote);
@@ -8786,12 +7478,27 @@ async function backgroundRefreshBibleList() {
 
 async function loadBibleList() {
   await resetStaleBibleJsonCachesOnce();
+  if (!Object.keys(GH_BIBLES || {}).length) {
+    try {
+      const remote = await loadRemoteTranslationsIndex();
+      if (remote?.translations?.length) {
+        initGhBiblesFromIndex(remote);
+        writeGhIndexCache(remote);
+        populateTranslationSelects();
+        applySavedDefaultTranslation({ syncPrefs: true });
+      }
+    } catch { /* ignore: background refresh still retries below */ }
+  }
   void backgroundRefreshBibleList();
   const version = resolveDefaultTranslationForBoot();
   applyInstantBookIdsFromMeta(version);
   const deferRead = shouldBootReadBibleOnLoad() && !_readBibleBootDone;
   try { await updateBooks(activePanel(), { skipReadInit: !shouldBootReadBibleOnLoad() || deferRead }); }
   catch { ['d', 'm'].forEach(p => setBookLabelState(p, 'error')); }
+  if (deferRead) {
+    showEarlyReadBibleBootLoader();
+    scheduleDefaultReadBibleBoot();
+  }
 }
 
 async function ensureBooksForVersion(version) {
@@ -8834,11 +7541,17 @@ async function preloadAllTranslationBookNames() {
 function applyTranslationRtl(version) {
   version = normalizeGhModuleId(version);
   const meta = getGhMeta(version);
-  const rtl = !!meta?.isRTL;
+  const rtl = inferTranslationRtl(meta || {}, meta?.rawUrl || version);
   document.documentElement.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+  document.documentElement.classList.toggle('translation-rtl-active', rtl);
   ['d', 'm'].forEach(p => {
     const display = document.getElementById(p + '-verseDisplay');
     if (display) display.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    if (display) display.style.textAlign = rtl ? 'right' : '';
+  });
+  document.querySelectorAll('.read-passage-text, .verse-text, .verse-ref').forEach(el => {
+    el.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    el.style.textAlign = rtl ? 'right' : '';
   });
 }
 
@@ -8991,7 +7704,7 @@ function applyTranslationRtl(version) {
         applySavedDefaultsOnLoad();
         restoreTestamentOptions(activePanel());
         applySavedDefaultsOnLoad();
-        void updateBooks(activePanel(), { skipReadInit: getEffectiveDefaultMode() !== 'read' });
+        void updateBooks(activePanel(), { skipReadInit: true });
       }
     }
     updateScrollToModeButtons();
@@ -10517,6 +9230,44 @@ function applyTranslationRtl(version) {
     display.classList.add('loading', 'read-bible-boot-loading');
     if (p === 'd') display.classList.remove('read-display-active');
     display.innerHTML = readBibleBootLoaderHtml(p);
+  }
+
+  function bibleVersionSwitchLoaderHtml(p, version) {
+    const subtitleClass = p === 'd' ? 'verse-placeholder' : 'mob-placeholder';
+    const label = escapeHtml(getTranslationLabel(version) || String(version || '').toUpperCase() || 'Bible');
+    return (
+      '<div class="read-bible-start-loader version-switch-loader" role="status" aria-live="polite">' +
+        '<div class="read-bible-loader-orb" aria-hidden="true"><span class="read-bible-loader-cross">✝</span></div>' +
+        '<div class="read-bible-loader-title">Loading Bible Version<span class="read-bible-loader-dots"><span></span><span></span><span></span></span></div>' +
+        '<p class="read-bible-loader-subtitle ' + subtitleClass + '">Loading ' + label + ' Bible. The spinner will close when the Bible book is fully ready.</p>' +
+      '</div>'
+    );
+  }
+
+  function setBibleVersionSwitchLoader(p, version) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return false;
+    display.classList.remove('read-updating');
+    display.classList.add('loading', 'read-bible-boot-loading');
+    if (p === 'd') display.classList.remove('read-display-active', 'generator-image-overflow', 'hbv-display-active');
+    display.innerHTML = bibleVersionSwitchLoaderHtml(p, version);
+    return true;
+  }
+
+  function displayHasVersionSwitchLoader(p) {
+    return !!document.getElementById(p + '-verseDisplay')?.querySelector('.version-switch-loader');
+  }
+
+  function finishBibleVersionSwitchLoader(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    if (!display.querySelector('.version-switch-loader')) return;
+    display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
+    if (isReadBibleMode(p)) {
+      display.innerHTML = passageLoadErrorHtml(p);
+    } else {
+      showGeneratorPlaceholder(p);
+    }
   }
 
   function cancelReadBibleBootTimers() {
@@ -12938,6 +11689,7 @@ function applyTranslationRtl(version) {
   function setReadDisplayLoading(p, hard) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
+    if (display.querySelector('.version-switch-loader')) return;
     if (isReadBibleBootLocked()) return;
     if (!hard && hasReadPassageContent(display)) {
       display.classList.add('read-updating');
@@ -13698,7 +12450,6 @@ function applyTranslationRtl(version) {
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     const isStale = () => isVersionChangeStale(changeGen);
 
-    void ensureBooksForVersion(version);
     readChapterCache = {};
     if (!syncBookCachesFromMemory(version)) {
       delete GH_BOOK_IDS_BY_MODULE[version];
@@ -13710,35 +12461,60 @@ function applyTranslationRtl(version) {
     syncVersionSelects(version);
 
     const active = activePanel();
-    for (const pl of ['d', 'm']) {
-      if (!isSegondMode(version)) restoreTestamentOptions(pl);
-      else ensureStandardTestamentOptions(pl);
-    }
     const inRead = isReadBibleMode(active);
-    await updateBooks(active, { refreshReadLabels: inRead, changeGen });
-    if (isStale()) return;
-    await loadVotdAndWeekly(version);
-    if (isStale()) return;
-    await refreshDevotionalScripture(version);
-    if (isStale()) return;
+    const loaderShown = setBibleVersionSwitchLoader(active, version);
 
-    const other = active === 'd' ? 'm' : 'd';
-    const tActive = document.getElementById(active + '-testament');
-    const tOther = document.getElementById(other + '-testament');
-    if (tActive && tOther) tOther.value = tActive.value;
+    try {
+      // Wait for the selected Bible JSON to fully load before removing the spinner.
+      await loadGhTranslationData(version);
+      if (isStale()) return;
 
-    if (inRead) {
-      const currentVersion = normalizeGhModuleId(document.getElementById(active + '-version').value);
-      const bookSel = document.getElementById(active + '-read-book');
-      const chSel = document.getElementById(active + '-read-chapter');
-      const loc = resolveReadLocationForVersion(
-        currentVersion,
-        bookSel?.value,
-        chSel?.value
-      );
-      await loadReadChapterAt(active, loc.bookEn, loc.chapter, { scrollToTop: false });
-    } else if (current[active]) {
-      await retranslateCurrentVerse(active, version);
+      await ensureBooksForVersion(version).catch(() => []);
+      if (isStale()) return;
+
+      for (const pl of ['d', 'm']) {
+        if (!isSegondMode(version)) restoreTestamentOptions(pl);
+        else ensureStandardTestamentOptions(pl);
+      }
+
+      await updateBooks(active, { refreshReadLabels: inRead, changeGen });
+      if (isStale()) return;
+      await loadVotdAndWeekly(version);
+      if (isStale()) return;
+      await refreshDevotionalScripture(version);
+      if (isStale()) return;
+
+      const other = active === 'd' ? 'm' : 'd';
+      const tActive = document.getElementById(active + '-testament');
+      const tOther = document.getElementById(other + '-testament');
+      if (tActive && tOther) tOther.value = tActive.value;
+
+      if (inRead) {
+        const currentVersion = normalizeGhModuleId(document.getElementById(active + '-version').value);
+        const bookSel = document.getElementById(active + '-read-book');
+        const chSel = document.getElementById(active + '-read-chapter');
+        const loc = resolveReadLocationForVersion(
+          currentVersion,
+          bookSel?.value,
+          chSel?.value
+        );
+        await loadReadChapterAt(active, loc.bookEn, loc.chapter, { scrollToTop: false });
+      } else if (current[active]) {
+        await retranslateCurrentVerse(active, version);
+      } else if (loaderShown && displayHasVersionSwitchLoader(active)) {
+        showGeneratorPlaceholder(active);
+      }
+    } catch (err) {
+      if (isStale()) return;
+      const display = document.getElementById(active + '-verseDisplay');
+      if (display) {
+        display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
+        display.innerHTML = inRead
+          ? passageLoadErrorHtml(active)
+          : `<p class="${active === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this Bible version. Check your connection and try again.</p>`;
+      }
+    } finally {
+      if (!isStale()) finishBibleVersionSwitchLoader(active);
     }
   }
 
@@ -14697,7 +13473,10 @@ function applyTranslationRtl(version) {
     applyDefaultTranslationToUi(version);
     applyInstantBookIdsFromMeta(version);
     applyTranslationRtl(version);
-    if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) showEarlyReadBibleBootLoader();
+    if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+      showEarlyReadBibleBootLoader();
+      scheduleDefaultReadBibleBoot();
+    }
 
     initDevotionalTextSize();
     initThemeSystem();
@@ -14710,7 +13489,17 @@ function applyTranslationRtl(version) {
 
     // Background work — must not block taps on Generate or social links.
     void loadWeeklyVersesCatalog();
-    void loadBibleList();
+    void loadBibleList().then(() => {
+      if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+        showEarlyReadBibleBootLoader();
+        return ensureDefaultReadBiblePassage({ force: true });
+      }
+    }).catch(() => {
+      if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+        showEarlyReadBibleBootLoader();
+        return ensureDefaultReadBiblePassage({ force: true });
+      }
+    });
     prefetchGhTranslation(version);
     void preloadBannerVerses(version, { silent: true });
     void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
@@ -14749,7 +13538,7 @@ function applyTranslationRtl(version) {
     const defaultMode = getEffectiveDefaultMode();
     applyInstantBookIdsFromMeta(defaultVer);
     activePanels.forEach(p => {
-      void updateBooks(p, { skipFetch: true, skipReadInit: defaultMode !== 'read' });
+      void updateBooks(p, { skipFetch: true, skipReadInit: true });
     });
     if (defaultMode === 'read') {
       showEarlyReadBibleBootLoader();
@@ -14760,8 +13549,9 @@ function applyTranslationRtl(version) {
     }
     prefetchGhTranslation(defaultVer, () => {
       activePanels.forEach(p => {
-        void updateBooks(p, { silent: true, skipReadInit: defaultMode !== 'read' });
+        void updateBooks(p, { silent: true, skipReadInit: true });
       });
+      if (defaultMode === 'read') scheduleDefaultReadBibleBoot();
     });
     const fillOther = () => {
       populateTranslationSelects(otherPanels);
@@ -14773,7 +13563,7 @@ function applyTranslationRtl(version) {
         else if (!optionValueExists(sel, sel.value)) sel.value = GH_DEFAULT_TRANSLATION;
       });
       refreshDefaultPreferenceSelectValues();
-      void updateBooks(otherPanels[0], { skipFetch: true, silent: true });
+      void updateBooks(otherPanels[0], { skipFetch: true, silent: true, skipReadInit: true });
     };
     if (typeof requestIdleCallback === 'function') requestIdleCallback(fillOther, { timeout: 2500 });
     else setTimeout(fillOther, 50);
@@ -14784,7 +13574,7 @@ function applyTranslationRtl(version) {
     const cached = readGhIndexCache();
     if (cached) initGhBiblesFromIndex(cached);
     const embedded = readEmbeddedTranslationsIndex();
-    if (embedded) {
+    if (embedded?.translations?.length) {
       initGhBiblesFromIndex(embedded);
       writeGhIndexCache(embedded);
     } else if (!cached) return;
@@ -15169,6 +13959,186 @@ function applyTranslationRtl(version) {
     } else {
       setTimeout(preloadWhenIdle, 900);
     }
+  })();
+
+  /* ══ Rain Effect (off by default, starts only when user toggles ON) ══ */
+  (function initRainEffect() {
+    const RAIN_URL = 'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/rain2.opus';
+    const RAIN_VOLUME = 0.15;
+    const RAIN_FADE_MS = 5000;
+
+    let rainAudio = null;
+    let rainOn = false;
+    let rainLoading = false;
+    let rainFadeTimer = null;
+
+    const rainBtns = Array.from(document.querySelectorAll('[data-rain-effect-toggle]'));
+    const rainHost = document.getElementById('rain-effect-player');
+
+    function syncRainUI() {
+      rainBtns.forEach(btn => {
+        const label = btn.querySelector('.rain-effect-status');
+        btn.classList.toggle('is-on', rainOn);
+        btn.classList.toggle('is-loading', rainLoading);
+        btn.setAttribute('aria-pressed', rainOn ? 'true' : 'false');
+        btn.setAttribute('aria-label', rainLoading ? 'Loading rain effect' : (rainOn ? 'Turn off rain effect' : 'Turn on rain effect'));
+        btn.setAttribute('title', rainLoading ? 'Loading rain effect' : (rainOn ? 'Turn off rain effect' : 'Turn on rain effect'));
+        if (label) label.textContent = rainLoading ? 'Loading' : (rainOn ? 'ON' : 'OFF');
+      });
+    }
+
+    function stopRainFade() {
+      if (rainFadeTimer) {
+        clearInterval(rainFadeTimer);
+        rainFadeTimer = null;
+      }
+    }
+
+    function fadeRainIn() {
+      if (!rainAudio) return;
+      stopRainFade();
+      const startedAt = Date.now();
+      rainAudio.volume = 0;
+      rainFadeTimer = setInterval(() => {
+        if (!rainAudio || !rainOn || rainAudio.paused) {
+          stopRainFade();
+          return;
+        }
+        const progress = Math.min(1, (Date.now() - startedAt) / RAIN_FADE_MS);
+        rainAudio.volume = Math.min(RAIN_VOLUME, RAIN_VOLUME * progress);
+        if (progress >= 1) stopRainFade();
+      }, 80);
+    }
+
+    function createRainAudio() {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.crossOrigin = 'anonymous';
+      audio.loop = true;
+      audio.muted = false;
+      audio.volume = 0;
+      audio.src = RAIN_URL;
+      audio.addEventListener('playing', () => {
+        const shouldFade = rainLoading || audio.volume === 0;
+        rainLoading = false;
+        rainOn = true;
+        if (shouldFade) fadeRainIn();
+        syncRainUI();
+      });
+      audio.addEventListener('canplaythrough', () => {
+        if (rainOn && rainLoading) {
+          const playPromise = audio.play();
+          if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(handleRainPlayFail);
+        }
+      }, { once: true });
+      audio.addEventListener('error', handleRainPlayFail);
+      try { audio.load(); } catch { /* ignore */ }
+      return audio;
+    }
+
+    function attachRainAudio(audio) {
+      if (!rainHost || !audio) return;
+      rainHost.innerHTML = '';
+      rainHost.appendChild(audio);
+    }
+
+    function handleRainPlayFail() {
+      stopRainFade();
+      rainLoading = false;
+      rainOn = false;
+      try {
+        if (rainAudio) {
+          rainAudio.pause();
+          rainAudio.currentTime = 0;
+        }
+      } catch { /* ignore */ }
+      syncRainUI();
+    }
+
+    function turnRainOn() {
+      if (rainLoading || rainOn) return;
+      rainLoading = true;
+      rainOn = true;
+      syncRainUI();
+
+      if (!rainAudio) {
+        rainAudio = createRainAudio();
+        attachRainAudio(rainAudio);
+      }
+
+      try {
+        stopRainFade();
+        rainAudio.volume = 0;
+        rainAudio.muted = false;
+      } catch { /* ignore */ }
+
+      const playPromise = rainAudio.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(() => {
+          rainLoading = false;
+          rainOn = true;
+          fadeRainIn();
+          syncRainUI();
+        }).catch(handleRainPlayFail);
+      } else {
+        rainLoading = false;
+        rainOn = true;
+        fadeRainIn();
+        syncRainUI();
+      }
+    }
+
+    function fadeRainOutAndStop() {
+      if (!rainAudio) return;
+      stopRainFade();
+
+      const startedAt = Date.now();
+      const startVolume = Math.max(0, Math.min(RAIN_VOLUME, rainAudio.volume || 0));
+
+      if (startVolume <= 0 || rainAudio.paused) {
+        try {
+          rainAudio.pause();
+          rainAudio.currentTime = 0;
+          rainAudio.volume = 0;
+        } catch { /* ignore */ }
+        return;
+      }
+
+      rainFadeTimer = setInterval(() => {
+        if (!rainAudio || rainOn) {
+          stopRainFade();
+          return;
+        }
+
+        const progress = Math.min(1, (Date.now() - startedAt) / RAIN_FADE_MS);
+        rainAudio.volume = Math.max(0, startVolume * (1 - progress));
+
+        if (progress >= 1) {
+          stopRainFade();
+          try {
+            rainAudio.pause();
+            rainAudio.currentTime = 0;
+            rainAudio.volume = 0;
+          } catch { /* ignore */ }
+        }
+      }, 80);
+    }
+
+    function turnRainOff() {
+      rainLoading = false;
+      rainOn = false;
+      fadeRainOutAndStop();
+      syncRainUI();
+    }
+
+    function toggleRain() {
+      if (rainLoading) return;
+      if (rainOn) turnRainOff();
+      else turnRainOn();
+    }
+
+    rainBtns.forEach(btn => btn.addEventListener('click', toggleRain));
+    syncRainUI();
   })();
 </script>
 
