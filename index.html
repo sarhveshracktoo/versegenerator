@@ -1052,6 +1052,68 @@
     }
     .read-bible-loader-dots span:nth-child(2) { animation-delay: 0.15s; }
     .read-bible-loader-dots span:nth-child(3) { animation-delay: 0.30s; }
+
+    .version-download-progress {
+      width: min(360px, 92%);
+      margin: 12px auto 0;
+      text-align: center;
+    }
+    .version-download-note {
+      font-family: 'Cinzel', serif;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--verse-ref-color);
+      margin-bottom: 8px;
+      overflow-wrap: anywhere;
+    }
+    .version-download-bar {
+      position: relative;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      background: rgba(var(--accent-rgb), 0.10);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.14), 0 0 12px rgba(var(--accent-rgb), 0.12);
+    }
+    .version-download-fill {
+      display: block;
+      height: 100%;
+      width: 1%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
+      box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.38);
+      transition: width 0.18s linear;
+      will-change: width;
+      transform: translateZ(0);
+    }
+    .version-download-cells {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      gap: 3px;
+      margin-top: 7px;
+      width: 100%;
+    }
+    .version-download-cell {
+      height: 5px;
+      border-radius: 2px;
+      background: rgba(var(--accent-rgb), 0.14);
+      border: 1px solid rgba(var(--accent-rgb), 0.12);
+      transition: background 0.12s linear, box-shadow 0.12s linear;
+    }
+    .version-download-cell.is-active {
+      background: var(--gold);
+      box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.42);
+    }
+    @media (max-width: 768px) {
+      .version-download-progress { width: min(310px, 96%); }
+      .version-download-note { font-size: 0.58rem; letter-spacing: 0.08em; }
+      .version-download-bar { height: 11px; }
+      .version-download-cells { gap: 2px; margin-top: 6px; }
+      .version-download-cell { height: 4px; }
+    }
     @keyframes readBibleLoaderSpin { to { transform: rotate(360deg); } }
     @keyframes readBibleOrbBreathe {
       0%, 100% { transform: scale(0.96); opacity: 0.82; }
@@ -5191,8 +5253,8 @@ The website owner respects legitimate copyright claims and aims to resolve such 
 
 /* GitHub Bible Translations — external master index (TRANSLATION/versions.json) */
 const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/versions.json';
-const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v8-master-rtl-sorted-apocrypha';
-const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt', 'KJVSTRONGS', 'KJV_STRONGS', 'KJV STRONGS', 'RV1909STRONGS', 'RV_1909_STRONGS', 'RV 1909 STRONGS', 'CHINESE UNION SIMP S', 'CHINESE UNION TRAD S']);
+const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v9-master-rtl-sorted-apocrypha-no-trparsed';
+const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt', 'KJVSTRONGS', 'KJV_STRONGS', 'KJV STRONGS', 'RV1909STRONGS', 'RV_1909_STRONGS', 'RV 1909 STRONGS', 'CHINESE UNION SIMP S', 'CHINESE UNION TRAD S', 'TRPARSED', 'TR PARSED', 'TR_PARSED']);
 const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
 const GH_TX_CACHE_PREFIX = 'bible_tx_';
 const GH_BOOK_META_PREFIX = 'bible_tx_meta_';
@@ -5201,7 +5263,7 @@ const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-17-master-index-rtl-sorted-apocrypha-v8';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-17-master-index-rtl-sorted-apocrypha-v9-no-trparsed-progress';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
@@ -5640,7 +5702,10 @@ function isHiddenTranslationName(value) {
   return token === 'KJV STRONGS' ||
     token === 'RV 1909 STRONGS' ||
     token === 'CHINESE UNION SIMP S' ||
-    token === 'CHINESE UNION TRAD S';
+    token === 'CHINESE UNION TRAD S' ||
+    token === 'TRPARSED' ||
+    token === 'TR PARSED' ||
+    token === 'TR_PARSED';
 }
 
 function canonicalApocryphaKeyFromEntry(entry) {
@@ -7800,7 +7865,7 @@ function applyTranslationRtl(version) {
 
   const WEEKLY_JSON_URL =
     'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
-  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-v3';
+  const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-remote-v4';
   let _weeklyVersesList = [];
   let _weeklyVersesByWeek = {};
   let _weeklySortedByDate = [];
@@ -7812,11 +7877,9 @@ function applyTranslationRtl(version) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const WEEKLY_VERSES_OFFLINE = [
-    { week: 1, reference: 'John 3:16', verse: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', note: "God's love for humanity is shown through Jesus Christ and the promise of eternal life.", month: 'January', date: '01' },
-    { week: 2, reference: 'Genesis 1:1', verse: 'In the beginning God created the heaven and the earth.', note: 'God is the Creator of everything and the source of all life.', month: 'January', date: '08' },
-    { week: 3, reference: 'Romans 8:28', verse: 'And we know that all things work together for good to them that love God, to them who are the called according to his purpose.', note: 'God can use every situation in life for the good of those who trust Him.', month: 'January', date: '15' }
-  ];
+  // Verse of the Week must come from the remote GitHub JSON file, so editing
+  // daily and week verse.json updates the website without editing this HTML.
+  const WEEKLY_VERSES_OFFLINE = [];
 
   function weeklyMonthDayKey(item) {
     if (!item) return 0;
@@ -7832,8 +7895,12 @@ function applyTranslationRtl(version) {
     return now.getMonth() * 100 + now.getDate();
   }
 
-  function getWeeklyBannerCacheKey(version) {
-    return version + ':' + getLocalTodayMonthDayKey();
+  function getWeeklyBannerCacheKey(version, weeklyEntry) {
+    // Keep the Verse of the Week cache tied to the selected weekly entry date,
+    // not only to the current day. This keeps the banner synced when the
+    // weekly date changes and prevents an old weekly reference from being reused.
+    const datePart = weeklyEntry ? weeklyMonthDayKey(weeklyEntry) : getLocalTodayMonthDayKey();
+    return version + ':' + datePart;
   }
 
   function indexWeeklyVersesCatalog() {
@@ -7849,13 +7916,26 @@ function applyTranslationRtl(version) {
   }
 
   function getWeeklyIndexForToday(sorted) {
+    // The date/month from the remote weekly JSON is treated as the START date
+    // of that weekly verse. It stays active until the next weekly JSON date.
+    // Example: if the JSON date is June 17 and the next one is June 24,
+    // the June 17 verse remains active for the full 7-day window.
     if (!sorted.length) return 0;
     const today = getLocalTodayMonthDayKey();
     let idx = sorted.length - 1;
     for (let i = 0; i < sorted.length; i++) {
       if (today >= weeklyMonthDayKey(sorted[i])) idx = i;
+      else break;
     }
     return idx;
+  }
+
+  function getCurrentWeeklyPeriodInfo(sorted) {
+    if (!sorted.length) return null;
+    const idx = getWeeklyIndexForToday(sorted);
+    const current = sorted[idx] || sorted[0];
+    const next = sorted[(idx + 1) % sorted.length] || null;
+    return { index: idx, current, next };
   }
 
   function ensureWeeklyCatalogIndexed() {
@@ -7864,13 +7944,27 @@ function applyTranslationRtl(version) {
     }
   }
 
+  function normalizeWeeklyCatalogData(data) {
+    const list = Array.isArray(data)
+      ? data
+      : (Array.isArray(data?.weekly) ? data.weekly
+        : (Array.isArray(data?.verses) ? data.verses
+          : (Array.isArray(data?.weeklyVerses) ? data.weeklyVerses : [])));
+    return list.filter(item => item && (item.reference || item.ref) && (item.date || item.day) && item.month).map(item => ({
+      ...item,
+      reference: String(item.reference || item.ref || '').trim(),
+      date: String(item.date ?? item.day ?? '').padStart(2, '0'),
+      month: String(item.month || '').trim()
+    }));
+  }
+
   function hydrateWeeklyCatalogFromCache() {
     if (_weeklyVersesList.length) return true;
     try {
       const raw = sessionStorage.getItem(WEEKLY_JSON_CACHE_KEY);
       if (!raw) return false;
-      const data = JSON.parse(raw);
-      if (Array.isArray(data) && data.length) {
+      const data = normalizeWeeklyCatalogData(JSON.parse(raw));
+      if (data.length) {
         _weeklyVersesList = data;
         indexWeeklyVersesCatalog();
         return true;
@@ -7879,24 +7973,28 @@ function applyTranslationRtl(version) {
     return false;
   }
 
-  async function loadWeeklyVersesCatalog() {
-    if (_weeklyVersesList.length) return _weeklyVersesList;
+  async function loadWeeklyVersesCatalog(forceRefresh) {
+    if (!forceRefresh && _weeklyVersesList.length) return _weeklyVersesList;
     if (_weeklyCatalogLoadPromise) return _weeklyCatalogLoadPromise;
 
     _weeklyCatalogLoadPromise = (async () => {
-      hydrateWeeklyCatalogFromCache();
-      if (!_weeklyVersesList.length) {
-        _weeklyVersesList = WEEKLY_VERSES_OFFLINE.slice();
-        indexWeeklyVersesCatalog();
-      }
       try {
-        const data = await apiGetJson(WEEKLY_JSON_URL, 12000);
-        if (Array.isArray(data) && data.length) {
-          _weeklyVersesList = data;
-          indexWeeklyVersesCatalog();
-          try { sessionStorage.setItem(WEEKLY_JSON_CACHE_KEY, JSON.stringify(data)); } catch { /* quota */ }
-        }
-      } catch { /* keep cache / offline list */ }
+        // Cache-bust the GitHub raw URL so changes to date/month in the JSON
+        // are read from GitHub instead of from an older embedded/browser copy.
+        const freshUrl = WEEKLY_JSON_URL + (WEEKLY_JSON_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const data = await apiGetJson(freshUrl, 16000);
+        const list = normalizeWeeklyCatalogData(data);
+        if (!list.length) throw new Error('empty-weekly-json');
+        _weeklyVersesList = list;
+        indexWeeklyVersesCatalog();
+        try { sessionStorage.setItem(WEEKLY_JSON_CACHE_KEY, JSON.stringify(list)); } catch { /* quota */ }
+      } catch {
+        // Use only the last remote JSON cache if the user is offline. Do not use
+        // integrated weekly date/month data from the HTML.
+        if (!_weeklyVersesList.length) hydrateWeeklyCatalogFromCache();
+      } finally {
+        _weeklyCatalogLoadPromise = null;
+      }
       return _weeklyVersesList;
     })();
 
@@ -7913,16 +8011,16 @@ function applyTranslationRtl(version) {
 
   function getCurrentWeeklyVerseEntry(version) {
     ensureWeeklyCatalogIndexed();
-    const sorted = _weeklySortedByDate.length
-      ? _weeklySortedByDate
-      : getSortedWeeklyCatalog(_weeklyVersesList.length ? _weeklyVersesList : WEEKLY_VERSES_OFFLINE);
-    if (!sorted.length) return WEEKLY_VERSES_OFFLINE[0];
-    const startIdx = getWeeklyIndexForToday(sorted);
-    for (let i = 0; i < sorted.length; i++) {
-      const entry = sorted[(startIdx + i) % sorted.length];
-      if (entry && (!version || weeklyRefAllowed(version, entry.reference))) return entry;
-    }
-    return sorted[0];
+    const sorted = _weeklySortedByDate.length ? _weeklySortedByDate : getSortedWeeklyCatalog(_weeklyVersesList);
+    if (!sorted.length) return null;
+
+    // Do not skip ahead to another weekly verse just because the selected Bible
+    // version cannot fetch that reference. The weekly date must stay locked to
+    // the active 7-day period from the remote JSON. If a translation cannot load
+    // the verse, the banner keeps the raw weekly text/fallback instead of
+    // jumping to a different week.
+    const period = getCurrentWeeklyPeriodInfo(sorted);
+    return period?.current || sorted[0] || null;
   }
 
   function buildRefFromParsed(parsed) {
@@ -8115,14 +8213,8 @@ function applyTranslationRtl(version) {
     scrollToOpenedBannerPanel('weekly');
 
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
-    const cacheKey = getWeeklyBannerCacheKey(version);
-    const cached = _weeklyDisplayCache[cacheKey];
-    if (cached) {
-      paintWeeklyBanner(cached.weeklyEntry, cached.label, cached.note);
-      scrollToOpenedBannerPanel('weekly');
-      return;
-    }
-
+    // Always let loadWeeklyBanner resolve the current weekly date first, so an
+    // old in-memory cache cannot display last week's reference.
     await loadWeeklyBanner(version, { silent: false });
     scrollToOpenedBannerPanel('weekly');
   }
@@ -8171,7 +8263,7 @@ function applyTranslationRtl(version) {
   function paintWeeklyBanner(weeklyEntry, label, note, version) {
     if (!weeklyEntry) return;
     const v = version || document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
-    _weeklyDisplayCache[getWeeklyBannerCacheKey(v)] = { weeklyEntry, label, note: note || '' };
+    _weeklyDisplayCache[getWeeklyBannerCacheKey(v, weeklyEntry)] = { weeklyEntry, label, note: note || '' };
     ['d', 'm'].forEach(p => {
       const weeklyText = document.getElementById(p + '-weekly-text');
       const weeklyRef = document.getElementById(p + '-weekly-ref');
@@ -8326,17 +8418,29 @@ function applyTranslationRtl(version) {
     version = version || VOTD_KJV_VERSION;
     opts = opts || {};
 
-    const cacheKey = getWeeklyBannerCacheKey(version);
+    await loadWeeklyVersesCatalog(opts.forceRefresh === true);
+
+    const weeklyJson = getCurrentWeeklyVerseEntry(version);
+    if (!weeklyJson) {
+      paintWeeklyBanner({
+        ref: 'Verse of the Week',
+        text: 'Could not load Verse of the Week. Check your connection and try again.',
+        canonicalRef: ''
+      }, getTranslationLabel(version), '', version);
+      return;
+    }
+    const cacheKey = getWeeklyBannerCacheKey(version, weeklyJson);
     if (_weeklyDisplayCache[cacheKey]) {
       const c = _weeklyDisplayCache[cacheKey];
       paintWeeklyBanner(c.weeklyEntry, c.label, c.note, version);
+      _bannerCanonicalRefs.weekly = c.weeklyEntry?.canonicalRef || c.weeklyEntry?.ref || weeklyJson.reference;
       return;
     }
 
-    await loadWeeklyVersesCatalog();
-
-    const weeklyJson = getCurrentWeeklyVerseEntry(version);
-    const weeklyRef = _bannerCanonicalRefs.weekly || weeklyJson.reference;
+    // Use the current week/date reference directly. Do not reuse the previous
+    // _bannerCanonicalRefs.weekly value, otherwise the banner can stay stuck on
+    // an older week until the page is refreshed.
+    const weeklyRef = weeklyJson.reference;
     const label = getTranslationLabel(version);
     const weeklyEntry = {
       ref: weeklyRef,
@@ -9301,6 +9405,62 @@ function applyTranslationRtl(version) {
     display.innerHTML = readBibleBootLoaderHtml(p);
   }
 
+
+  function progressCellsHtml() {
+    let html = '';
+    for (let i = 0; i < 20; i++) html += '<span class="version-download-cell" data-progress-cell="' + i + '"></span>';
+    return html;
+  }
+
+  function setBibleVersionLoadingProgress(p, value, allowComplete) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return;
+    let pct = Math.max(1, Math.min(100, Math.round(Number(value) || 1)));
+
+    // Keep the visible progress monotonic. This prevents mobile/desktop flicker where
+    // the bar briefly jumps to 100%, then falls back to the real loading percentage.
+    const previous = Number(_bibleVersionProgressState[p]) || 1;
+    if (pct < previous) pct = previous;
+    if (pct >= 100 && !allowComplete) pct = 99;
+    _bibleVersionProgressState[p] = pct;
+
+    const text = display.querySelector('[data-version-progress-text]');
+    const fill = display.querySelector('[data-version-progress-fill]');
+    const cells = display.querySelectorAll('[data-progress-cell]');
+    if (text) text.textContent = 'Downloading Bible Version ' + pct + '%';
+    if (fill) fill.style.width = pct + '%';
+    const activeCount = Math.max(1, Math.ceil((pct / 100) * cells.length));
+    cells.forEach((cell, index) => cell.classList.toggle('is-active', index < activeCount));
+  }
+
+  function stopBibleVersionLoadingProgress(p, finalValue, allowComplete) {
+    if (_bibleVersionProgressTimers[p]) {
+      clearInterval(_bibleVersionProgressTimers[p]);
+      _bibleVersionProgressTimers[p] = null;
+    }
+    if (finalValue != null) setBibleVersionLoadingProgress(p, finalValue, !!allowComplete);
+  }
+
+  function startBibleVersionLoadingProgress(p) {
+    stopBibleVersionLoadingProgress(p);
+    _bibleVersionProgressState[p] = 1;
+    let pct = 1;
+    setBibleVersionLoadingProgress(p, pct);
+    _bibleVersionProgressTimers[p] = setInterval(() => {
+      const display = document.getElementById(p + '-verseDisplay');
+      if (!display || !display.querySelector('.version-switch-loader')) {
+        stopBibleVersionLoadingProgress(p);
+        return;
+      }
+      pct = Math.max(pct, Number(_bibleVersionProgressState[p]) || 1);
+      if (pct < 42) pct += 3;
+      else if (pct < 72) pct += 2;
+      else if (pct < 96) pct += 1;
+      pct = Math.min(96, pct);
+      setBibleVersionLoadingProgress(p, pct);
+    }, 160);
+  }
+
   function bibleVersionSwitchLoaderHtml(p, version) {
     const subtitleClass = p === 'd' ? 'verse-placeholder' : 'mob-placeholder';
     const label = escapeHtml(getTranslationLabel(version) || String(version || '').toUpperCase() || 'Bible');
@@ -9309,6 +9469,11 @@ function applyTranslationRtl(version) {
         '<div class="read-bible-loader-orb" aria-hidden="true"><span class="read-bible-loader-cross">✝</span></div>' +
         '<div class="read-bible-loader-title">Loading Bible Version<span class="read-bible-loader-dots"><span></span><span></span><span></span></span></div>' +
         '<p class="read-bible-loader-subtitle ' + subtitleClass + '">Loading ' + label + ' Bible. The spinner will close when the Bible book is fully ready.</p>' +
+        '<div class="version-download-progress" data-version-progress="1">' +
+          '<div class="version-download-note" data-version-progress-text>Downloading Bible Version 1%</div>' +
+          '<div class="version-download-bar" aria-hidden="true"><span class="version-download-fill" data-version-progress-fill></span></div>' +
+          '<div class="version-download-cells" aria-hidden="true">' + progressCellsHtml() + '</div>' +
+        '</div>' +
       '</div>'
     );
   }
@@ -9320,6 +9485,7 @@ function applyTranslationRtl(version) {
     display.classList.add('loading', 'read-bible-boot-loading');
     if (p === 'd') display.classList.remove('read-display-active', 'generator-image-overflow', 'hbv-display-active');
     display.innerHTML = bibleVersionSwitchLoaderHtml(p, version);
+    startBibleVersionLoadingProgress(p);
     return true;
   }
 
@@ -9331,6 +9497,7 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
     if (!display.querySelector('.version-switch-loader')) return;
+    stopBibleVersionLoadingProgress(p, 100, true);
     display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
     if (isReadBibleMode(p)) {
       display.innerHTML = passageLoadErrorHtml(p);
@@ -10028,6 +10195,8 @@ function applyTranslationRtl(version) {
   const PASSAGE_ERROR_REFRESH_RESTORE_KEY = 'vg-passage-error-refresh-restore';
   let _versionChangeTimer = null;
   let _versionChangeGeneration = 0;
+  const _bibleVersionProgressTimers = { d: null, m: null };
+  const _bibleVersionProgressState = { d: 1, m: 1 };
 
   function isVersionChangeStale(changeGen) {
     return changeGen != null && changeGen !== _versionChangeGeneration;
@@ -11924,7 +12093,10 @@ function applyTranslationRtl(version) {
   }
 
   async function initReadBiblePanel(p, resetToGenesis = false) {
-    applyDefaultTranslationToUi(resolveDefaultTranslationForBoot());
+    // Keep the currently selected Bible version when entering Read Bible mode.
+    // Do not reset to the Control Panel default here; first-load boot already applies
+    // the default before this function runs. This preserves the user's chosen version
+    // when opening a generated verse in Read Bible mode.
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     await ensureGhBooksDiscovered(version);
     const langCode = getTranslationLang(version);
@@ -12537,9 +12709,11 @@ function applyTranslationRtl(version) {
       // Wait for the selected Bible JSON to fully load before removing the spinner.
       await loadGhTranslationData(version);
       if (isStale()) return;
+      setBibleVersionLoadingProgress(active, 72);
 
       await ensureBooksForVersion(version).catch(() => []);
       if (isStale()) return;
+      setBibleVersionLoadingProgress(active, 82);
 
       for (const pl of ['d', 'm']) {
         if (!isSegondMode(version)) restoreTestamentOptions(pl);
@@ -12548,8 +12722,10 @@ function applyTranslationRtl(version) {
 
       await updateBooks(active, { refreshReadLabels: inRead, changeGen });
       if (isStale()) return;
+      setBibleVersionLoadingProgress(active, 90);
       await loadVotdAndWeekly(version);
       if (isStale()) return;
+      setBibleVersionLoadingProgress(active, 96);
       await refreshDevotionalScripture(version);
       if (isStale()) return;
 
@@ -12567,14 +12743,19 @@ function applyTranslationRtl(version) {
           bookSel?.value,
           chSel?.value
         );
+        setBibleVersionLoadingProgress(active, 99);
         await loadReadChapterAt(active, loc.bookEn, loc.chapter, { scrollToTop: false });
       } else if (current[active]) {
+        setBibleVersionLoadingProgress(active, 99);
         await retranslateCurrentVerse(active, version);
       } else if (loaderShown && displayHasVersionSwitchLoader(active)) {
+        setBibleVersionLoadingProgress(active, 100);
+        await delay(160);
         showGeneratorPlaceholder(active);
       }
     } catch (err) {
       if (isStale()) return;
+      stopBibleVersionLoadingProgress(active);
       const display = document.getElementById(active + '-verseDisplay');
       if (display) {
         display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
@@ -12583,6 +12764,7 @@ function applyTranslationRtl(version) {
           : `<p class="${active === 'd' ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this Bible version. Check your connection and try again.</p>`;
       }
     } finally {
+      if (isStale()) stopBibleVersionLoadingProgress(active);
       if (!isStale()) finishBibleVersionSwitchLoader(active);
     }
   }
