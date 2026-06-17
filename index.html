@@ -1072,6 +1072,75 @@
       .read-bible-loader-cross,
       .read-bible-loader-dots span { animation: none !important; }
     }
+
+
+    /* Mobile-safe Bible loading spinner fix
+       Some mobile browsers freeze layered pseudo-element animations on the first frame.
+       This fallback uses one lightweight GPU-friendly ring for mobile/compat browsers. */
+    @keyframes readBibleLoaderSpinMobileSafe {
+      0% { transform: rotate(0deg) translateZ(0); }
+      100% { transform: rotate(360deg) translateZ(0); }
+    }
+    @keyframes readBibleCrossMobilePulse {
+      0%, 100% { opacity: 0.72; transform: translateZ(0) scale(0.96); }
+      50% { opacity: 1; transform: translateZ(0) scale(1.06); }
+    }
+    @media (max-width: 768px), (pointer: coarse) {
+      .read-bible-loader-orb {
+        width: 72px;
+        height: 72px;
+        animation: none !important;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        contain: layout paint style;
+        will-change: transform;
+      }
+      .read-bible-loader-orb::before {
+        content: '';
+        display: block !important;
+        position: absolute;
+        inset: 7px;
+        border-radius: 50%;
+        border: 3px solid rgba(var(--accent-rgb), 0.18);
+        border-top-color: var(--gold);
+        border-right-color: var(--gold-light);
+        border-bottom-color: rgba(var(--accent-rgb), 0.30);
+        transform-origin: 50% 50%;
+        animation: readBibleLoaderSpinMobileSafe 0.9s linear infinite !important;
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .read-bible-loader-orb::after {
+        display: none !important;
+        animation: none !important;
+      }
+      .read-bible-loader-cross {
+        animation: readBibleCrossMobilePulse 1.35s ease-in-out infinite !important;
+        transform: translateZ(0);
+        will-change: transform, opacity;
+      }
+      .read-bible-loader-dots span {
+        animation: readBibleDotPulse 1.15s ease-in-out infinite !important;
+      }
+    }
+    body.compat-mobile .read-bible-loader-orb {
+      animation: none !important;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    body.compat-mobile .read-bible-loader-orb::before {
+      animation: readBibleLoaderSpinMobileSafe 0.9s linear infinite !important;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    body.compat-mobile .read-bible-loader-orb::after {
+      display: none !important;
+      animation: none !important;
+    }
+
     .passage-action-btn {
       font-family: 'Cinzel', serif;
       font-size: 0.68rem;
