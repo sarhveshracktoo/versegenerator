@@ -9655,7 +9655,6 @@ function applyTranslationRtl(version) {
         if (showBootLoader) await enforceReadBibleBootMinimumWait(p);
 
         applyDefaultTranslationToUi(resolveDefaultTranslationForBoot());
-        _readBibleBootFinishing[p] = true;
         releaseReadBibleBootLock();
 
         if (!displayNeedsReadBibleBoot(p) && !options.force) {
@@ -9670,7 +9669,6 @@ function applyTranslationRtl(version) {
         }
         markReadBibleBootComplete(p);
       } finally {
-        _readBibleBootFinishing[p] = false;
         releaseReadBibleBootLock();
         _readBibleBootPromise = null;
       }
@@ -10278,7 +10276,6 @@ function applyTranslationRtl(version) {
   let _readBibleBootShowUntil = 0;
   let _readBibleBootLock = false;
   let _readBibleBootStartedAt = 0;
-  let _readBibleBootFinishing = { d: false, m: false };
   let _layoutMode = null;
   let _layoutIsMobile = null;
   /** Choose Book: 'verses' = search passage; 'random' = reveal random verse */
@@ -12021,7 +12018,6 @@ function applyTranslationRtl(version) {
     if (!display) return;
     if (display.querySelector('.version-switch-loader')) return;
     if (isReadBibleBootLocked()) return;
-    if (_readBibleBootFinishing[p] && display.querySelector('.read-bible-start-loader')) return;
     if (!hard && hasReadPassageContent(display)) {
       display.classList.add('read-updating');
       return;
