@@ -5765,7 +5765,7 @@ const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
 const GH_SESSION_MEMORY_CACHE_MS = 6 * 60 * 60 * 1000; // After a fresh switch/download, reuse the in-memory JSON for fast random verse generation.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-21-library-content-direction-ltr-fix-v1';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-21-github-json-live-refresh-v2';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
@@ -6718,6 +6718,17 @@ async function idbSetBible(key, value) {
   return new Promise(resolve => {
     const tx = db.transaction('translations', 'readwrite');
     tx.objectStore('translations').put(value, key);
+    tx.oncomplete = () => { db.close(); resolve(true); };
+    tx.onerror = () => { db.close(); resolve(false); };
+  });
+}
+
+async function idbDeleteBible(key) {
+  const db = await openBibleIdb();
+  if (!db) return false;
+  return new Promise(resolve => {
+    const tx = db.transaction('translations', 'readwrite');
+    tx.objectStore('translations').delete(key);
     tx.oncomplete = () => { db.close(); resolve(true); };
     tx.onerror = () => { db.close(); resolve(false); };
   });
@@ -7723,9 +7734,24 @@ function storeGhTranslationData(module, normalized, cacheKey) {
   return normalized;
 }
 
-async function loadGhTranslationData(module) {
+async function clearGhTranslationDataCache(module) {
   module = normalizeGhModuleId(module);
-  if (GH_LOADING_PROMISES[module]) return GH_LOADING_PROMISES[module];
+  // Clear only this page-session cache. IndexedDB/localStorage stay as offline fallback
+  // and are used only if GitHub cannot be reached.
+  delete GH_MEMORY_CACHE[module];
+  delete GH_BOOK_IDS_BY_MODULE[module];
+  delete VERSION_BOOKS_CACHE[module];
+  delete VERSION_BOOK_IDS_CACHE[module];
+}
+
+async function loadGhTranslationData(module, options = {}) {
+  module = normalizeGhModuleId(module);
+  const forceFresh = !!options.forceFresh;
+  if (forceFresh) {
+    delete GH_LOADING_PROMISES[module];
+    await clearGhTranslationDataCache(module);
+  }
+  if (!forceFresh && GH_LOADING_PROMISES[module]) return GH_LOADING_PROMISES[module];
 
   GH_LOADING_PROMISES[module] = (async () => {
     const meta = GH_BIBLES[module];
@@ -7749,7 +7775,7 @@ async function loadGhTranslationData(module) {
         memoryCached.sessionReady === true ||
         (GH_RAW_JSON_CACHE_TTL_MS > 0 && getGhDataAgeMs(memoryCached) < GH_RAW_JSON_CACHE_TTL_MS)
       );
-    if (reusableMemory) {
+    if (!forceFresh && reusableMemory) {
       syncBookCachesFromMemory(module);
       return memoryCached;
     }
@@ -13338,7 +13364,7 @@ function applyTranslationRtl(version) {
 const BIBLE_LIBRARY_OPTION_VALUE = '__BIBLE_TRANSLATION_LIBRARY__';
 const BIBLE_LIBRARY_TITLE = '1500+ Bible Translation Library';
 const BIBLE_LIBRARY_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
-const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v2';
+const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v3-github-live';
 let bibleLibraryRows = [];
 let bibleLibraryLoadingPromise = null;
 let lastRealBibleVersion = { d: null, m: null };
@@ -13611,7 +13637,7 @@ async function selectBibleLibraryVersion(row, p) {
   const active = document.getElementById(p + '-version') ? p : activePanel();
   const moduleId = ensureBibleLibraryVersionOption(row);
   setBibleLibraryRowState(row, 'loading');
-  setBibleLibraryStatus(`Loading ${row.title}…`);
+  setBibleLibraryStatus(`Checking GitHub latest: ${row.title}…`);
 
   ['d', 'm'].forEach(pl => {
     const mode = document.getElementById(pl + '-testament');
@@ -13624,7 +13650,7 @@ async function selectBibleLibraryVersion(row, p) {
   ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
 
   try {
-    const data = await loadGhTranslationData(moduleId);
+    const data = await loadGhTranslationData(moduleId, { forceFresh: true });
     if (!data?.booksByEn) throw new Error('Library Bible JSON returned no readable books.');
     setBibleLibraryRowState(row, 'selected');
     setBibleLibraryStatus(`Selected: ${row.territory} - ${row.title}`);
@@ -13637,15 +13663,10 @@ async function selectBibleLibraryVersion(row, p) {
 }
 
 async function loadBibleLibraryList() {
-  if (bibleLibraryRows.length) return bibleLibraryRows;
-  const cached = readBibleLibraryCache();
-  if (cached.length) {
-    bibleLibraryRows = cached;
-    return bibleLibraryRows;
-  }
   if (bibleLibraryLoadingPromise) return bibleLibraryLoadingPromise;
-  setBibleLibraryStatus('Loading 1500+ Bible Translation Library…');
-  bibleLibraryLoadingPromise = fetch(BIBLE_LIBRARY_TREE_API, { cache: 'no-store' })
+  setBibleLibraryStatus('Loading fresh 1500+ Bible Translation Library list from GitHub…');
+  const cachedFallback = readBibleLibraryCache();
+  bibleLibraryLoadingPromise = fetch(`${BIBLE_LIBRARY_TREE_API}&live=${Date.now()}`, { cache: 'no-store' })
     .then(r => {
       if (!r.ok) throw new Error('GitHub list could not be loaded.');
       return r.json();
@@ -13664,12 +13685,14 @@ async function loadBibleLibraryList() {
       });
       rows.sort((a, b) => a.territory.localeCompare(b.territory, undefined, { sensitivity: 'base' }) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
       bibleLibraryRows = rows;
-      try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now() })); } catch { /* quota */ }
+      try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now(), source: 'github-live' })); } catch { /* quota */ }
+      setBibleLibraryStatus(rows.length ? 'Bible list updated from GitHub.' : 'No Bible JSON files found on GitHub.');
       return rows;
     })
     .catch(err => {
-      bibleLibraryRows = readBibleLibraryCache();
+      bibleLibraryRows = cachedFallback;
       if (!bibleLibraryRows.length) setBibleLibraryStatus('Could not load the GitHub Bible list. Please check your internet connection and try again.');
+      else setBibleLibraryStatus('Using saved Bible list because GitHub could not be reached.');
       return bibleLibraryRows;
     })
     .finally(() => { bibleLibraryLoadingPromise = null; });
