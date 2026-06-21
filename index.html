@@ -1523,6 +1523,16 @@
       }
     }
     .read-mode-actions-hidden { display: none !important; }
+    .easybible-action-btn {
+      white-space: nowrap;
+    }
+    @media (max-width: 768px) {
+      .mob-verse-actions .easybible-action-btn {
+        min-width: 132px;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    }
 
     /* Hardest Bible Verse Generator */
     .hbv-image-wrap {
@@ -4075,6 +4085,309 @@
       }
     }
 
+
+    /* 1500+ Bible Translation Library panel */
+    .bible-library-panel {
+      grid-column: 1 / -1;
+      width: 100%;
+      max-width: none;
+      border-radius: 10px;
+      margin: 0 0 14px;
+      background: var(--glass-votd-bg, rgba(22, 12, 4, 0.52));
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      box-shadow: var(--glass-shadow, 0 8px 32px rgba(0,0,0,0.28));
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      display: none;
+      animation: fadeUp 0.45s ease both;
+    }
+    .bible-library-panel.is-visible { display: block; }
+    .bible-library-panel.is-open .devotional-chevron svg { transform: rotate(180deg); }
+    .bible-library-collapse {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .bible-library-panel.is-open .bible-library-collapse { grid-template-rows: 1fr; }
+    .bible-library-inner { overflow: hidden; min-height: 0; }
+    .bible-library-body {
+      position: relative;
+      padding: 12px 14px 16px;
+      border-top: 1px solid rgba(var(--accent-rgb), 0.14);
+    }
+    .bible-library-search-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+    }
+    .bible-library-filter {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      background: rgba(255,255,255,0.08);
+      color: var(--parchment);
+      font-family: 'EB Garamond', serif;
+      font-size: 1rem;
+      outline: none;
+    }
+    .bible-library-filter::placeholder { color: rgba(245,234,214,0.55); }
+    .bible-library-filter:focus {
+      border-color: rgba(var(--accent-rgb), 0.72);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+    }
+    .bible-library-table-wrap {
+      position: relative;
+      height: min(72vh, 760px);
+      max-height: 72vh;
+      overflow: auto;
+      border: 1px solid rgba(var(--accent-rgb), 0.20);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.035);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(var(--accent-rgb), 0.34) transparent;
+    }
+    .bible-library-table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+    .bible-library-table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .bible-library-table-wrap::-webkit-scrollbar-thumb {
+      background: rgba(var(--accent-rgb), 0.24);
+      border: 2px solid transparent;
+      border-radius: 999px;
+      background-clip: content-box;
+    }
+    .bible-library-table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.52); background-clip: content-box; }
+    .bible-library-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+      font-size: 0.95rem;
+      color: var(--parchment);
+    }
+    .bible-library-table th,
+    .bible-library-table td {
+      border: 1px solid rgba(var(--accent-rgb), 0.18);
+      padding: 7px 9px;
+      text-align: left;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+    .bible-library-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(12, 7, 2, 0.92);
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+    .bible-library-table tr:nth-child(even) td { background: rgba(255,255,255,0.035); }
+    .bible-library-table tbody tr { cursor: pointer; transition: background 0.18s ease, outline-color 0.18s ease; }
+    .bible-library-table tbody tr:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.68); outline-offset: -2px; }
+    .bible-library-table tr:hover td,
+    .bible-library-table tr.is-selected td { background: rgba(var(--accent-rgb), 0.12); }
+    .bible-library-table tr.is-loading td { background: rgba(var(--accent-rgb), 0.18); }
+    .bible-library-status {
+      padding: 14px 10px;
+      font-style: italic;
+      color: rgba(245,234,214,0.72);
+      text-align: center;
+    }
+    .bible-library-scroll-btn {
+      position: absolute;
+      right: 18px;
+      bottom: 20px;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.30);
+      background: rgba(var(--accent-rgb), 0.08);
+      color: var(--gold-light);
+      cursor: pointer;
+      z-index: 4;
+      opacity: 0.70;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .bible-library-scroll-btn:hover,
+    .bible-library-scroll-btn:focus-visible {
+      opacity: 1;
+      transform: translateY(-1px);
+      background: rgba(var(--accent-rgb), 0.16);
+      border-color: rgba(var(--accent-rgb), 0.58);
+      outline: none;
+    }
+    .bible-library-scroll-btn svg { width: 18px; height: 18px; display: block; }
+
+    /* Normal theme: keep the 1500+ library panel bright like the parchment UI */
+    html:not([data-theme]) .bible-library-panel,
+    html[data-theme="normal"] .bible-library-panel {
+      background: rgba(245, 234, 214, 0.88);
+      border-color: rgba(139, 104, 32, 0.34);
+      box-shadow: 0 0 0 1px rgba(139,104,32,0.22), 0 8px 28px rgba(42,26,10,0.18), inset 0 1px 0 rgba(255,255,255,0.42);
+    }
+    html:not([data-theme]) .bible-library-panel button.devotional-header,
+    html[data-theme="normal"] .bible-library-panel button.devotional-header {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    html:not([data-theme]) .bible-library-panel .banner-label,
+    html:not([data-theme]) .bible-library-search-title,
+    html[data-theme="normal"] .bible-library-panel .banner-label,
+    html[data-theme="normal"] .bible-library-search-title {
+      color: var(--gold-dark);
+    }
+    html:not([data-theme]) .bible-library-body,
+    html[data-theme="normal"] .bible-library-body {
+      border-top-color: rgba(139, 104, 32, 0.18);
+    }
+    html:not([data-theme]) .bible-library-filter,
+    html[data-theme="normal"] .bible-library-filter {
+      background: rgba(255, 255, 255, 0.62);
+      border-color: rgba(139, 104, 32, 0.42);
+      color: var(--ink);
+    }
+    html:not([data-theme]) .bible-library-filter::placeholder,
+    html[data-theme="normal"] .bible-library-filter::placeholder {
+      color: rgba(42, 26, 10, 0.55);
+    }
+    html:not([data-theme]) .bible-library-table-wrap,
+    html[data-theme="normal"] .bible-library-table-wrap {
+      background: rgba(255, 255, 255, 0.32);
+      border-color: rgba(139, 104, 32, 0.24);
+      scrollbar-color: rgba(139, 104, 32, 0.38) transparent;
+    }
+    html:not([data-theme]) .bible-library-table,
+    html[data-theme="normal"] .bible-library-table {
+      color: var(--ink);
+    }
+    html:not([data-theme]) .bible-library-table th,
+    html[data-theme="normal"] .bible-library-table th {
+      background: rgba(224, 201, 154, 0.96);
+      color: var(--ink);
+      border-color: rgba(139, 104, 32, 0.28);
+    }
+    html:not([data-theme]) .bible-library-table td,
+    html[data-theme="normal"] .bible-library-table td {
+      border-color: rgba(139, 104, 32, 0.20);
+      background: rgba(255, 255, 255, 0.18);
+    }
+    html:not([data-theme]) .bible-library-table tr:nth-child(even) td,
+    html[data-theme="normal"] .bible-library-table tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.34);
+    }
+    html:not([data-theme]) .bible-library-table tr:hover td,
+    html:not([data-theme]) .bible-library-table tr.is-selected td,
+    html[data-theme="normal"] .bible-library-table tr:hover td,
+    html[data-theme="normal"] .bible-library-table tr.is-selected td {
+      background: rgba(201, 168, 76, 0.22);
+    }
+    html:not([data-theme]) .bible-library-table tr.is-loading td,
+    html[data-theme="normal"] .bible-library-table tr.is-loading td {
+      background: rgba(201, 168, 76, 0.30);
+    }
+    html:not([data-theme]) .bible-library-status,
+    html[data-theme="normal"] .bible-library-status {
+      color: rgba(42, 26, 10, 0.72);
+    }
+    html:not([data-theme]) .bible-library-scroll-btn,
+    html[data-theme="normal"] .bible-library-scroll-btn {
+      background: rgba(255, 255, 255, 0.28);
+      color: var(--gold-dark);
+      border-color: rgba(139, 104, 32, 0.34);
+    }
+    html:not([data-theme]) .bible-library-scroll-btn:hover,
+    html:not([data-theme]) .bible-library-scroll-btn:focus-visible,
+    html[data-theme="normal"] .bible-library-scroll-btn:hover,
+    html[data-theme="normal"] .bible-library-scroll-btn:focus-visible {
+      background: rgba(201, 168, 76, 0.22);
+      color: var(--ink);
+      border-color: rgba(139, 104, 32, 0.58);
+    }
+
+    /* Normal theme: keep the 1500+ panel open/close chevron button light and readable */
+    html:not([data-theme]) .bible-library-panel .devotional-chevron,
+    html[data-theme="normal"] .bible-library-panel .devotional-chevron {
+      background: rgba(255, 255, 255, 0.54);
+      color: var(--gold-dark);
+      border-color: rgba(139, 104, 32, 0.42);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58), 0 2px 8px rgba(42, 26, 10, 0.08);
+    }
+    html:not([data-theme]) .bible-library-panel button.devotional-header:hover .devotional-chevron,
+    html:not([data-theme]) .bible-library-panel button.devotional-header:focus-visible .devotional-chevron,
+    html[data-theme="normal"] .bible-library-panel button.devotional-header:hover .devotional-chevron,
+    html[data-theme="normal"] .bible-library-panel button.devotional-header:focus-visible .devotional-chevron {
+      background: rgba(201, 168, 76, 0.24);
+      color: var(--ink);
+      border-color: rgba(139, 104, 32, 0.64);
+    }
+
+    @media (min-width: 1025px) {
+      /* Keep the library large inside the left controls column only.
+         Do not collapse the desktop shell to one column, because that pushes
+         the Bible passage below the controls. */
+      #desktop-view.desktop-two-column-ready .desktop-two-column-shell:has(#d-bibleLibraryPanel.is-visible) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        max-width: none;
+        margin: 0;
+      }
+      #desktop-view.desktop-two-column-ready .desktop-two-column-shell:has(#d-bibleLibraryPanel.is-visible) .desktop-right-column {
+        position: sticky;
+        top: 24px;
+        min-height: calc(100vh - 48px);
+      }
+      #desktop-view.desktop-two-column-ready .desktop-two-column-shell:has(#d-bibleLibraryPanel.is-visible) .desktop-right-column #d-verseDisplay {
+        min-height: calc(100vh - 150px);
+      }
+      /* Keep the 1500+ Bible panel from widening the Full Page parchment card.
+         The panel must stay inside the same centered card width as the normal
+         Read Bible layout shown before the 1500+ option is selected. */
+      #desktop-view .scroll-card:has(#d-bibleLibraryPanel.is-visible) {
+        width: 100%;
+        max-width: min(760px, calc(100vw - 40px));
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+      }
+      #desktop-view.desktop-two-column-ready .desktop-left-column .scroll-card:has(#d-bibleLibraryPanel.is-visible) {
+        max-width: 100%;
+      }
+      #desktop-view #d-bibleLibraryPanel {
+        width: 100%;
+        max-width: 100%;
+      }
+      #desktop-view #d-bibleLibraryPanel.is-open .bible-library-table-wrap {
+        height: min(62vh, 700px);
+        max-height: 62vh;
+      }
+      #desktop-view #d-bibleLibraryPanel .bible-library-table {
+        font-size: 1rem;
+      }
+      #desktop-view #d-bibleLibraryPanel .bible-library-table th:first-child,
+      #desktop-view #d-bibleLibraryPanel .bible-library-table td:first-child {
+        width: 28%;
+        min-width: 140px;
+      }
+      #desktop-view #d-bibleLibraryPanel .bible-library-table th,
+      #desktop-view #d-bibleLibraryPanel .bible-library-table td {
+        padding: 9px 12px;
+      }
+    }
+    .mob-bible-library-panel { margin: 0 0 9px; border-radius: 10px; }
+    .mob-bible-library-panel .bible-library-body { padding: 10px 10px 14px; }
+    .mob-bible-library-panel .bible-library-table-wrap { height: min(58vh, 560px); max-height: 58vh; }
+    .mob-bible-library-panel .bible-library-table { font-size: 0.86rem; }
+    .mob-bible-library-panel .bible-library-table th,
+    .mob-bible-library-panel .bible-library-table td { padding: 6px 7px; }
+
   </style>
 </head>
 <body>
@@ -4133,6 +4446,29 @@
           <option value="NIV" selected>NIV</option>
         </select>
       </div>
+
+      <div id="d-bibleLibraryPanel" class="bible-library-panel" aria-live="polite">
+        <button type="button" class="devotional-header" onclick="toggleBibleLibraryPanel('d')" aria-expanded="false" aria-controls="d-bibleLibraryBody">
+          <span class="banner-label">1500+ Bible Translation Library</span>
+          <span class="devotional-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+        <div class="bible-library-collapse">
+          <div class="bible-library-inner" id="d-bibleLibraryBody">
+            <div class="bible-library-body">
+              <div class="bible-library-search-title">Search..</div>
+              <input id="d-bibleLibrarySearch" class="bible-library-filter" type="search" placeholder="Search territory or Bible version" oninput="filterBibleLibrary('d')">
+              <div class="bible-library-table-wrap" id="d-bibleLibraryScroll">
+                <div class="bible-library-status" id="d-bibleLibraryStatus">Open the panel to load the Bible list.</div>
+                <table class="bible-library-table" id="d-bibleLibraryTable" style="display:none;">
+                  <thead><tr><th>Territory</th><th>Vernacular Title</th></tr></thead>
+                  <tbody id="d-bibleLibraryTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="control-group full-width" id="d-bookWrapper">
         <label for="d-book" id="d-book-label" class="is-loading">Loading Books…</label>
         <select id="d-book">
@@ -4216,6 +4552,7 @@
       <button class="btn-action" id="d-prev-btn" onclick="showPrev('d')" disabled>◀ Previous</button>
       <button class="btn-action" id="d-copy-btn" onclick="copyVerse('d')">⧉ Copy</button>
       <button class="btn-action" id="d-next-btn" onclick="showNext('d')" disabled>Next ▶</button>
+      <button class="btn-action easybible-action-btn read-mode-actions-hidden" id="d-easybible-btn" onclick="openEasyBible()">Open in EasyBible</button>
       <button class="btn-action" id="d-share-btn" onclick="openShare('d')">↗ Share</button>
       <button class="btn-action" id="d-speak-btn" onclick="speakVerse('d')">🔊 Read</button>
       <button class="btn-action" id="d-img-btn" onclick="generateImage('d')">🖼 Image</button>
@@ -4579,6 +4916,29 @@
         </div>
       </div>
 
+
+      <div id="m-bibleLibraryPanel" class="bible-library-panel mob-bible-library-panel" aria-live="polite">
+        <button type="button" class="devotional-header" onclick="toggleBibleLibraryPanel('m')" aria-expanded="false" aria-controls="m-bibleLibraryBody">
+          <span class="banner-label">1500+ Bible Translation Library</span>
+          <span class="devotional-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+        <div class="bible-library-collapse">
+          <div class="bible-library-inner" id="m-bibleLibraryBody">
+            <div class="bible-library-body">
+              <div class="bible-library-search-title">Search..</div>
+              <input id="m-bibleLibrarySearch" class="bible-library-filter" type="search" placeholder="Search territory or Bible version" oninput="filterBibleLibrary('m')">
+              <div class="bible-library-table-wrap" id="m-bibleLibraryScroll">
+                <div class="bible-library-status" id="m-bibleLibraryStatus">Open the panel to load the Bible list.</div>
+                <table class="bible-library-table" id="m-bibleLibraryTable" style="display:none;">
+                  <thead><tr><th>Territory</th><th>Vernacular Title</th></tr></thead>
+                  <tbody id="m-bibleLibraryTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="mob-select-row" id="m-bookWrapper">
         <div class="mob-field full">
           <span class="mob-label is-loading" id="m-book-label">Loading Books…</span>
@@ -4652,6 +5012,7 @@
         <button class="mob-btn-action" id="m-prev-btn" onclick="showPrev('m')" disabled>◀</button>
         <button class="mob-btn-action" id="m-copy-btn" onclick="copyVerse('m')">⧉ Copy</button>
         <button class="mob-btn-action" id="m-next-btn" onclick="showNext('m')" disabled>▶</button>
+        <button class="mob-btn-action easybible-action-btn read-mode-actions-hidden" id="m-easybible-btn" onclick="openEasyBible()">Open in EasyBible</button>
         <button class="mob-btn-action" id="m-share-btn" onclick="openShare('m')">↗</button>
         <button class="mob-btn-action" id="m-speak-btn" onclick="speakVerse('m')">🔊</button>
         <button class="mob-btn-action" id="m-img-btn" onclick="generateImage('m')">🖼</button>
@@ -5404,7 +5765,7 @@ const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
 const GH_SESSION_MEMORY_CACHE_MS = 6 * 60 * 60 * 1000; // After a fresh switch/download, reuse the in-memory JSON for fast random verse generation.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-17-master-index-rtl-sorted-apocrypha-v9-no-trparsed-progress';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-21-library-content-direction-ltr-fix-v1';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
@@ -5757,9 +6118,9 @@ function getSavedDefaultTranslation() {
 }
 
 function resolveDefaultTranslationForBoot() {
-  return readDefaultTranslationFromStorage()
-    || getSavedDefaultTranslation()
-    || normalizeGhModuleId(
+  const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
+  if (saved && !(typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && saved === BIBLE_LIBRARY_OPTION_VALUE)) return saved;
+  return normalizeGhModuleId(
       document.getElementById(typeof activePanel === 'function' ? activePanel() + '-version' : 'd-version')?.value
       || document.getElementById('d-version')?.value
       || GH_DEFAULT_TRANSLATION
@@ -5785,6 +6146,14 @@ function applySavedDefaultTranslation(options) {
   options = options || {};
   const trans = getSavedDefaultTranslation() || readDefaultTranslationFromStorage();
   if (!trans) return null;
+  if (typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && trans === BIBLE_LIBRARY_OPTION_VALUE) {
+    if (options.syncPrefs !== false) {
+      document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+        if (optionValueExists(sel, trans)) sel.value = trans;
+      });
+    }
+    return trans;
+  }
   let applied = false;
   ['d', 'm'].forEach(p => {
     const sel = document.getElementById(p + '-version');
@@ -5929,6 +6298,8 @@ const RTL_PATH_MATCHERS = [
 
 function inferTranslationRtl(entry, filePath) {
   if (!entry) return false;
+  if (entry.forceRTL === true) return true;
+  if (entry.forceLTR === true) return false;
   if (entry.isRTL === true || entry.rtl === true) return true;
   const code = String(entry.languageCode || entry.lang_short || entry.langCode || '').toLowerCase().split('-')[0];
   if (RTL_LANGUAGE_CODES.has(code)) return true;
@@ -5938,6 +6309,63 @@ function inferTranslationRtl(entry, filePath) {
   if (RTL_PATH_MATCHERS.some(word => raw.includes(word))) return true;
   const id = String(entry.id || entry.abbr || entry.abbreviation || '').toLowerCase();
   return ['svd', 'he_modern', 'hemodern', 'wlc', 'opt', 'ug_ara', 'ugara'].includes(id);
+}
+
+const RTL_SCRIPT_RE = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF\u{10D00}-\u{10D3F}\u{10F70}-\u{10FAF}\u{1E900}-\u{1E95F}]/gu;
+const LETTER_SCRIPT_RE = /\p{L}/gu;
+
+function countRegexMatches(text, regex) {
+  const m = String(text || '').match(regex);
+  return m ? m.length : 0;
+}
+
+function collectTranslationDirectionSample(data, maxChars) {
+  maxChars = maxChars || 4500;
+  const parts = [];
+  function add(value) {
+    if (parts.join(' ').length >= maxChars) return;
+    const s = String(value || '').trim();
+    if (s) parts.push(s.slice(0, 500));
+  }
+  if (!data?.booksByEn) return '';
+  Object.values(data.localizedNames || {}).slice(0, 20).forEach(add);
+  Object.keys(data.booksByEn || {}).slice(0, 12).forEach(bookKey => {
+    const book = data.booksByEn[bookKey];
+    add(book?.localizedName || bookKey);
+    const chapters = book?.chapters || {};
+    Object.keys(chapters).slice(0, 3).forEach(ch => {
+      const verses = chapters[ch] || {};
+      Object.keys(verses).slice(0, 5).forEach(v => add(verses[v]));
+    });
+  });
+  return parts.join(' ').slice(0, maxChars);
+}
+
+function detectRtlFromLoadedBibleText(data, fallbackMeta) {
+  const sample = collectTranslationDirectionSample(data);
+  const rtlChars = countRegexMatches(sample, RTL_SCRIPT_RE);
+  const letters = Math.max(1, countRegexMatches(sample, LETTER_SCRIPT_RE));
+
+  // Use actual Bible text first. This prevents Latin, Cyrillic, Greek, CJK, and other
+  // left-to-right translations from being flipped because of a territory/folder guess.
+  if (rtlChars >= 8 && rtlChars / letters >= 0.18) return true;
+  if (letters >= 20 && rtlChars / letters < 0.08) return false;
+
+  return inferTranslationRtl(fallbackMeta || {}, fallbackMeta?.rawUrl || fallbackMeta?.file || fallbackMeta?.path || '');
+}
+
+function applyLoadedDirectionToTranslation(module, normalized) {
+  module = normalizeGhModuleId(module);
+  const meta = getGhMeta(module);
+  const rtl = detectRtlFromLoadedBibleText(normalized, meta);
+  if (normalized) normalized.isRTL = rtl;
+  if (GH_BIBLES[module]) GH_BIBLES[module].isRTL = rtl;
+  if (GH_TRANSLATIONS_INDEX?.translations?.length) {
+    GH_TRANSLATIONS_INDEX.translations.forEach(t => {
+      if (normalizeGhModuleId(t.id || t.abbreviation || t.abbr || '') === module) t.isRTL = rtl;
+    });
+  }
+  return rtl;
 }
 
 function formatBibleVersionListName(value) {
@@ -6514,6 +6942,15 @@ function normalizeBookNameForMatch(s) {
 function formatGhBookDisplayName(name) {
   if (name == null || name === '') return name;
   return String(name).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function isNumericBookDisplayName(name) {
+  return /^\d+$/.test(String(name || '').trim());
+}
+
+function cleanBookDisplayNameForCanonical(bookEn, localizedName) {
+  const displayName = formatGhBookDisplayName(localizedName || bookEn) || bookEn;
+  return isNumericBookDisplayName(displayName) && bookEn ? bookEn : displayName;
 }
 
 function matchBookNameInLangMap(lower, langCode) {
@@ -7124,7 +7561,7 @@ function normalizeGhBibleJson(raw, meta) {
   const maxVerses = {};
 
   function ensureBook(bookEn, localizedName) {
-    const displayName = formatGhBookDisplayName(localizedName || bookEn) || bookEn;
+    const displayName = cleanBookDisplayNameForCanonical(bookEn, localizedName);
     if (!booksByEn[bookEn]) {
       booksByEn[bookEn] = { bookId: BOOK_NUM[bookEn], localizedName: displayName, chapters: {} };
       if (BOOK_NUM[bookEn]) localizedNames[BOOK_NUM[bookEn]] = displayName;
@@ -7255,14 +7692,17 @@ function syncBookCachesFromMemory(module) {
 function storeGhTranslationData(module, normalized, cacheKey) {
   if (normalized?.localizedNames) {
     Object.keys(normalized.localizedNames).forEach(id => {
-      normalized.localizedNames[id] = formatGhBookDisplayName(normalized.localizedNames[id]);
+      const canonical = bookEnFromId(id);
+      normalized.localizedNames[id] = cleanBookDisplayNameForCanonical(canonical, normalized.localizedNames[id]);
     });
   }
   if (normalized?.booksByEn) {
-    Object.values(normalized.booksByEn).forEach(book => {
-      if (book?.localizedName) book.localizedName = formatGhBookDisplayName(book.localizedName);
+    Object.keys(normalized.booksByEn).forEach(bookEn => {
+      const book = normalized.booksByEn[bookEn];
+      if (book?.localizedName) book.localizedName = cleanBookDisplayNameForCanonical(bookEn, book.localizedName);
     });
   }
+  applyLoadedDirectionToTranslation(module, normalized);
   normalized.cachedAt = Date.now();
   normalized.fetchedAt = Date.now();
   normalized.sessionReady = true;
@@ -7733,6 +8173,7 @@ function populateTranslationSelects(panels) {
     }
   });
   applySavedDefaultTranslation();
+  if (typeof addBibleLibraryOptionToVersionSelects === 'function') addBibleLibraryOptionToVersionSelects();
   populateDefaultTranslationSelects();
   refreshDefaultPreferenceSelectValues();
 }
@@ -7802,9 +8243,12 @@ function getTranslatedBookName(enBookName, langBooks, langCode) {
   const bookId = BOOK_NUM[enBookName];
   if (!bookId) return enBookName;
   const map = LANG_BOOK_NAME_MAP[langCode || 'en'];
-  if (map && map[bookId]) return formatGhBookDisplayName(map[bookId]);
+  const mappedName = formatGhBookDisplayName(map?.[bookId]);
+  if (mappedName && !isNumericBookDisplayName(mappedName)) return mappedName;
   const entry = langBooks?.find(b => Number(b.id) === bookId);
-  return formatGhBookDisplayName(entry?.name) || enBookName;
+  const entryName = formatGhBookDisplayName(entry?.name);
+  if (entryName && !isNumericBookDisplayName(entryName)) return entryName;
+  return enBookName;
 }
 
 function collectTranslationLangCodes() {
@@ -7822,8 +8266,12 @@ async function preloadAllTranslationBookNames() {
 function applyTranslationRtl(version) {
   version = normalizeGhModuleId(version);
   const meta = getGhMeta(version);
-  const rtl = inferTranslationRtl(meta || {}, meta?.rawUrl || version);
-  document.documentElement.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+  const loaded = GH_MEMORY_CACHE[version];
+  const rtl = loaded?.booksByEn ? detectRtlFromLoadedBibleText(loaded, meta || {}) : inferTranslationRtl(meta || {}, meta?.rawUrl || version);
+
+  // Keep the whole app UI left-to-right. Only the Bible passage text changes direction
+  // when the selected translation is truly Hebrew/Arabic/Urdu/etc.
+  document.documentElement.setAttribute('dir', 'ltr');
   document.documentElement.classList.toggle('translation-rtl-active', rtl);
   ['d', 'm'].forEach(p => {
     const display = document.getElementById(p + '-verseDisplay');
@@ -9370,6 +9818,7 @@ function applyTranslationRtl(version) {
   function isValidTranslationModule(module) {
     module = normalizeGhModuleId(module);
     if (!module) return false;
+    if (typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && module === BIBLE_LIBRARY_OPTION_VALUE) return true;
     if (GH_BIBLES[module]) return true;
     for (const pl of ['d', 'm']) {
       const sel = document.getElementById(pl + '-version');
@@ -9392,6 +9841,7 @@ function applyTranslationRtl(version) {
   }
 
   function populateDefaultTranslationSelects() {
+    if (typeof addBibleLibraryOptionToVersionSelects === 'function') addBibleLibraryOptionToVersionSelects();
     const source = document.getElementById('d-version');
     if (!source) return;
     const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
@@ -9435,8 +9885,15 @@ function applyTranslationRtl(version) {
   }
 
   function applySavedDefaultsOnLoad() {
-    applySavedDefaultTranslation();
+    const savedTranslation = applySavedDefaultTranslation();
     const mode = getEffectiveDefaultMode();
+    if (typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && savedTranslation === BIBLE_LIBRARY_OPTION_VALUE) {
+      if (typeof addBibleLibraryOptionToVersionSelects === 'function') addBibleLibraryOptionToVersionSelects();
+      setTimeout(() => {
+        if (typeof openBibleLibraryPanel === 'function') openBibleLibraryPanel(activePanel());
+        syncDefaultPrefSelects(null, BIBLE_LIBRARY_OPTION_VALUE);
+      }, 350);
+    }
     ['d', 'm'].forEach(p => {
       const sel = document.getElementById(p + '-testament');
       if (sel && optionValueExists(sel, mode)) {
@@ -9473,6 +9930,13 @@ function applyTranslationRtl(version) {
     if (!version) return;
     if (options.save !== false) {
       try { localStorage.setItem(DEFAULT_TRANSLATION_STORAGE_KEY, version); } catch { /* private mode */ }
+    }
+    if (typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && version === BIBLE_LIBRARY_OPTION_VALUE) {
+      if (typeof addBibleLibraryOptionToVersionSelects === 'function') addBibleLibraryOptionToVersionSelects();
+      syncDefaultPrefSelects(null, version);
+      const active = activePanel();
+      if (typeof openBibleLibraryPanel === 'function') openBibleLibraryPanel(active);
+      return;
     }
     if (!GH_BIBLES[version] && !isValidTranslationModule(version)) return;
     syncDefaultPrefSelects(null, version);
@@ -10435,11 +10899,32 @@ function applyTranslationRtl(version) {
     }
   }
 
+  function openEasyBible() {
+    window.open('https://easybible.pages.dev/', '_blank', 'noopener,noreferrer');
+  }
+
+  function isBibleLibrarySelectedVersion(p) {
+    const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value || '');
+    if (!version) return false;
+    if (version.startsWith('LIB_')) return true;
+    if (GH_BIBLES?.[version]?.source === 'github-library') return true;
+    const selectedOpt = document.getElementById(p + '-version')?.selectedOptions?.[0];
+    return !!selectedOpt?.parentElement?.dataset?.librarySelected;
+  }
+
+  function updateEasyBibleButtonVisibility(p) {
+    const btn = document.getElementById(p + '-easybible-btn');
+    if (!btn) return;
+    const show = isReadBibleMode(p) && isBibleLibrarySelectedVersion(p);
+    btn.classList.toggle('read-mode-actions-hidden', !show);
+  }
+
   function setReadModeActions(p, readMode) {
     ['share', 'speak', 'img'].forEach(suffix => {
       const btn = document.getElementById(p + '-' + suffix + '-btn');
       if (btn) btn.classList.toggle('read-mode-actions-hidden', readMode);
     });
+    updateEasyBibleButtonVisibility(p);
   }
 
   function cloneVerseEntry(entry) {
@@ -12847,11 +13332,419 @@ function applyTranslationRtl(version) {
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
+
+
+/* 1500+ Bible Translation Library — GitHub JSON directory browser */
+const BIBLE_LIBRARY_OPTION_VALUE = '__BIBLE_TRANSLATION_LIBRARY__';
+const BIBLE_LIBRARY_TITLE = '1500+ Bible Translation Library';
+const BIBLE_LIBRARY_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
+const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v2';
+let bibleLibraryRows = [];
+let bibleLibraryLoadingPromise = null;
+let lastRealBibleVersion = { d: null, m: null };
+
+function addBibleLibraryOptionToVersionSelects() {
+  ['d', 'm'].forEach(p => {
+    const sel = document.getElementById(p + '-version');
+    if (!sel || optionValueExists(sel, BIBLE_LIBRARY_OPTION_VALUE)) return;
+    const og = document.createElement('optgroup');
+    og.label = 'Library';
+    const o = document.createElement('option');
+    o.value = BIBLE_LIBRARY_OPTION_VALUE;
+    o.textContent = BIBLE_LIBRARY_TITLE;
+    o.title = 'Open the 1500+ Bible Translation Library list';
+    og.appendChild(o);
+    sel.insertBefore(og, sel.firstChild);
+    if (sel.value && sel.value !== BIBLE_LIBRARY_OPTION_VALUE) lastRealBibleVersion[p] = sel.value;
+  });
+}
+
+function syncBibleLibraryOptionState(p) {
+  ['d', 'm'].forEach(pl => {
+    if (pl === p) return;
+    const panel = document.getElementById(pl + '-bibleLibraryPanel');
+    const source = document.getElementById(p + '-bibleLibraryPanel');
+    if (panel && source) {
+      panel.classList.toggle('is-visible', source.classList.contains('is-visible'));
+      panel.classList.toggle('is-open', source.classList.contains('is-open'));
+      const btn = panel.querySelector('.devotional-header');
+      if (btn) btn.setAttribute('aria-expanded', panel.classList.contains('is-open') ? 'true' : 'false');
+    }
+  });
+}
+
+function openBibleLibraryPanel(p) {
+  addBibleLibraryOptionToVersionSelects();
+  const panel = document.getElementById(p + '-bibleLibraryPanel');
+  if (panel) {
+    panel.classList.add('is-visible', 'is-open');
+    const btn = panel.querySelector('.devotional-header');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+  syncBibleLibraryOptionState(p);
+  loadBibleLibraryList().then(() => {
+    renderBibleLibraryRows('d');
+    renderBibleLibraryRows('m');
+  });
+  setTimeout(() => panel?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+function toggleBibleLibraryPanel(p) {
+  const panel = document.getElementById(p + '-bibleLibraryPanel');
+  if (!panel) return;
+  panel.classList.add('is-visible');
+  const willOpen = !panel.classList.contains('is-open');
+  panel.classList.toggle('is-open', willOpen);
+  const btn = panel.querySelector('.devotional-header');
+  if (btn) btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  syncBibleLibraryOptionState(p);
+  if (willOpen) {
+    loadBibleLibraryList().then(() => {
+      renderBibleLibraryRows('d');
+      renderBibleLibraryRows('m');
+    });
+  }
+}
+
+function closeBibleLibraryPanel() {
+  ['d', 'm'].forEach(pl => {
+    const panel = document.getElementById(pl + '-bibleLibraryPanel');
+    if (!panel) return;
+    panel.classList.remove('is-open', 'is-visible');
+    const btn = panel.querySelector('.devotional-header');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  });
+}
+
+const HIDDEN_BIBLE_LIBRARY_PANEL_TITLES = new Set([
+    "55 book of apocrypha",
+    "apocrypha",
+    "king james version strongs",
+    "adnyamathanha christmas story",
+    "gupapuyngu scripture",
+    "gurindji scripture",
+    "gurrgoni scripture",
+    "iwaidja selections",
+    "kukatja scriptures",
+    "kunbarlang scripture",
+    "kuninjku selections",
+    "larrakia christmas story",
+    "liyagawumirr luke",
+    "marraŋu selections",
+    "matthew sample",
+    "mawng mark and other scripture portions",
+    "mayali (jabiru) scripture",
+    "meriam mir bible",
+    "nakara selections",
+    "ndjebbana bible portions",
+    "nyirtingu manyka wantharna ngurray",
+    "rembarrnga scripture",
+    "tungarar jehobald yarildewallin",
+    "wangurri scripture",
+    "warlpiri short bible",
+    "warramiri ḏolttji selections",
+    "yän nhaŋu selections",
+    "tsakhur",
+    "sylheti bible (nagri script)",
+    "ᤏᤡᤱᤘᤠ᤹ᤑᤢ ᤐᤠ᤺ᤴᤈᤠᤰ ᤁᤢᤛᤱ ᤔᤠᤱᤜᤢᤵ",
+    "ëhwati gali",
+    "isuva soqe uva kuama",
+    "oofulilu na",
+    "veqaura baibel",
+    "las escrituras en ashéninka ucayali del sur del perú",
+    "ivatan"
+]);
+
+function isHiddenBibleLibraryPanelTitle(value) {
+  const name = cleanBibleLibraryName(value).toLowerCase();
+  return HIDDEN_BIBLE_LIBRARY_PANEL_TITLES.has(name);
+}
+
+function readBibleLibraryCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(BIBLE_LIBRARY_CACHE_KEY) || 'null');
+    if (cached?.rows?.length) return cached.rows.filter(row => !isHiddenBibleLibraryPanelTitle(row?.title));
+  } catch { /* ignore */ }
+  return [];
+}
+
+function setBibleLibraryStatus(text) {
+  ['d', 'm'].forEach(p => {
+    const st = document.getElementById(p + '-bibleLibraryStatus');
+    if (st) st.textContent = text;
+  });
+}
+
+function cleanBibleLibraryName(value) {
+  const name = decodeURIComponent(String(value || ''))
+    .replace(/\.json$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /^01\s+English$/i.test(name) ? 'English' : name;
+}
+
+function bibleLibraryRawUrlFromPath(path) {
+  const encoded = String(path || '')
+    .split('/')
+    .map(part => encodeURIComponent(part))
+    .join('/');
+  return `https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/${encoded}`;
+}
+
+function bibleLibraryHash(value) {
+  let h = 2166136261;
+  const str = String(value || '');
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36).toUpperCase();
+}
+
+function bibleLibraryModuleId(row) {
+  return `LIB_${bibleLibraryHash(row?.path || row?.rawUrl || row?.title || Date.now())}`;
+}
+
+function getOrCreateBibleLibraryDynamicGroup(sel) {
+  if (!sel) return null;
+  let group = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.dataset.librarySelected === '1');
+  if (!group) {
+    group = document.createElement('optgroup');
+    group.label = '1500+ Library Selected';
+    group.dataset.librarySelected = '1';
+    const afterLibrary = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.label === 'Library');
+    if (afterLibrary && afterLibrary.nextSibling) sel.insertBefore(group, afterLibrary.nextSibling);
+    else sel.insertBefore(group, sel.firstChild);
+  }
+  return group;
+}
+
+function ensureBibleLibraryVersionOption(row) {
+  const moduleId = bibleLibraryModuleId(row);
+  const rawUrl = row.rawUrl || bibleLibraryRawUrlFromPath(row.path);
+  const label = row.title || moduleId;
+  if (!GH_BIBLES[moduleId]) {
+    GH_BIBLES[moduleId] = {
+      name: label,
+      shortname: label,
+      module: moduleId,
+      lang: row.territory || 'Other',
+      lang_short: 'en',
+      voiceLang: 'en-US',
+      source: 'github-library',
+      rawUrl,
+      testament: 'both',
+      isRTL: inferTranslationRtl({ language: row.territory, translationName: label, abbreviation: label }, rawUrl),
+      hasApocrypha: false,
+      partialCanon: true,
+      rank: '1'
+    };
+  }
+  if (GH_TRANSLATIONS_INDEX?.translations && !GH_TRANSLATIONS_INDEX.translations.some(t => t.id === moduleId)) {
+    GH_TRANSLATIONS_INDEX.translations.push({
+      id: moduleId,
+      language: row.territory || 'Other',
+      languageCode: 'en',
+      voiceLang: 'en-US',
+      translationName: label,
+      abbreviation: label,
+      rawUrl,
+      testament: 'both',
+      isRTL: GH_BIBLES[moduleId].isRTL,
+      hasApocrypha: false,
+      partialCanon: true
+    });
+  }
+  ['d', 'm'].forEach(pl => {
+    const sel = document.getElementById(pl + '-version');
+    if (!sel) return;
+    if (!optionValueExists(sel, moduleId)) {
+      const group = getOrCreateBibleLibraryDynamicGroup(sel);
+      const opt = document.createElement('option');
+      opt.value = moduleId;
+      opt.textContent = label;
+      opt.title = `${row.territory || 'Other'} - ${label}`;
+      (group || sel).appendChild(opt);
+    }
+  });
+  return moduleId;
+}
+
+function setBibleLibraryRowState(row, state) {
+  document.querySelectorAll('.bible-library-table tbody tr').forEach(tr => {
+    const same = tr.dataset.path === row.path;
+    tr.classList.toggle('is-selected', same && state === 'selected');
+    tr.classList.toggle('is-loading', same && state === 'loading');
+  });
+}
+
+function shouldAutoScrollBibleLibraryBookSection(p) {
+  if (p === 'm') return getLayoutMode() === 'mobile';
+  if (p === 'd') return typeof isTabletPortraitLayout === 'function' && isTabletPortraitLayout();
+  return false;
+}
+
+function scrollBibleLibraryBookSectionAfterSelect(p) {
+  if (!shouldAutoScrollBibleLibraryBookSection(p)) return;
+  let attempts = 0;
+  const maxAttempts = 8;
+  const run = () => {
+    if (!shouldAutoScrollBibleLibraryBookSection(p)) return;
+    const readWrapper = document.getElementById(p + '-readBibleWrapper');
+    const fallbackWrapper = document.getElementById(p + '-bookWrapper');
+    const readVisible = readWrapper && getComputedStyle(readWrapper).display !== 'none';
+    const target = (readVisible ? readWrapper : fallbackWrapper) || readWrapper;
+    if (!target) return;
+    const topbar = p === 'm' ? document.querySelector('.mob-topbar') : null;
+    const fixedOffset = topbar ? Math.ceil(topbar.getBoundingClientRect().height + 12) : 18;
+    const top = window.scrollY + target.getBoundingClientRect().top - fixedOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    attempts += 1;
+    if (attempts < maxAttempts) setTimeout(run, attempts < 3 ? 220 : 420);
+  };
+  setTimeout(run, 180);
+}
+
+async function selectBibleLibraryVersion(row, p) {
+  if (!row) return;
+  const active = document.getElementById(p + '-version') ? p : activePanel();
+  const moduleId = ensureBibleLibraryVersionOption(row);
+  setBibleLibraryRowState(row, 'loading');
+  setBibleLibraryStatus(`Loading ${row.title}…`);
+
+  ['d', 'm'].forEach(pl => {
+    const mode = document.getElementById(pl + '-testament');
+    if (mode && optionValueExists(mode, 'read')) mode.value = 'read';
+    const sel = document.getElementById(pl + '-version');
+    if (sel && optionValueExists(sel, moduleId)) sel.value = moduleId;
+    lastRealBibleVersion[pl] = moduleId;
+  });
+  syncVersionSelects(moduleId);
+  ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
+
+  try {
+    const data = await loadGhTranslationData(moduleId);
+    if (!data?.booksByEn) throw new Error('Library Bible JSON returned no readable books.');
+    setBibleLibraryRowState(row, 'selected');
+    setBibleLibraryStatus(`Selected: ${row.territory} - ${row.title}`);
+    if (typeof onVersionChange === 'function') onVersionChange(active, { keepBibleLibraryPanel: true });
+    scrollBibleLibraryBookSectionAfterSelect(active);
+  } catch (_) {
+    setBibleLibraryRowState(row, '');
+    setBibleLibraryStatus('Could not load this Bible JSON. Please check your connection and try again.');
+  }
+}
+
+async function loadBibleLibraryList() {
+  if (bibleLibraryRows.length) return bibleLibraryRows;
+  const cached = readBibleLibraryCache();
+  if (cached.length) {
+    bibleLibraryRows = cached;
+    return bibleLibraryRows;
+  }
+  if (bibleLibraryLoadingPromise) return bibleLibraryLoadingPromise;
+  setBibleLibraryStatus('Loading 1500+ Bible Translation Library…');
+  bibleLibraryLoadingPromise = fetch(BIBLE_LIBRARY_TREE_API, { cache: 'no-store' })
+    .then(r => {
+      if (!r.ok) throw new Error('GitHub list could not be loaded.');
+      return r.json();
+    })
+    .then(data => {
+      const tree = Array.isArray(data?.tree) ? data.tree : [];
+      const rows = [];
+      tree.forEach(item => {
+        const path = String(item?.path || '');
+        if (item?.type !== 'blob' || !/^JSON\//i.test(path) || !/\.json$/i.test(path)) return;
+        const parts = path.split('/');
+        const territory = cleanBibleLibraryName(parts.length > 2 ? parts[1] : 'Other');
+        const title = cleanBibleLibraryName(parts[parts.length - 1]);
+        if (!title || title.toLowerCase() === 'versions' || isHiddenBibleLibraryPanelTitle(title)) return;
+        rows.push({ territory, title, path, rawUrl: bibleLibraryRawUrlFromPath(path) });
+      });
+      rows.sort((a, b) => a.territory.localeCompare(b.territory, undefined, { sensitivity: 'base' }) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+      bibleLibraryRows = rows;
+      try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now() })); } catch { /* quota */ }
+      return rows;
+    })
+    .catch(err => {
+      bibleLibraryRows = readBibleLibraryCache();
+      if (!bibleLibraryRows.length) setBibleLibraryStatus('Could not load the GitHub Bible list. Please check your internet connection and try again.');
+      return bibleLibraryRows;
+    })
+    .finally(() => { bibleLibraryLoadingPromise = null; });
+  return bibleLibraryLoadingPromise;
+}
+
+function renderBibleLibraryRows(p) {
+  const tbody = document.getElementById(p + '-bibleLibraryTbody');
+  const table = document.getElementById(p + '-bibleLibraryTable');
+  const status = document.getElementById(p + '-bibleLibraryStatus');
+  const filter = (document.getElementById(p + '-bibleLibrarySearch')?.value || '').toLowerCase().trim();
+  if (!tbody || !table || !status) return;
+  const rows = (bibleLibraryRows || [])
+    .filter(row => !isHiddenBibleLibraryPanelTitle(row?.title))
+    .filter(row => !filter || row.territory.toLowerCase().includes(filter) || row.title.toLowerCase().includes(filter));
+  tbody.innerHTML = '';
+  if (!rows.length) {
+    table.style.display = 'none';
+    status.style.display = 'block';
+    status.textContent = bibleLibraryRows.length ? 'No Bible version found for this search.' : 'Loading 1500+ Bible Translation Library…';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  const currentVersion = normalizeGhModuleId(document.getElementById(p + '-version')?.value || '');
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.dataset.path = row.path;
+    tr.tabIndex = 0;
+    tr.setAttribute('role', 'button');
+    tr.setAttribute('aria-label', `Load ${row.title} from ${row.territory}`);
+    const moduleId = bibleLibraryModuleId(row);
+    if (currentVersion === moduleId) tr.classList.add('is-selected');
+    tr.addEventListener('click', () => selectBibleLibraryVersion(row, p));
+    tr.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        selectBibleLibraryVersion(row, p);
+      }
+    });
+    const tdTerritory = document.createElement('td');
+    const tdTitle = document.createElement('td');
+    tdTerritory.textContent = row.territory;
+    tdTitle.textContent = row.title;
+    tr.appendChild(tdTerritory);
+    tr.appendChild(tdTitle);
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+  status.style.display = 'none';
+  table.style.display = 'table';
+}
+
+function filterBibleLibrary(p) { renderBibleLibraryRows(p); }
+function scrollBibleLibraryTop(p) {
+  const wrap = document.getElementById(p + '-bibleLibraryScroll');
+  if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
   /* ══════════════════════════════════════
      VERSION CHANGE HANDLER
      Called whenever the translation dropdown changes
   ══════════════════════════════════════ */
-  function onVersionChange(p) {
+  function onVersionChange(p, options = {}) {
+    const sel = document.getElementById(p + '-version');
+    if (sel && typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && sel.value === BIBLE_LIBRARY_OPTION_VALUE) {
+      openBibleLibraryPanel(p);
+      const fallback = lastRealBibleVersion[p] || lastRealBibleVersion[p === 'd' ? 'm' : 'd'] || readDefaultTranslationFromStorage?.() || GH_DEFAULT_TRANSLATION;
+      if (fallback && optionValueExists(sel, fallback)) sel.value = fallback;
+      syncVersionSelects(sel.value);
+      ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
+      return;
+    }
+    if (!options.keepBibleLibraryPanel && typeof closeBibleLibraryPanel === 'function') closeBibleLibraryPanel();
+    if (sel && sel.value) lastRealBibleVersion[p] = sel.value;
+    ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
     clearTimeout(_versionChangeTimer);
     // Disable both Generate buttons immediately while the selected Bible version loads.
     setGeneratorVersionSwitchBusy('d', true);
