@@ -11387,7 +11387,20 @@ function applyTranslationRtl(version) {
     smoothScrollToY(Math.min(maxScroll, Math.max(0, top)), 1000);
   }
 
+  function isDesktopFullVerseGeneratorWithBibleLibraryOpen(p) {
+    if (p !== 'd') return false;
+    if (typeof isDesktop === 'function' && !isDesktop()) return false;
+    const displayMode = document.documentElement.getAttribute('data-display-mode') || currentMode || 'full';
+    if (displayMode !== 'full') return false;
+    const modeSel = document.getElementById('d-testament');
+    if (!modeSel || modeSel.value !== 'custom') return false;
+    const panel = document.getElementById('d-bibleLibraryPanel');
+    if (!panel) return false;
+    return panel.classList.contains('is-visible') || panel.classList.contains('is-open');
+  }
+
   function scheduleScrollToCenterVerseDisplay(p) {
+    if (isDesktopFullVerseGeneratorWithBibleLibraryOpen(p)) return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         scrollToCenterVerseDisplay(p);
@@ -13612,6 +13625,8 @@ function shouldAutoScrollBibleLibraryBookSection(p) {
 }
 
 function scrollBibleLibraryBookSectionAfterSelect(p) {
+  const modeValue = document.getElementById(p + '-testament')?.value;
+  if (modeValue !== 'read' && modeValue !== 'custom') return;
   if (!shouldAutoScrollBibleLibraryBookSection(p)) return;
   let attempts = 0;
   const maxAttempts = 8;
@@ -13640,8 +13655,8 @@ async function selectBibleLibraryVersion(row, p) {
   setBibleLibraryStatus(`Checking GitHub latest: ${row.title}…`);
 
   ['d', 'm'].forEach(pl => {
-    const mode = document.getElementById(pl + '-testament');
-    if (mode && optionValueExists(mode, 'read')) mode.value = 'read';
+    // Keep the user's current mode. Selecting a Bible from the 1500+ panel
+    // should only change the Bible version, not force Read Bible mode.
     const sel = document.getElementById(pl + '-version');
     if (sel && optionValueExists(sel, moduleId)) sel.value = moduleId;
     lastRealBibleVersion[pl] = moduleId;
