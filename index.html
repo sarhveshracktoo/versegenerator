@@ -13679,7 +13679,7 @@ async function selectBibleLibraryVersion(row, p) {
 
 async function loadBibleLibraryList() {
   if (bibleLibraryLoadingPromise) return bibleLibraryLoadingPromise;
-  setBibleLibraryStatus('Loading fresh 1500+ Bible Translation Library list from GitHub…');
+  setBibleLibraryStatus('Loading the 1500+ Bible Translation Library list, wait a moment…');
   const cachedFallback = readBibleLibraryCache();
   bibleLibraryLoadingPromise = fetch(`${BIBLE_LIBRARY_TREE_API}&live=${Date.now()}`, { cache: 'no-store' })
     .then(r => {
