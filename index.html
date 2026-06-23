@@ -1049,6 +1049,28 @@
     }
     #d-verseDisplay.read-updating,
     .mob-verse-box.read-updating { opacity: 0.82; transition: opacity 0.2s ease; }
+    #d-verseDisplay .read-passage-fade-layer,
+    .mob-verse-box .read-passage-fade-layer {
+      opacity: 1;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    #d-verseDisplay .read-passage-fade-layer.read-passage-transitioning,
+    .mob-verse-box .read-passage-fade-layer.read-passage-transitioning {
+      transition: opacity 1s ease !important;
+      animation: none !important;
+      will-change: opacity;
+    }
+    #d-verseDisplay .read-passage-fade-layer.read-passage-fade-out,
+    .mob-verse-box .read-passage-fade-layer.read-passage-fade-out {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+    #d-verseDisplay .read-passage-fade-layer.read-passage-fade-in,
+    .mob-verse-box .read-passage-fade-layer.read-passage-fade-in {
+      opacity: 1 !important;
+    }
     #d-verseDisplay, .mob-verse-box { contain: layout style; }
     .votd-panel, .weekly-banner, .encouragement-banner, .mob-votd-panel, .mob-weekly-banner, .mob-encouragement-banner {
       content-visibility: auto;
@@ -1354,6 +1376,10 @@
       .read-bible-loader-orb::after,
       .read-bible-loader-cross,
       .read-bible-loader-dots span { animation: none !important; }
+      #d-verseDisplay.read-passage-transitioning,
+      .mob-verse-box.read-passage-transitioning {
+        transition: none !important;
+      }
     }
 
 
@@ -11592,7 +11618,7 @@ function applyTranslationRtl(version) {
       const fallbackCh = usesCatalogChapterKeys(version)
         ? getDefaultReadChapter(version, fallbackBook)
         : 1;
-      await loadReadChapterAt(p, fallbackBook, fallbackCh, { scrollToTop: true });
+      await loadReadChapterAt(p, fallbackBook, fallbackCh, { scrollToTop: true, fadeTransition: true });
       return;
     }
 
@@ -11632,7 +11658,7 @@ function applyTranslationRtl(version) {
       } else return;
     }
 
-    await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true });
+    await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true, fadeTransition: true });
   }
 
   function readChapterCacheKey(version, bookEn, chapter) {
@@ -11646,6 +11672,89 @@ function applyTranslationRtl(version) {
   function clearReadDisplayLoading(p) {
     const display = document.getElementById(p + '-verseDisplay');
     if (display) display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
+  }
+
+  const READ_PASSAGE_FADE_MS = 1000;
+  const _readPassageFadeTimers = { d: null, m: null };
+
+  function canUseReadPassageFade(p, options) {
+    if (!options || !options.fadeTransition) return false;
+    // Do not skip this transition on mobile when the device reports reduced motion;
+    // this is a required Read Bible passage-change effect and only the text layer fades.
+    if (isReadBibleBootLocked()) return false;
+    const display = document.getElementById(p + '-verseDisplay');
+    return !!display && hasReadPassageContent(display);
+  }
+
+  function getReadPassageFadeLayer(p) {
+    const display = document.getElementById(p + '-verseDisplay');
+    if (!display) return null;
+    return display.querySelector('.read-passage-fade-layer') || display.firstElementChild || null;
+  }
+
+  async function runReadPassageOpacityAnimation(layer, from, to, duration) {
+    if (!layer) return;
+    layer.getAnimations?.().forEach(anim => {
+      try { anim.cancel(); } catch (_) {}
+    });
+    layer.style.transition = 'none';
+    layer.style.opacity = String(from);
+    layer.style.pointerEvents = 'none';
+    layer.classList.add('read-passage-transitioning');
+    layer.classList.remove('read-passage-fade-in', 'read-passage-fade-out');
+    // Force layout and wait two frames. This makes mobile Safari/Chrome reliably
+    // paint the starting opacity before the animation begins.
+    void layer.offsetWidth;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    if (typeof layer.animate === 'function') {
+      const anim = layer.animate(
+        [{ opacity: from }, { opacity: to }],
+        { duration, easing: 'ease', fill: 'forwards' }
+      );
+      try { await anim.finished; } catch (_) { await delay(duration); }
+      try { anim.commitStyles?.(); } catch (_) {}
+      try { anim.cancel(); } catch (_) {}
+      layer.style.opacity = String(to);
+      return;
+    }
+
+    layer.style.transition = `opacity ${duration}ms ease`;
+    void layer.offsetWidth;
+    layer.style.opacity = String(to);
+    await delay(duration);
+  }
+
+  async function fadeOutCurrentReadPassage(p) {
+    const layer = getReadPassageFadeLayer(p);
+    if (!layer) return;
+    if (_readPassageFadeTimers[p]) {
+      clearTimeout(_readPassageFadeTimers[p]);
+      _readPassageFadeTimers[p] = null;
+    }
+
+    // Fade only the passage content layer. Keep the outer verse box/background visible.
+    await runReadPassageOpacityAnimation(layer, 1, 0, READ_PASSAGE_FADE_MS);
+  }
+
+  async function startReadPassageFadeIn(p) {
+    const layer = getReadPassageFadeLayer(p);
+    if (!layer) return;
+    if (_readPassageFadeTimers[p]) clearTimeout(_readPassageFadeTimers[p]);
+
+    // Fade only the new passage content layer. The background stays steady.
+    await runReadPassageOpacityAnimation(layer, 0, 1, READ_PASSAGE_FADE_MS);
+
+    _readPassageFadeTimers[p] = setTimeout(() => {
+      layer.getAnimations?.().forEach(anim => {
+        try { anim.cancel(); } catch (_) {}
+      });
+      layer.classList.remove('read-passage-transitioning', 'read-passage-fade-in', 'read-passage-fade-out');
+      layer.style.transition = '';
+      layer.style.opacity = '';
+      layer.style.pointerEvents = '';
+      _readPassageFadeTimers[p] = null;
+    }, 80);
   }
 
   function setDesktopReadDisplayScrollButton(enabled) {
@@ -11787,6 +11896,7 @@ function applyTranslationRtl(version) {
   }
 
   function scrollReadAreaToTop(p) {
+    if (p === 'm' && _mobileTextSizeScrollInFlight) return;
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     requestAnimationFrame(() => {
@@ -11829,7 +11939,81 @@ function applyTranslationRtl(version) {
     });
   }
 
+  let _mobileTextSizeScrollInFlight = false;
+
+  function scrollReadAreaToTextSize(p) {
+    const slider = document.getElementById(p + '-size-slider');
+    const anchor = slider?.closest(p === 'm' ? '.mob-field' : '.control-group') || slider;
+    if (!anchor) {
+      scrollReadAreaToTop(p);
+      return;
+    }
+    const offset = p === 'm' ? 76 : 20;
+    const target = Math.max(0, window.scrollY + anchor.getBoundingClientRect().top - offset);
+
+    // Mobile browsers can ignore/shorten native smooth scroll while the passage DOM is being replaced.
+    // Use a manual timed scroll so Next/Previous chapter always moves slowly during fade-out/fade-in.
+    if (p === 'm') {
+      slowMobileScrollToY(target, 2600);
+      return;
+    }
+
+    if (typeof smoothScrollToY === 'function') smoothScrollToY(target, 1800);
+    else window.scrollTo({ top: target, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  }
+
+  function slowMobileScrollToY(targetY, durationMs) {
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const target = Math.min(maxScroll, Math.max(0, targetY));
+    const start = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const distance = target - start;
+    if (Math.abs(distance) < 2) return;
+
+    _mobileTextSizeScrollInFlight = true;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const oldHtmlScrollBehavior = html.style.scrollBehavior;
+    const oldBodyScrollBehavior = body.style.scrollBehavior;
+    const oldHtmlOverflowAnchor = html.style.overflowAnchor;
+    const oldBodyOverflowAnchor = body.style.overflowAnchor;
+
+    html.style.scrollBehavior = 'auto';
+    body.style.scrollBehavior = 'auto';
+    html.style.overflowAnchor = 'none';
+    body.style.overflowAnchor = 'none';
+
+    const duration = Math.max(2200, durationMs || 2600);
+    const startTime = performance.now();
+
+    function easeInOutSine(t) {
+      return -(Math.cos(Math.PI * t) - 1) / 2;
+    }
+
+    function frame(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const y = start + distance * easeInOutSine(t);
+      window.scrollTo(0, y);
+
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        window.scrollTo(0, target);
+        setTimeout(() => {
+          html.style.scrollBehavior = oldHtmlScrollBehavior;
+          body.style.scrollBehavior = oldBodyScrollBehavior;
+          html.style.overflowAnchor = oldHtmlOverflowAnchor;
+          body.style.overflowAnchor = oldBodyOverflowAnchor;
+          _mobileTextSizeScrollInFlight = false;
+        }, 80);
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
   function scrollToCenterVerseDisplay(p) {
+    if (p === 'm' && _mobileTextSizeScrollInFlight) return;
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -12292,12 +12476,12 @@ function applyTranslationRtl(version) {
     });
   }
 
-  function applyReadChapterData(p, bookEn, chapter, data) {
+  function applyReadChapterData(p, bookEn, chapter, data, options) {
     populateReadVerseSelect(p, data.verses[data.verses.length - 1].num, { defaultWhole: true });
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
     _readSyncLock = false;
-    renderReadPassage(p, data, false);
+    renderReadPassage(p, data, false, options);
   }
 
   function resolveReadLocationForVersion(version, bookEn, chapter) {
@@ -12337,17 +12521,24 @@ function applyTranslationRtl(version) {
 
     const display = document.getElementById(p + '-verseDisplay');
     const cached = readChapterCache[key];
+    const useFadeTransition = canUseReadPassageFade(p, options);
+    if (scrollToTop && useFadeTransition) {
+      if (p === 'm') scrollReadAreaToTextSize(p);
+      else scrollReadAreaToTop(p);
+    }
+    const fadeOutPromise = useFadeTransition ? fadeOutCurrentReadPassage(p) : Promise.resolve();
 
     if (cached) {
+      await fadeOutPromise;
       if (!isReadBibleBootLocked()) {
-        applyReadChapterData(p, bookEn, chapter, cached);
+        applyReadChapterData(p, bookEn, chapter, cached, { fadeIn: useFadeTransition });
       }
-      if (scrollToTop) scrollReadAreaToTop(p);
+      if (scrollToTop && !useFadeTransition) scrollReadAreaToTop(p);
       updateReadChapterNav(p);
       return;
     }
 
-    if (!isReadBibleBootLocked()) {
+    if (!isReadBibleBootLocked() && !useFadeTransition) {
       setReadDisplayLoading(p, !hasReadPassageContent(display));
     }
 
@@ -12369,9 +12560,11 @@ function applyTranslationRtl(version) {
     }
     if (loadId !== _readLoadId[p]) return;
 
+    await fadeOutPromise;
+
     if (data?.verses?.length) {
       storeReadChapterCache(key, data);
-      applyReadChapterData(p, bookEn, chapter, data);
+      applyReadChapterData(p, bookEn, chapter, data, { fadeIn: useFadeTransition });
     } else {
       populateReadVerseSelect(p, 1, { defaultWhole: true });
       _readSyncLock = true;
@@ -12379,7 +12572,7 @@ function applyTranslationRtl(version) {
       _readSyncLock = false;
       await loadReadPassage(p, buildReadReference(bookEn, chapter, 1, 1, version));
     }
-    if (scrollToTop) scrollReadAreaToTop(p);
+    if (scrollToTop && !useFadeTransition) scrollReadAreaToTop(p);
     updateReadChapterNav(p);
   }
 
@@ -12739,6 +12932,7 @@ function applyTranslationRtl(version) {
 
   function renderSearchedPassage(p, data, passageParsed) {
     const display = document.getElementById(p + '-verseDisplay');
+    options = options || {};
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const parsed = passageParsed || parsedFromPassageData(data);
@@ -12897,7 +13091,7 @@ function applyTranslationRtl(version) {
     }
   }
 
-  function renderReadPassage(p, data, animate) {
+  function renderReadPassage(p, data, animate, options) {
     if (isReadBibleBootLocked()) return;
     // Guard against stale Read Bible requests finishing after the user/default mode
     // has already switched back to Verse Generator or HBV.
@@ -12916,8 +13110,18 @@ function applyTranslationRtl(version) {
     const reveal = animate === false ? '' : verseRevealClass();
     clearReadDisplayLoading(p);
     display.innerHTML = isDesk
-      ? `<div class="${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
-      : `<div class="${reveal}"><p class="mob-verse-ref read-passage-ref-top">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p><p class="mob-verse-text read-mode read-passage-text">${body}</p></div>`;
+      ? `<div class="read-passage-fade-layer ${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
+      : `<div class="read-passage-fade-layer ${reveal}"><p class="mob-verse-ref read-passage-ref-top">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p><p class="mob-verse-text read-mode read-passage-text">${body}</p></div>`;
+    if (options.fadeIn) {
+      const fadeLayer = getReadPassageFadeLayer(p);
+      if (fadeLayer) {
+        fadeLayer.style.transition = 'none';
+        fadeLayer.style.opacity = '0';
+        fadeLayer.style.pointerEvents = 'none';
+        void fadeLayer.offsetWidth;
+      }
+      requestAnimationFrame(() => requestAnimationFrame(() => startReadPassageFadeIn(p)));
+    }
     if (isDesk) ensureDesktopReadDisplayScrollButton();
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
@@ -13149,7 +13353,7 @@ function applyTranslationRtl(version) {
     const chapter = usesCatalogChapterKeys(version)
       ? getDefaultReadChapter(version, book)
       : 1;
-    await loadReadChapterAt(p, book, chapter);
+    await loadReadChapterAt(p, book, chapter, { fadeTransition: true });
   }
 
   async function onReadChapterChange(p) {
@@ -13159,7 +13363,7 @@ function applyTranslationRtl(version) {
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     const chRaw = document.getElementById(p + '-read-chapter').value;
     const chapter = usesCatalogChapterKeys(version) ? chRaw : (parseInt(chRaw, 10) || 1);
-    await loadReadChapterAt(p, bookEn, chapter);
+    await loadReadChapterAt(p, bookEn, chapter, { fadeTransition: true });
   }
 
   async function onReadVerseChange(p) {
@@ -13571,7 +13775,7 @@ function applyTranslationRtl(version) {
           const chapter = usesCatalogChapterKeys(version)
             ? (chRaw || getDefaultReadChapter(version, bookEn))
             : (parseInt(chRaw, 10) || 1);
-          await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true });
+          await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true, fadeTransition: true });
         } else if ((prevTest !== 'read' || options.forceReadInit) && !options.skipReadInit) {
           await initReadBiblePanel(p, true);
         } else if (options.refreshReadLabels) {
@@ -15462,6 +15666,12 @@ function scrollBibleLibraryTop(p) {
     initScrollToModeButtons();
     clearAllVersePanelLoading();
 
+    // Lock the main controls immediately on first web entry too. This prevents
+    // quick taps while the default Bible/index/passage is still being prepared.
+    setVersionSwitchControlsLocked(true);
+    setGeneratorVersionSwitchBusy('d', true);
+    setGeneratorVersionSwitchBusy('m', true);
+
     if (pendingGeneratorRestore) {
       ['d', 'm'].forEach(pl => {
         const sel = document.getElementById(pl + '-testament');
@@ -15499,20 +15709,35 @@ function scrollBibleLibraryTop(p) {
     initPanelMagnifyPrefs();
     initDefaultPreferencesUI();
 
-    // Background work — must not block taps on Generate or social links.
+    // Background work. Keep Mode / Book / Chapter / Verse / Search locked on first
+    // web entry until the default Bible JSON and first passage/placeholder are safely ready.
     void loadWeeklyVersesCatalog();
     void loadDailyEncouragementCatalog();
-    void loadBibleList().then(() => {
-      if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
-        showEarlyReadBibleBootLoader();
-        return ensureDefaultReadBiblePassage({ force: true });
+    void (async () => {
+      try {
+        await loadBibleList();
+        await loadGhTranslationData(version);
+        await ensureBooksForVersion(version).catch(() => []);
+        applyTranslationRtl(version);
+        await updateBooks(activePanel(), { silent: true, skipReadInit: true });
+
+        if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+          showEarlyReadBibleBootLoader();
+          await ensureDefaultReadBiblePassage({ force: true });
+        } else if (!pendingGeneratorRestore) {
+          const active = activePanel();
+          if (!current[active]) showGeneratorPlaceholder(active);
+        }
+      } catch (err) {
+        if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+          showEarlyReadBibleBootLoader();
+          try { await ensureDefaultReadBiblePassage({ force: true }); } catch (_) { /* keep handled error visible */ }
+        }
+      } finally {
+        setVersionSwitchControlsLocked(false);
+        setAllGeneratorVersionSwitchBusy(false);
       }
-    }).catch(() => {
-      if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
-        showEarlyReadBibleBootLoader();
-        return ensureDefaultReadBiblePassage({ force: true });
-      }
-    });
+    })();
     prefetchGhTranslation(version);
     void preloadBannerVerses(version, { silent: true });
     void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
