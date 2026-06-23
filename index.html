@@ -890,6 +890,21 @@
       filter: grayscale(0.35);
     }
 
+    /* Lock reading/generator controls while a Bible version is downloading/loading. */
+    html.version-switch-controls-locked select:disabled,
+    html.version-switch-controls-locked input:disabled,
+    html.version-switch-controls-locked button:disabled,
+    .version-switch-control-locked {
+      opacity: 0.42 !important;
+      cursor: wait !important;
+      pointer-events: none !important;
+      filter: grayscale(0.45) saturate(0.65) !important;
+    }
+    html.version-switch-controls-locked label,
+    html.version-switch-controls-locked .mob-label {
+      opacity: 0.55;
+    }
+
     /* Verse display */
     #d-verseDisplay {
       min-height:110px; text-align:center; padding:20px 16px;
@@ -5881,15 +5896,15 @@ const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshrac
 const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v9-master-rtl-sorted-apocrypha-no-trparsed';
 const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt', 'KJVSTRONGS', 'KJV_STRONGS', 'KJV STRONGS', 'RV1909STRONGS', 'RV_1909_STRONGS', 'RV 1909 STRONGS', 'CHINESE UNION SIMP S', 'CHINESE UNION TRAD S', 'TRPARSED', 'TR PARSED', 'TR_PARSED']);
 const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
-const GH_TX_CACHE_PREFIX = 'bible_tx_';
-const GH_BOOK_META_PREFIX = 'bible_tx_meta_';
+const GH_TX_CACHE_PREFIX = 'bible_tx_dynamic_books_v2_';
+const GH_BOOK_META_PREFIX = 'bible_tx_meta_dynamic_books_v2_';
 const GH_DEFAULT_TRANSLATION = 'KJV';
 const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
 const GH_SESSION_MEMORY_CACHE_MS = 6 * 60 * 60 * 1000; // After a fresh switch/download, reuse the in-memory JSON for fast random verse generation.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-21-github-json-live-refresh-v2';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-23-dynamic-github-books-v3';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
@@ -6140,28 +6155,28 @@ function isPartialCanonTranslation(module) {
   return !!getGhMeta(normalizeGhModuleId(module))?.partialCanon;
 }
 
+function translationHasCanonicalRange(version, start, end) {
+  version = normalizeGhModuleId(version);
+  const ids = getAvailableBookIds(version);
+  if (!Array.isArray(ids) || !ids.length) return false;
+  return ids.some(id => {
+    const n = Number(id);
+    return Number.isFinite(n) && n >= start && n <= end;
+  });
+}
+
 function translationShowsOtBookScope(version) {
   version = normalizeGhModuleId(version);
   const meta = getGhMeta(version);
-  if (!meta) return true;
-  if (meta.testament === 'new') return false;
-  if (meta.testament === 'old') return true;
-  if (meta.partialCanon) {
-    return getAvailableBookIds(version).some(id => id >= 1 && id <= 39);
-  }
-  return true;
+  if (meta?.testament === 'new') return false;
+  return translationHasCanonicalRange(version, 1, 39);
 }
 
 function translationShowsNtBookScope(version) {
   version = normalizeGhModuleId(version);
   const meta = getGhMeta(version);
-  if (!meta) return true;
-  if (meta.testament === 'old') return false;
-  if (meta.testament === 'new') return true;
-  if (meta.partialCanon) {
-    return getAvailableBookIds(version).some(id => id >= 40 && id <= 66);
-  }
-  return true;
+  if (meta?.testament === 'old') return false;
+  return translationHasCanonicalRange(version, 40, 66);
 }
 
 function booksReadyForVersion(version, langBooks, availableIds) {
@@ -7300,7 +7315,11 @@ function getVerseGenerateTimeoutMs(scope, version) {
   if (isApocryphaBookEn(scope?.book) || isApocryphaRandomScope(scope)) {
     return Math.max(base, GH_TRANSLATION_LOAD_TIMEOUT_MS);
   }
-  if (getGhMeta(version)?.hasApocrypha && !GH_MEMORY_CACHE[version]?.booksByEn) {
+  const meta = getGhMeta(version);
+  if (meta?.hasApocrypha && !GH_MEMORY_CACHE[version]?.booksByEn) {
+    return Math.max(base, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+  }
+  if (isBibleLibraryDynamicMeta(meta) && !GH_MEMORY_CACHE[version]?.booksByEn) {
     return Math.max(base, GH_TRANSLATION_LOAD_TIMEOUT_MS);
   }
   return base;
@@ -7312,8 +7331,11 @@ async function ensureTranslationLoadedForScope(version, scope) {
     await loadGhTranslationData(version);
     return;
   }
+  const meta = getGhMeta(version);
   const needsApo = isApocryphaBookEn(scope?.book) || isApocryphaRandomScope(scope);
-  if (!needsApo && !getGhMeta(version)?.hasApocrypha) return;
+  const explicitDynamicBook = scope?.book && isDynamicBibleLibraryBookId(BOOK_NUM[scope.book]);
+  const needsDynamicJsonBookDiscovery = isBibleLibraryDynamicMeta(meta);
+  if (!needsApo && !meta?.hasApocrypha && !explicitDynamicBook && !needsDynamicJsonBookDiscovery) return;
   await loadGhTranslationData(version);
 }
 
@@ -7333,9 +7355,9 @@ function pickRandomBookIds(scope, version) {
     available = mergeApocryphaBookIds(version, available);
   }
   if (scope.book) {
-    const id = BOOK_NUM[scope.book];
+    const id = BOOK_NUM[scope.book] || (registerDynamicBibleLibraryBook(scope.book) && BOOK_NUM[scope.book]);
     // Always honor an explicit book choice — never widen to OT/NT when apocrypha
-    // is missing from a stale book-id cache.
+    // or a newly discovered dynamic book is missing from a stale book-id cache.
     if (id) return [id];
     return available;
   }
@@ -7479,8 +7501,24 @@ function needsApocryphaMergeRefresh(module, data) {
   return apoIds.some(id => !cached.has(id));
 }
 
+function cachedBookIdsContainDynamicBooks(data) {
+  return (data?.bookIds || []).some(id => isDynamicBibleLibraryBookId(id));
+}
+
+function dynamicGithubBooksNeedDiscovery(module, data) {
+  const meta = getGhMeta(module);
+  if (!isBibleLibraryDynamicMeta(meta)) return false;
+  // If a version only has old 66-book metadata and no loaded book map, force a
+  // fresh raw JSON discovery once so extra books can be registered. This fixes
+  // Ethiopian Orthodox Bible in English and protects future JSON files with
+  // new book names.
+  if (!data?.booksByEn && !cachedBookIdsContainDynamicBooks(data)) return true;
+  return false;
+}
+
 function needsStoredBookIdsRefresh(module, data) {
   if (!data?.bookIds?.length) return false;
+  if (dynamicGithubBooksNeedDiscovery(module, data)) return true;
   const meta = getGhMeta(module);
   if (meta?.partialCanon) {
     if (!data?.booksByEn) return true;
@@ -7604,7 +7642,15 @@ function registerDynamicBibleLibraryBook(value) {
 }
 
 function isBibleLibraryDynamicMeta(meta) {
-  return !!(meta && (meta.source === 'github-library' || meta.partialCanon === true));
+  // Any GitHub JSON Bible may contain books outside the normal 66-book canon.
+  // This keeps versions such as the Ethiopian Orthodox Bible in English, and any
+  // future JSON with new book names, from losing those books during normalization.
+  return !!(meta && (
+    meta.source === 'github' ||
+    meta.source === 'github-library' ||
+    meta.partialCanon === true ||
+    /raw\.githubusercontent\.com/i.test(String(meta.rawUrl || ''))
+  ));
 }
 
 function bookEnFromId(bookId) {
@@ -7784,7 +7830,7 @@ function normalizeGhBibleJson(raw, meta) {
     (items || []).forEach(v => {
       if (!v || v.chapter == null || v.verse == null) return;
       let bookEn = bookFromAny(v.book ?? v.book_number ?? v.book_id ?? v.b ?? v.bookNo);
-      if (!bookEn && (v.book_name || v.bookName || v.name)) bookEn = resolveBookEnFromRaw(v.book_name || v.bookName || v.name);
+      if (!bookEn && (v.book_name || v.bookName || v.name)) bookEn = bookFromAny(v.book_name || v.bookName || v.name);
       const localized = v.book_name || v.bookName || v.name || bookEn;
       const text = v.text ?? v.verse_text ?? v.content ?? v.value ?? v.words;
       if (bookEn) addVerse(bookEn, localized, v.chapter, v.verse, text);
@@ -8011,7 +8057,18 @@ function prefetchGhTranslation(module, onReady) {
     if (data?.bookIds?.length) {
       GH_BOOK_IDS_BY_MODULE[module] = data.bookIds;
       VERSION_BOOK_IDS_CACHE[module] = [...data.bookIds];
+      const versionBooks = buildBooksListFromGhData(data);
+      if (versionBooks?.length) VERSION_BOOKS_CACHE[module] = versionBooks;
       saveGhBookMeta(module, data);
+      ['d', 'm'].forEach(panel => {
+        if (!panelVersionIs(panel, module)) return;
+        const mode = document.getElementById(panel + '-testament')?.value;
+        if (mode === 'custom') {
+          void updateBooks(panel, { silent: true, skipFetch: true, skipReadInit: true });
+        } else if (mode === 'read') {
+          void refreshReadBibleLabels(panel);
+        }
+      });
     }
     if (typeof onReady === 'function') onReady(module);
   }).catch(() => {
@@ -8223,8 +8280,16 @@ async function fetchRandomGhVerse(module, scope, attempt = 0) {
   const ids = pickRandomBookIds(scope, module);
   if (!ids.length) return null;
   const bookId = pinnedBook ? (BOOK_NUM[pinnedBook] || ids[0]) : ids[Math.floor(Math.random() * ids.length)];
-  const bookEn = bookEnFromId(bookId) || pinnedBook;
-  const bookData = getGhBookData(data, bookEn);
+  let bookEn = bookEnFromId(bookId) || pinnedBook;
+  let bookData = getGhBookData(data, bookEn);
+  if (!bookData && !pinnedBook && data?.booksByEn) {
+    const dataBooks = Object.keys(data.booksByEn).filter(k => data.booksByEn[k]?.chapters && Object.keys(data.booksByEn[k].chapters).length);
+    const fallbackBook = dataBooks[Math.floor(Math.random() * dataBooks.length)];
+    if (fallbackBook) {
+      bookEn = fallbackBook;
+      bookData = getGhBookData(data, bookEn);
+    }
+  }
   if (!bookData) {
     if (pinnedBook) return null;
     return fetchRandomGhVerse(module, scope, attempt + 1);
@@ -13077,6 +13142,7 @@ function applyTranslationRtl(version) {
   }
 
   async function onReadBookChange(p) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (_readSyncLock) return;
     const book = document.getElementById(p + '-read-book').value;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
@@ -13087,6 +13153,7 @@ function applyTranslationRtl(version) {
   }
 
   async function onReadChapterChange(p) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (_readSyncLock) return;
     const bookEn = document.getElementById(p + '-read-book').value;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
@@ -13096,6 +13163,7 @@ function applyTranslationRtl(version) {
   }
 
   async function onReadVerseChange(p) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (_readSyncLock) return;
     const verseVal = document.getElementById(p + '-read-verse').value;
     const bookEn = document.getElementById(p + '-read-book').value;
@@ -13132,6 +13200,7 @@ function applyTranslationRtl(version) {
   }
 
   async function onReadSearch(p) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     blurSearchInputs(p);
     const query = document.getElementById(p + '-read-search').value;
     const parsed = parseReferenceSearch(query);
@@ -13317,7 +13386,9 @@ function applyTranslationRtl(version) {
       if (!options.silent) setBookLabelState(p, 'loading');
     applyInstantBookIdsFromMeta(version);
     let langBooks = getInstantBooksForVersion(version);
-    const needsAwaitBooks = readMode || options.awaitFetch || isPartialCanonTranslation(version);
+    const versionMetaForBooks = getGhMeta(version);
+    const needsDynamicJsonBookDiscovery = isBibleLibraryDynamicMeta(versionMetaForBooks);
+    const needsAwaitBooks = readMode || showBooks || options.awaitFetch || isPartialCanonTranslation(version) || needsDynamicJsonBookDiscovery;
     if (!options.skipFetch) {
       if (needsAwaitBooks) {
         try { langBooks = await loadBooksForVersion(version, { awaitFetch: true }); }
@@ -14184,6 +14255,49 @@ function scrollBibleLibraryTop(p) {
   if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+
+  /* ══════════════════════════════════════
+     VERSION SWITCH CONTROL LOCK
+     Prevent fast clicks/searches while the selected Bible JSON and passage are loading.
+  ══════════════════════════════════════ */
+  const VERSION_SWITCH_LOCK_CONTROL_IDS = [
+    'testament',
+    'book',
+    'read-book',
+    'read-chapter',
+    'read-verse',
+    'read-search',
+    'custom-search'
+  ];
+  let _versionSwitchControlsLocked = false;
+
+  function setVersionSwitchControlsLocked(locked) {
+    _versionSwitchControlsLocked = !!locked;
+    document.documentElement.classList.toggle('version-switch-controls-locked', _versionSwitchControlsLocked);
+
+    ['d', 'm'].forEach(pl => {
+      VERSION_SWITCH_LOCK_CONTROL_IDS.forEach(id => {
+        const el = document.getElementById(pl + '-' + id);
+        if (!el) return;
+        el.disabled = _versionSwitchControlsLocked;
+        el.classList.toggle('version-switch-control-locked', _versionSwitchControlsLocked);
+        el.setAttribute('aria-busy', _versionSwitchControlsLocked ? 'true' : 'false');
+      });
+
+      // Desktop read search button has no id, so lock it from the wrapper.
+      const searchWrap = document.getElementById(pl + '-read-search')?.closest('.ref-search-wrap');
+      searchWrap?.querySelectorAll('button').forEach(btn => {
+        btn.disabled = _versionSwitchControlsLocked;
+        btn.classList.toggle('version-switch-control-locked', _versionSwitchControlsLocked);
+        btn.setAttribute('aria-busy', _versionSwitchControlsLocked ? 'true' : 'false');
+      });
+    });
+  }
+
+  function isVersionSwitchControlsLocked() {
+    return _versionSwitchControlsLocked;
+  }
+
   /* ══════════════════════════════════════
      VERSION CHANGE HANDLER
      Called whenever the translation dropdown changes
@@ -14202,7 +14316,8 @@ function scrollBibleLibraryTop(p) {
     if (sel && sel.value) lastRealBibleVersion[p] = sel.value;
     ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
     clearTimeout(_versionChangeTimer);
-    // Disable both Generate buttons immediately while the selected Bible version loads.
+    // Disable mode/book/chapter/verse/search and both Generate buttons immediately while the selected Bible version loads.
+    setVersionSwitchControlsLocked(true);
     setGeneratorVersionSwitchBusy('d', true);
     setGeneratorVersionSwitchBusy('m', true);
     _versionChangeTimer = setTimeout(() => onVersionChangeImpl(p), 140);
@@ -14289,6 +14404,7 @@ function scrollBibleLibraryTop(p) {
       if (isStale()) stopBibleVersionLoadingProgress(active);
       if (!isStale()) {
         finishBibleVersionSwitchLoader(active);
+        setVersionSwitchControlsLocked(false);
         setAllGeneratorVersionSwitchBusy(false);
       }
     }
@@ -14486,6 +14602,7 @@ function scrollBibleLibraryTop(p) {
 
 
   async function generate(p, retryCount = 0, pinnedScope = null) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (isReadBibleMode(p)) return;
 
     if (isHbvMode(p)) {
