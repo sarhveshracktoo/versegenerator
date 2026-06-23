@@ -337,6 +337,42 @@
       margin-top: 6px;
       font-style: italic;
     }
+    .encouragement-date {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 2px 0 8px;
+    }
+    .encouragement-theme {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--parchment);
+      letter-spacing: 0.05em;
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+    .encouragement-footnote {
+      color: rgba(245,234,214,0.76);
+      font-size: 0.92rem;
+      line-height: 1.58;
+      margin-top: 10px;
+      font-style: normal;
+      text-align: left;
+    }
+    .encouragement-banner .banner-verse,
+    .encouragement-banner .banner-ref,
+    .encouragement-banner .encouragement-date,
+    .encouragement-banner .encouragement-theme,
+    .encouragement-banner .encouragement-footnote {
+      text-align: left;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
 
 
     .votd-panel .devotional-panel-body,
@@ -406,11 +442,40 @@
       line-height: 1.35;
       margin-top: 10px;
     }
+    .encouragement-banner.is-magnified .banner-verse {
+      font-size: calc(1.05rem * 2);
+      line-height: 1.45;
+    }
+    .encouragement-banner.is-magnified .banner-ref {
+      font-size: calc(0.65rem * 1.55);
+      line-height: 1.35;
+      margin-top: 10px;
+    }
+    .encouragement-banner.is-magnified .encouragement-date {
+      font-size: calc(0.68rem * 1.45);
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+    .encouragement-banner.is-magnified .encouragement-theme {
+      font-size: calc(0.95rem * 1.6);
+      line-height: 1.35;
+      margin-bottom: 14px;
+    }
+    .encouragement-banner.is-magnified .encouragement-footnote {
+      font-size: calc(0.92rem * 1.55);
+      line-height: 1.48;
+      margin-top: 14px;
+    }
     .votd-panel .votd-verse,
     .votd-panel .banner-ref,
     .weekly-banner .banner-verse,
     .weekly-banner .banner-ref,
-    .weekly-banner .weekly-note {
+    .weekly-banner .weekly-note,
+    .encouragement-banner .banner-verse,
+    .encouragement-banner .banner-ref,
+    .encouragement-banner .encouragement-date,
+    .encouragement-banner .encouragement-theme,
+    .encouragement-banner .encouragement-footnote {
       transition: font-size 0.22s ease, line-height 0.22s ease, margin 0.22s ease;
     }
     @media (max-width: 768px) {
@@ -425,12 +490,17 @@
         bottom: 10px;
       }
       .votd-panel.is-magnified .votd-verse,
-      .weekly-banner.is-magnified .banner-verse {
+      .weekly-banner.is-magnified .banner-verse,
+      .encouragement-banner.is-magnified .banner-verse {
         font-size: 1.55rem;
       }
       .votd-panel.is-magnified .banner-ref,
       .weekly-banner.is-magnified .banner-ref,
-      .weekly-banner.is-magnified .weekly-note {
+      .weekly-banner.is-magnified .weekly-note,
+      .encouragement-banner.is-magnified .banner-ref,
+      .encouragement-banner.is-magnified .encouragement-date,
+      .encouragement-banner.is-magnified .encouragement-theme,
+      .encouragement-banner.is-magnified .encouragement-footnote {
         font-size: 1rem;
       }
     }
@@ -965,14 +1035,16 @@
     #d-verseDisplay.read-updating,
     .mob-verse-box.read-updating { opacity: 0.82; transition: opacity 0.2s ease; }
     #d-verseDisplay, .mob-verse-box { contain: layout style; }
-    .votd-panel, .weekly-banner, .mob-votd-panel, .mob-weekly-banner {
+    .votd-panel, .weekly-banner, .encouragement-banner, .mob-votd-panel, .mob-weekly-banner, .mob-encouragement-banner {
       content-visibility: auto;
       contain-intrinsic-size: auto 88px;
     }
     body.compat-mobile .votd-panel,
     body.compat-mobile .weekly-banner,
+    body.compat-mobile .encouragement-banner,
     body.compat-mobile .mob-votd-panel,
     body.compat-mobile .mob-weekly-banner,
+    body.compat-mobile .mob-encouragement-banner,
     body.compat-mobile .devotional-banner,
     body.compat-mobile .mob-devotional-banner {
       content-visibility: visible;
@@ -4618,6 +4690,32 @@
     </div>
   </div>
 
+  <!-- Daily Encouragement -->
+  <div class="weekly-banner encouragement-banner" id="d-encouragement-banner">
+    <button type="button" class="devotional-header" id="d-encouragement-toggle" aria-expanded="false" aria-controls="d-encouragement-collapse" aria-label="Expand daily encouragement" onclick="toggleEncouragementPanel()">
+      <span class="banner-label">🌿 Daily Encouragement</span>
+      <span class="devotional-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </span>
+    </button>
+    <div class="devotional-collapse" id="d-encouragement-collapse">
+      <div class="devotional-inner">
+        <div class="devotional-panel-body" aria-live="polite">
+          <p class="encouragement-date" id="d-encouragement-date">Loading…</p>
+          <h2 class="encouragement-theme" id="d-encouragement-theme"></h2>
+          <p class="banner-verse" id="d-encouragement-text"></p>
+          <span class="banner-ref" id="d-encouragement-ref"></span>
+          <p class="encouragement-footnote" id="d-encouragement-footnote"></p>
+          <button type="button" class="panel-magnify-btn" id="d-encouragement-magnify" onclick="togglePanelMagnify(event, 'encouragement')" aria-label="Magnify daily encouragement" title="Magnify verse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Daily Devotional -->
   <div class="devotional-banner" id="d-devotional-banner">
     <button type="button" class="devotional-header" id="d-devotional-toggle" aria-expanded="false" aria-controls="d-devotional-collapse" aria-label="Expand daily devotional" onclick="toggleDevotionalPanel()">
@@ -4864,6 +4962,32 @@
           <button type="button" class="panel-magnify-btn" id="m-weekly-magnify" onclick="togglePanelMagnify(event, 'weekly')" aria-label="Magnify verse of the week" title="Magnify verse">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
           </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Daily Encouragement -->
+    <div class="mob-encouragement-banner weekly-banner encouragement-banner" id="m-encouragement-banner">
+      <button type="button" class="devotional-header" id="m-encouragement-toggle" aria-expanded="false" aria-controls="m-encouragement-collapse" aria-label="Expand daily encouragement" onclick="toggleEncouragementPanel()">
+        <span class="banner-label">🌿 Daily Encouragement</span>
+        <span class="devotional-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+      </button>
+      <div class="devotional-collapse" id="m-encouragement-collapse">
+        <div class="devotional-inner">
+          <div class="devotional-panel-body" aria-live="polite">
+            <p class="encouragement-date" id="m-encouragement-date">Loading…</p>
+            <h2 class="encouragement-theme" id="m-encouragement-theme"></h2>
+            <p class="banner-verse" id="m-encouragement-text"></p>
+            <span class="banner-ref" id="m-encouragement-ref"></span>
+            <p class="encouragement-footnote" id="m-encouragement-footnote"></p>
+            <button type="button" class="panel-magnify-btn" id="m-encouragement-magnify" onclick="togglePanelMagnify(event, 'encouragement')" aria-label="Magnify daily encouragement" title="Magnify verse">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -7138,7 +7262,8 @@ function localVersionKey(module) {
 }
 
 function isApocryphaBookEn(bookEn) {
-  return !!(bookEn && BOOK_NUM[bookEn] >= 67);
+  const id = bookEn ? BOOK_NUM[bookEn] : null;
+  return !!(id && id >= 67 && id < DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START);
 }
 
 function getApocryphaBookIdsForModule(module) {
@@ -7217,7 +7342,7 @@ function pickRandomBookIds(scope, version) {
   let scoped = available;
   if (scope.randomScope === 'OT') scoped = available.filter(id => id <= 39);
   else if (scope.randomScope === 'NT') scoped = available.filter(id => id >= 40 && id <= 66);
-  else if (scope.randomScope === 'Apocrypha') scoped = available.filter(id => id >= 67);
+  else if (scope.randomScope === 'Apocrypha') scoped = available.filter(id => id >= 67 && id < DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START);
   return scoped.length ? scoped : available;
 }
 
@@ -7442,10 +7567,51 @@ function applyInstantBookIdsFromMeta(module) {
   return ids;
 }
 
+const DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START = 20001;
+let NEXT_DYNAMIC_BIBLE_LIBRARY_BOOK_ID = DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START;
+const DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID = {};
+const DYNAMIC_BIBLE_LIBRARY_BOOK_ID_BY_NAME = {};
+
+function normalizeBibleLibraryBookName(value) {
+  return decodeURIComponent(String(value || ''))
+    .replace(/\.json$/i, '')
+    .replace(/[_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function bibleLibraryBookKey(value) {
+  return normalizeBookNameForMatch(normalizeBibleLibraryBookName(value));
+}
+
+function isDynamicBibleLibraryBookId(id) {
+  const n = parseInt(id, 10);
+  return Number.isFinite(n) && n >= DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START;
+}
+
+function registerDynamicBibleLibraryBook(value) {
+  const display = normalizeBibleLibraryBookName(value);
+  const key = bibleLibraryBookKey(display);
+  if (!display || !key) return null;
+  const canonical = resolveBookEnFromRaw(display) || (BOOK_NUM[display] ? display : null);
+  if (canonical) return canonical;
+  if (DYNAMIC_BIBLE_LIBRARY_BOOK_ID_BY_NAME[key]) return DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID[DYNAMIC_BIBLE_LIBRARY_BOOK_ID_BY_NAME[key]];
+  const id = NEXT_DYNAMIC_BIBLE_LIBRARY_BOOK_ID++;
+  DYNAMIC_BIBLE_LIBRARY_BOOK_ID_BY_NAME[key] = id;
+  DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID[id] = display;
+  BOOK_NUM[display] = id;
+  return display;
+}
+
+function isBibleLibraryDynamicMeta(meta) {
+  return !!(meta && (meta.source === 'github-library' || meta.partialCanon === true));
+}
+
 function bookEnFromId(bookId) {
   const id = parseInt(bookId, 10);
   if (id >= 1 && id <= 66) return ALL[id - 1];
-  if (id >= 67) return APOCRYPHA[id - 67] || null;
+  if (id >= 67 && id < DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START) return APOCRYPHA[id - 67] || null;
+  if (DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID[id]) return DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID[id];
   return null;
 }
 
@@ -7583,8 +7749,10 @@ function normalizeGhBibleJson(raw, meta) {
   function addVerse(bookEn, localizedName, chapter, verse, text) {
     const chNum = parseInt(chapter, 10);
     const vNum = parseInt(verse, 10);
+    if (!bookEn && isBibleLibraryDynamicMeta(meta)) bookEn = registerDynamicBibleLibraryBook(localizedName);
+    if (bookEn && !BOOK_NUM[bookEn] && isBibleLibraryDynamicMeta(meta)) bookEn = registerDynamicBibleLibraryBook(bookEn);
     if (!bookEn || !BOOK_NUM[bookEn] || !Number.isFinite(chNum) || !Number.isFinite(vNum)) return;
-    const book = ensureBook(bookEn, localizedName);
+    const book = ensureBook(bookEn, localizedName || bookEn);
     const clean = cleanGhText(text);
     if (!clean) return;
     const chKey = String(chNum);
@@ -7604,7 +7772,10 @@ function normalizeGhBibleJson(raw, meta) {
       if (asNum >= 1 && asNum <= 66) return ALL[asNum - 1];
       if (asNum >= 67) return APOCRYPHA[asNum - 67] || null;
     }
-    return resolveBookEnFromRaw(value) || (BOOK_NUM[value] ? value : null);
+    const resolved = resolveBookEnFromRaw(value) || (BOOK_NUM[value] ? value : null);
+    if (resolved) return resolved;
+    if (isBibleLibraryDynamicMeta(meta)) return registerDynamicBibleLibraryBook(value);
+    return null;
   }
 
   const root = raw?.data || raw?.bible || raw?.translation || raw;
@@ -7625,6 +7796,20 @@ function normalizeGhBibleJson(raw, meta) {
   } else if (root?.verses) {
     const items = Array.isArray(root.verses) ? root.verses : Object.values(root.verses);
     readFlatVerseItems(items);
+  } else if (root?.books && !Array.isArray(root.books) && typeof root.books === 'object') {
+    Object.keys(root.books).forEach(bookKey => {
+      const chapters = root.books[bookKey];
+      const bookEn = bookFromAny(bookKey);
+      if (!bookEn || !chapters || typeof chapters !== 'object') return;
+      Object.keys(chapters).forEach(ch => {
+        const verses = chapters[ch];
+        if (Array.isArray(verses)) {
+          verses.forEach((vv, vi) => addVerse(bookEn, bookKey, ch, vv.verse || vv.number || vv.id || vi + 1, vv.text ?? vv.verse_text ?? vv.content ?? vv.value ?? vv));
+        } else if (verses && typeof verses === 'object') {
+          Object.keys(verses).forEach(v => addVerse(bookEn, bookKey, ch, v, verses[v]));
+        }
+      });
+    });
   } else if (root?.books && Array.isArray(root.books)) {
     root.books.forEach(book => {
       const bookEn = bookFromAny(book.name || book.book || book.book_name || book.id || book.number);
@@ -8481,8 +8666,17 @@ function applyTranslationRtl(version) {
   let _votdLastVersion = '';
   let _votdOpen = false;
   let _weeklyOpen = false;
+  let _encouragementOpen = false;
   let _votdDisplayCache = {};
   let _weeklyDisplayCache = {};
+  let _encouragementDisplayCache = {};
+
+  const DAILY_ENCOURAGEMENT_JSON_URL =
+    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/Daily%20Encouragement.json';
+  const DAILY_ENCOURAGEMENT_CACHE_KEY = 'vg-daily-encouragement-json-v1';
+  let _encouragementList = [];
+  let _encouragementCatalogLoadPromise = null;
+  let _encouragementRenderedKey = null;
 
   const WEEKLY_JSON_URL =
     'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
@@ -8491,7 +8685,7 @@ function applyTranslationRtl(version) {
   let _weeklyVersesByWeek = {};
   let _weeklySortedByDate = [];
   let _weeklyCatalogLoadPromise = null;
-  let _bannerCanonicalRefs = { votd: null, weekly: null };
+  let _bannerCanonicalRefs = { votd: null, weekly: null, encouragement: null };
 
   const WEEKLY_MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -8514,6 +8708,74 @@ function applyTranslationRtl(version) {
   function getLocalTodayMonthDayKey() {
     const now = new Date();
     return now.getMonth() * 100 + now.getDate();
+  }
+
+  function getDailyEncouragementDateKey(date) {
+    const d = date || new Date();
+    return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function normalizeDailyEncouragementCatalogData(data) {
+    const list = Array.isArray(data)
+      ? data
+      : (Array.isArray(data?.verses) ? data.verses
+        : (Array.isArray(data?.dailyEncouragement) ? data.dailyEncouragement
+          : (Array.isArray(data?.encouragement) ? data.encouragement : [])));
+    return list.filter(item => item && item.month && (item.date || item.day)).map(item => {
+      const month = String(item.month || '').trim();
+      const date = parseInt(String(item.date ?? item.day ?? '1'), 10) || 1;
+      const reference = String(item.reference || item.ref || '').trim();
+      return {
+        ...item,
+        month,
+        date,
+        dateKey: String((WEEKLY_MONTH_NAMES.findIndex(m => m.toLowerCase() === month.toLowerCase()) + 1) || parseInt(month, 10) || 1).padStart(2, '0') + '-' + String(date).padStart(2, '0'),
+        reference,
+        verse_text: String(item.verse_text || item.verse || item.text || '').trim(),
+        theme: String(item.theme || item.title || 'Daily Encouragement').trim(),
+        encouragement_footnote: String(item.encouragement_footnote || item.footnote || item.note || '').trim()
+      };
+    }).filter(item => item.dateKey && (item.reference || item.verse_text));
+  }
+
+  async function loadDailyEncouragementCatalog(forceRefresh) {
+    if (!forceRefresh && _encouragementList.length) return _encouragementList;
+    if (_encouragementCatalogLoadPromise) return _encouragementCatalogLoadPromise;
+
+    _encouragementCatalogLoadPromise = (async () => {
+      if (!forceRefresh) {
+        try {
+          const raw = sessionStorage.getItem(DAILY_ENCOURAGEMENT_CACHE_KEY);
+          if (raw) {
+            const cached = normalizeDailyEncouragementCatalogData(JSON.parse(raw));
+            if (cached.length) _encouragementList = cached;
+          }
+        } catch { /* ignore cache */ }
+      }
+
+      try {
+        const freshUrl = DAILY_ENCOURAGEMENT_JSON_URL + (DAILY_ENCOURAGEMENT_JSON_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const data = await apiGetJson(freshUrl, 22000);
+        const list = normalizeDailyEncouragementCatalogData(data);
+        if (!list.length) throw new Error('empty-daily-encouragement-json');
+        _encouragementList = list;
+        try { sessionStorage.setItem(DAILY_ENCOURAGEMENT_CACHE_KEY, JSON.stringify(list)); } catch { /* quota */ }
+      } catch { /* keep cached data if available */ }
+      finally { _encouragementCatalogLoadPromise = null; }
+
+      return _encouragementList;
+    })();
+
+    return _encouragementCatalogLoadPromise;
+  }
+
+  function getTodaysDailyEncouragementEntry() {
+    const key = getDailyEncouragementDateKey();
+    return _encouragementList.find(item => item.dateKey === key) || null;
+  }
+
+  function getDailyEncouragementCacheKey(version, entry) {
+    return normalizeGhModuleId(version || VOTD_KJV_VERSION) + ':' + (entry?.dateKey || getDailyEncouragementDateKey());
   }
 
   function getWeeklyBannerCacheKey(version, weeklyEntry) {
@@ -8732,9 +8994,23 @@ function applyTranslationRtl(version) {
     });
   }
 
+
+  function setEncouragementPanelOpen(open) {
+    _encouragementOpen = open;
+    ['d', 'm'].forEach(p => {
+      const panel = document.getElementById(p + '-encouragement-banner');
+      const btn = document.getElementById(p + '-encouragement-toggle');
+      if (panel) panel.classList.toggle('is-open', open);
+      if (btn) {
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Collapse daily encouragement' : 'Expand daily encouragement');
+      }
+    });
+  }
+
   function scrollToBannerPanel(kind) {
     const p = activePanel();
-    const id = kind === 'weekly' ? p + '-weekly-banner' : p + '-votd-panel';
+    const id = kind === 'weekly' ? p + '-weekly-banner' : (kind === 'encouragement' ? p + '-encouragement-banner' : p + '-votd-panel');
     const panel = document.getElementById(id);
     if (!panel) return;
     const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
@@ -8756,18 +9032,25 @@ function applyTranslationRtl(version) {
 
   const PANEL_MAGNIFY_KEYS = {
     votd: 'vg-votd-panel-magnified',
-    weekly: 'vg-weekly-panel-magnified'
+    weekly: 'vg-weekly-panel-magnified',
+    encouragement: 'vg-encouragement-panel-magnified'
   };
 
   function applyPanelMagnify(kind, enabled) {
-    const ids = kind === 'weekly' ? ['d-weekly-banner', 'm-weekly-banner'] : ['d-votd-panel', 'm-votd-panel'];
+    const ids = kind === 'weekly'
+      ? ['d-weekly-banner', 'm-weekly-banner']
+      : (kind === 'encouragement'
+        ? ['d-encouragement-banner', 'm-encouragement-banner']
+        : ['d-votd-panel', 'm-votd-panel']);
     ids.forEach(id => {
       const panel = document.getElementById(id);
       if (panel) panel.classList.toggle('is-magnified', !!enabled);
     });
     const buttons = kind === 'weekly'
       ? [document.getElementById('d-weekly-magnify'), document.getElementById('m-weekly-magnify')]
-      : [document.getElementById('d-votd-magnify'), document.getElementById('m-votd-magnify')];
+      : (kind === 'encouragement'
+        ? [document.getElementById('d-encouragement-magnify'), document.getElementById('m-encouragement-magnify')]
+        : [document.getElementById('d-votd-magnify'), document.getElementById('m-votd-magnify')]);
     buttons.forEach(btn => {
       if (!btn) return;
       btn.classList.toggle('is-active', !!enabled);
@@ -8789,7 +9072,8 @@ function applyTranslationRtl(version) {
       event.preventDefault();
       event.stopPropagation();
     }
-    const panel = document.getElementById((activePanel() === 'm' ? 'm-' : 'd-') + (kind === 'weekly' ? 'weekly-banner' : 'votd-panel'));
+    const panelId = (activePanel() === 'm' ? 'm-' : 'd-') + (kind === 'weekly' ? 'weekly-banner' : (kind === 'encouragement' ? 'encouragement-banner' : 'votd-panel'));
+    const panel = document.getElementById(panelId);
     const next = !(panel && panel.classList.contains('is-magnified'));
     applyPanelMagnify(kind, next);
     savePanelMagnify(kind, next);
@@ -8799,6 +9083,7 @@ function applyTranslationRtl(version) {
   function initPanelMagnifyPrefs() {
     applyPanelMagnify('votd', getSavedPanelMagnify('votd'));
     applyPanelMagnify('weekly', getSavedPanelMagnify('weekly'));
+    applyPanelMagnify('encouragement', getSavedPanelMagnify('encouragement'));
   }
 
   async function toggleVotdPanel() {
@@ -8838,6 +9123,18 @@ function applyTranslationRtl(version) {
     // old in-memory cache cannot display last week's reference.
     await loadWeeklyBanner(version, { silent: false });
     scrollToOpenedBannerPanel('weekly');
+  }
+
+
+  async function toggleEncouragementPanel() {
+    const willOpen = !_encouragementOpen;
+    setEncouragementPanelOpen(willOpen);
+    if (!willOpen) return;
+    scrollToOpenedBannerPanel('encouragement');
+
+    const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
+    await loadDailyEncouragementBanner(version, { silent: false });
+    scrollToOpenedBannerPanel('encouragement');
   }
 
   function paintVotdPanel(entry, version) {
@@ -8895,6 +9192,96 @@ function applyTranslationRtl(version) {
       if (weeklyRef) weeklyRef.textContent = '— ' + weeklyEntry.ref + (cleanLabel ? ' (' + cleanLabel + ')' : '');
       if (noteEl) noteEl.textContent = note ? '💭 ' + note : '';
     });
+  }
+
+  function paintDailyEncouragementBanner(entry, label, version) {
+    const v = normalizeGhModuleId(version || document.getElementById('d-version')?.value || VOTD_KJV_VERSION);
+    if (!entry) return;
+    _encouragementRenderedKey = entry.dateKey || getDailyEncouragementDateKey();
+    _encouragementDisplayCache[getDailyEncouragementCacheKey(v, entry)] = { entry, label: label || '' };
+    _bannerCanonicalRefs.encouragement = entry.canonicalRef || entry.ref || entry.reference || _bannerCanonicalRefs.encouragement;
+
+    const dateLine = (entry.month && entry.date) ? `${entry.month} ${entry.date}` : _encouragementRenderedKey;
+    const ref = entry.ref || entry.reference || 'Daily Encouragement';
+    const text = String(entry.text || entry.verse_text || '').trim();
+    const theme = String(entry.theme || 'Daily Encouragement').trim();
+    const footnote = String(entry.footnote || entry.encouragement_footnote || '').trim();
+    const cleanLabel = String(label || '').trim();
+
+    ['d', 'm'].forEach(p => {
+      const dateEl = document.getElementById(p + '-encouragement-date');
+      const themeEl = document.getElementById(p + '-encouragement-theme');
+      const textEl = document.getElementById(p + '-encouragement-text');
+      const refEl = document.getElementById(p + '-encouragement-ref');
+      const footEl = document.getElementById(p + '-encouragement-footnote');
+      if (dateEl) dateEl.textContent = dateLine;
+      if (themeEl) themeEl.textContent = theme;
+      if (textEl) textEl.textContent = text ? '"' + text + '"' : 'Verse text unavailable for this date.';
+      if (refEl) refEl.textContent = '— ' + ref + (cleanLabel ? ' (' + cleanLabel + ')' : '');
+      if (footEl) footEl.textContent = footnote;
+    });
+  }
+
+  function hasPaintedDailyEncouragementBanner() {
+    return ['d', 'm'].some(p => {
+      const textEl = document.getElementById(p + '-encouragement-text');
+      const refEl = document.getElementById(p + '-encouragement-ref');
+      return !!((textEl?.textContent || '').trim() && (refEl?.textContent || '').trim());
+    });
+  }
+
+  async function loadDailyEncouragementBanner(version, opts) {
+    version = normalizeGhModuleId(version || VOTD_KJV_VERSION);
+    opts = opts || {};
+
+    await loadDailyEncouragementCatalog(opts.forceRefresh === true);
+    const raw = getTodaysDailyEncouragementEntry();
+    if (!raw) {
+      if (!hasPaintedDailyEncouragementBanner()) {
+        paintDailyEncouragementBanner({
+          dateKey: getDailyEncouragementDateKey(),
+          month: WEEKLY_MONTH_NAMES[new Date().getMonth()],
+          date: new Date().getDate(),
+          ref: 'Daily Encouragement',
+          text: 'Could not load Daily Encouragement. Check your connection and try again.',
+          theme: 'Daily Encouragement',
+          footnote: ''
+        }, '', version);
+      }
+      return;
+    }
+
+    const cacheKey = getDailyEncouragementCacheKey(version, raw);
+    if (_encouragementDisplayCache[cacheKey]) {
+      const c = _encouragementDisplayCache[cacheKey];
+      paintDailyEncouragementBanner(c.entry, c.label, version);
+      return;
+    }
+
+    const rawEntry = {
+      ...raw,
+      ref: raw.reference || raw.ref || 'Daily Encouragement',
+      text: raw.verse_text || raw.text || '',
+      footnote: raw.encouragement_footnote || raw.footnote || '',
+      canonicalRef: raw.reference || raw.ref || ''
+    };
+
+    const ref = rawEntry.canonicalRef;
+    let resolvedEntry = rawEntry;
+    let label = '';
+
+    if (ref && !apiCircuitOpen()) {
+      try {
+        const bannerTimeout = isRestrictedMobileBrowser() ? 7000 : 11000;
+        const fetched = await withTimeout(fetchReferenceForVersion(version, ref), bannerTimeout, null);
+        if (fetched && verseFetchHasText(fetched)) {
+          resolvedEntry = { ...rawEntry, ref, text: fetched.text.trim(), canonicalRef: ref };
+          label = getTranslationLabel(version);
+        }
+      } catch { /* leave original Daily Encouragement text if selected version cannot load it */ }
+    }
+
+    paintDailyEncouragementBanner(resolvedEntry, label, version);
   }
 
   function readVotdCache(dateKey) {
@@ -9114,7 +9501,8 @@ function applyTranslationRtl(version) {
     const silent = opts.silent !== false;
     await Promise.all([
       loadVerseOfTheDay(version, { silent }),
-      loadWeeklyBanner(version, { silent })
+      loadWeeklyBanner(version, { silent }),
+      loadDailyEncouragementBanner(version, { silent })
     ]);
   }
 
@@ -12020,6 +12408,21 @@ function applyTranslationRtl(version) {
       return;
     }
     const allowed = new Set(getAvailableBookIds(version));
+    const dynamicLibraryBooks = Array.from(allowed)
+      .filter(id => isDynamicBibleLibraryBookId(id))
+      .map(id => bookEnFromId(id))
+      .filter(Boolean);
+    if (dynamicLibraryBooks.length) {
+      const libG = document.createElement('optgroup');
+      libG.label = 'Full Books';
+      dynamicLibraryBooks.forEach(b => {
+        const o = document.createElement('option');
+        o.value = b;
+        o.textContent = formatGhBookDisplayName(getGhLocalizedBookName(version, b)) || b;
+        libG.appendChild(o);
+      });
+      if (libG.children.length) frag.appendChild(libG);
+    }
     const otG = document.createElement('optgroup');
     otG.label = ui.ot;
     OT.forEach(b => {
@@ -13011,6 +13414,21 @@ function applyTranslationRtl(version) {
         if (ntG.children.length) frag.appendChild(ntG);
       }
       appendApocryphaBookOptions(frag, availableSet, langBooks, langCode, ui, version);
+      const dynamicLibraryBooks = availableIds
+        .filter(id => isDynamicBibleLibraryBookId(id))
+        .map(id => bookEnFromId(id))
+        .filter(Boolean);
+      if (dynamicLibraryBooks.length) {
+        const libG = document.createElement('optgroup');
+        libG.label = 'Full Books';
+        dynamicLibraryBooks.forEach(b => {
+          const o = document.createElement('option');
+          o.value = b;
+          o.textContent = formatGhBookDisplayName(getGhLocalizedBookName(version, b)) || b;
+          libG.appendChild(o);
+        });
+        if (libG.children.length) frag.appendChild(libG);
+      }
       sel.replaceChildren(frag);
       if (testament === 'custom' && (prevTest !== 'custom' || !savedBook)) {
         // When switching to Verse Generator, default to "Whole Bible (random)"
@@ -14966,6 +15384,7 @@ function scrollBibleLibraryTop(p) {
 
     // Background work — must not block taps on Generate or social links.
     void loadWeeklyVersesCatalog();
+    void loadDailyEncouragementCatalog();
     void loadBibleList().then(() => {
       if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
         showEarlyReadBibleBootLoader();
@@ -14985,10 +15404,13 @@ function scrollBibleLibraryTop(p) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const version = document.getElementById('d-version')?.value || VOTD_KJV_VERSION;
-    if (_votdMeta.dateKey && _votdMeta.dateKey !== getVotdDateKey()) {
+    const todayEncouragementKey = getDailyEncouragementDateKey();
+    if ((_votdMeta.dateKey && _votdMeta.dateKey !== getVotdDateKey()) || (_encouragementRenderedKey && _encouragementRenderedKey !== todayEncouragementKey)) {
       _votdDisplayCache = {};
+      _encouragementDisplayCache = {};
       _devotionalScriptureCache = {};
       _devotionalRenderedKey = null;
+      _encouragementRenderedKey = null;
       void preloadBannerVerses(version, { silent: true });
       void loadDevotionalsCatalog().then(() => refreshDevotionalScripture(version, { showLoading: false }));
     }
