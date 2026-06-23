@@ -28,7 +28,8 @@
         document.documentElement.setAttribute('data-theme', 'normal');
       }
     })();
-  </script>
+
+</script>
   <title>Verse Generator</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -4500,6 +4501,212 @@
     .mob-bible-library-panel .bible-library-table { font-size: 0.86rem; }
     .mob-bible-library-panel .bible-library-table th,
     .mob-bible-library-panel .bible-library-table td { padding: 6px 7px; }
+
+  
+    @keyframes mobileVerseFlashStrong {
+      0%, 100% { background-color: transparent; box-shadow: none; }
+      16%, 50%, 84% {
+        background-color: rgba(var(--accent-rgb), 0.34);
+        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.32), 0 0 22px rgba(var(--accent-rgb), 0.34);
+      }
+      33%, 67% { background-color: transparent; box-shadow: none; }
+    }
+    #m-verseDisplay .verse-flash-x3,
+    #m-verseDisplay .verse-phrase-flash {
+      animation: mobileVerseFlashStrong 3s ease-in-out 1 !important;
+      border-radius: 6px;
+      padding-left: 3px;
+      padding-right: 3px;
+    }
+
+  
+    @keyframes mobileSelectedVerseFlash3x {
+      0%, 100% { background-color: transparent; box-shadow: none; }
+      12%, 22%, 45%, 55%, 78%, 88% {
+        background-color: rgba(var(--accent-rgb), 0.36);
+        box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.30), 0 0 20px rgba(var(--accent-rgb), 0.36);
+      }
+      30%, 63%, 94% {
+        background-color: transparent;
+        box-shadow: none;
+      }
+    }
+    #m-verseDisplay .mobile-selected-verse-flash {
+      animation: mobileSelectedVerseFlash3x 3s ease-in-out 1 !important;
+      border-radius: 6px;
+      padding-left: 3px;
+      padding-right: 3px;
+    }
+
+  
+    .is-loading-locked,
+    .controls-loading-locked,
+    select:disabled,
+    input:disabled,
+    button:disabled {
+      opacity: 0.52;
+    }
+    .is-loading-locked {
+      cursor: not-allowed !important;
+      filter: grayscale(0.28);
+    }
+
+  
+    .read-open-loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 3, 1, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    .read-open-loading-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .read-open-loading-box {
+      width: min(220px, 76vw);
+      min-height: 180px;
+      border-radius: 18px;
+      border: 1px solid rgba(var(--accent-rgb), 0.34);
+      background:
+        radial-gradient(circle at 50% 38%, rgba(var(--accent-rgb), 0.22), transparent 54%),
+        rgba(15, 8, 2, 0.72);
+      box-shadow:
+        0 18px 60px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 36px rgba(var(--accent-rgb), 0.16);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 26px 20px;
+      text-align: center;
+    }
+    .read-open-loading-orb {
+      position: relative;
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      box-shadow:
+        inset 0 0 22px rgba(var(--accent-rgb), 0.18),
+        0 0 30px rgba(var(--accent-rgb), 0.25);
+    }
+    .read-open-loading-orb::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 3px solid rgba(var(--accent-rgb), 0.16);
+      border-top-color: var(--gold);
+      border-right-color: var(--gold-light);
+      animation: readOpenSpin 0.9s linear infinite;
+    }
+    .read-open-loading-cross {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-light);
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.65rem;
+      text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.72);
+      animation: readOpenCrossPulse 1.25s ease-in-out infinite;
+    }
+    .read-open-loading-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      line-height: 1.35;
+    }
+    .read-open-loading-subtitle {
+      font-size: 0.92rem;
+      font-style: italic;
+      color: rgba(245, 234, 214, 0.78);
+      line-height: 1.35;
+    }
+    @keyframes readOpenSpin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes readOpenCrossPulse {
+      0%, 100% { opacity: 0.68; transform: scale(0.94); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .read-open-loading-orb::before,
+      .read-open-loading-cross {
+        animation: none !important;
+      }
+    }
+
+  
+    /* Mobile-safe Read Bible opening spinner.
+       Android/Chrome can freeze pseudo-element animations inside fixed blurred overlays.
+       This uses a real element with GPU-friendly transforms. */
+    .read-open-loading-orb {
+      transform: translateZ(0);
+      will-change: transform;
+      contain: layout paint style;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .read-open-loading-spinner {
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 3px solid rgba(var(--accent-rgb), 0.16);
+      border-top-color: var(--gold);
+      border-right-color: var(--gold-light);
+      border-bottom-color: rgba(var(--accent-rgb), 0.32);
+      transform-origin: 50% 50%;
+      animation: readOpenSpinMobileSafe 0.85s linear infinite;
+      will-change: transform;
+      transform: rotate(0deg) translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      pointer-events: none;
+    }
+    .read-open-loading-orb::before {
+      display: none !important;
+      animation: none !important;
+      content: none !important;
+    }
+    .read-open-loading-cross {
+      transform: translateZ(0);
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    @keyframes readOpenSpinMobileSafe {
+      0% { transform: rotate(0deg) translateZ(0); }
+      100% { transform: rotate(360deg) translateZ(0); }
+    }
+    @media (max-width: 768px), (pointer: coarse) {
+      .read-open-loading-overlay {
+        transform: translateZ(0);
+        will-change: opacity;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .read-open-loading-spinner {
+        animation: readOpenSpinMobileSafe 0.75s linear infinite !important;
+      }
+      .read-open-loading-cross {
+        animation: readOpenCrossPulse 1.15s ease-in-out infinite !important;
+      }
+    }
 
   </style>
 </head>
@@ -11896,7 +12103,7 @@ function applyTranslationRtl(version) {
   }
 
   function scrollReadAreaToTop(p) {
-    if (p === 'm' && _mobileTextSizeScrollInFlight) return;
+    if (p === 'm' && (_mobileTextSizeScrollInFlight || _selectedVerseScrollInFlight)) return;
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     requestAnimationFrame(() => {
@@ -11940,6 +12147,7 @@ function applyTranslationRtl(version) {
   }
 
   let _mobileTextSizeScrollInFlight = false;
+  let _selectedVerseScrollInFlight = false;
 
   function scrollReadAreaToTextSize(p) {
     const slider = document.getElementById(p + '-size-slider');
@@ -11983,7 +12191,7 @@ function applyTranslationRtl(version) {
     html.style.overflowAnchor = 'none';
     body.style.overflowAnchor = 'none';
 
-    const duration = Math.max(2200, durationMs || 2600);
+    const duration = Math.max(900, durationMs || 2600);
     const startTime = performance.now();
 
     function easeInOutSine(t) {
@@ -12013,7 +12221,7 @@ function applyTranslationRtl(version) {
   }
 
   function scrollToCenterVerseDisplay(p) {
-    if (p === 'm' && _mobileTextSizeScrollInFlight) return;
+    if (p === 'm' && (_mobileTextSizeScrollInFlight || _selectedVerseScrollInFlight)) return;
     const el = document.getElementById(p + '-verseDisplay');
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -12174,18 +12382,47 @@ function applyTranslationRtl(version) {
       if (Number.isNaN(n) || n < start || n > end) return;
       el.classList.remove('verse-phrase-flash', 'verse-flash-x3');
       void el.offsetWidth;
-      el.classList.add(...flashClass.split(' '));
+      requestAnimationFrame(() => {
+        el.classList.add(...flashClass.split(' '));
+      });
       setTimeout(() => el.classList.remove('verse-phrase-flash', 'verse-flash-x3'), clearMs);
     });
+  }
+
+  
+  function scrollToReadVersesThenFlash(p, verseStart, verseEnd, options) {
+    options = options || {};
+    const start = parseInt(verseStart, 10);
+    const end = parseInt(verseEnd ?? verseStart, 10);
+    const flashTimes = options.flashTimes || 0;
+
+    // Scroll first, with flash disabled during scroll.
+    const didScroll = scrollToReadVerses(p, start, end, {
+      ...options,
+      flashTimes: 0
+    });
+
+    // Wait for the scroll animation to finish, then flash 3 times.
+    const waitMs = options.scrollDurationMs
+      || (p === 'm' ? 2250 : 1850);
+
+    setTimeout(() => {
+      flashReadVerseRange(p, start, end, flashTimes);
+    }, didScroll ? waitMs : 350);
+
+    return didScroll;
   }
 
   function scrollToReadVerses(p, verseStart, verseEnd, options) {
     options = options || {};
     const display = document.getElementById(p + '-verseDisplay');
     const passage = display?.querySelector('.read-passage-text');
-    if (!passage) return;
-    const start = Math.min(verseStart, verseEnd);
-    const end = Math.max(verseStart, verseEnd);
+    if (!display || !passage) return false;
+
+    const start = Math.min(parseInt(verseStart, 10), parseInt(verseEnd, 10));
+    const end = Math.max(parseInt(verseStart, 10), parseInt(verseEnd, 10));
+    if (!start || Number.isNaN(start)) return false;
+
     let firstTarget = passage.querySelector(`.read-verse-segment[data-verse-num="${start}"]`);
     if (!firstTarget) {
       passage.querySelectorAll('.read-verse-segment').forEach(el => {
@@ -12193,45 +12430,51 @@ function applyTranslationRtl(version) {
         if (!firstTarget && !Number.isNaN(n) && n >= start && n <= end) firstTarget = el;
       });
     }
-    if (!firstTarget) {
-      scrollReadAreaToTop(p);
-      return;
-    }
+    if (!firstTarget) return false;
+
     const flashTimes = options.flashTimes || 0;
-    if (!flashTimes) {
-      flashReadVerseRange(p, start, end, 1);
-    }
+
     requestAnimationFrame(() => {
       const rect = firstTarget.getBoundingClientRect();
+
       if (p === 'd') {
         const compactDesktop = typeof isDesktopCompactDisplayMode === 'function' && isDesktopCompactDisplayMode();
         if (compactDesktop) {
-          // Compact Page desktop has no internal scroll panel, so scroll the whole page
-          // directly to the selected verse and keep the verse comfortably in view.
           const stickyOffset = 120;
           const viewAnchor = window.innerHeight * 0.34;
           const targetTop = window.scrollY + rect.top - Math.max(stickyOffset, viewAnchor) + (rect.height / 2);
           const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
           const clampedTop = Math.min(maxScroll, Math.max(0, targetTop));
-          if (options.slowScroll) smoothScrollToY(clampedTop, 1600);
+          if (options.slowScroll && typeof smoothScrollToY === 'function') smoothScrollToY(clampedTop, 1600);
           else window.scrollTo({ top: clampedTop, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-          return;
+        } else {
+          const displayRect = display.getBoundingClientRect();
+          const targetTop = display.scrollTop + rect.top - displayRect.top - (display.clientHeight * 0.38) + (rect.height / 2);
+          if (typeof smoothScrollElementTo === 'function') smoothScrollElementTo(display, targetTop, options.slowScroll ? 1600 : 900);
+          else display.scrollTo({ top: Math.max(0, targetTop), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
         }
-        const displayRect = display.getBoundingClientRect();
-        const targetTop = display.scrollTop + rect.top - displayRect.top - (display.clientHeight * 0.38) + (rect.height / 2);
-        smoothScrollElementTo(display, targetTop, options.slowScroll ? 1600 : 900);
-        return;
+      } else {
+        const viewMid = window.innerHeight * 0.40;
+        const chromeOffset = 74;
+        const top = window.scrollY + rect.top - viewMid + (rect.height / 2) - chromeOffset;
+        if (options.slowScroll) {
+          _selectedVerseScrollInFlight = true;
+          if (typeof slowMobileScrollToY === 'function') slowMobileScrollToY(top, 1800);
+          else if (typeof smoothScrollToY === 'function') smoothScrollToY(top, 1800);
+          else window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+          setTimeout(() => { _selectedVerseScrollInFlight = false; }, 2050);
+        } else {
+          window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+        }
       }
-      const viewMid = window.innerHeight * 0.42;
-      const chromeOffset = 72;
-      const top = window.scrollY + rect.top - viewMid + (rect.height / 2) - chromeOffset;
-      if (options.slowScroll) smoothScrollToY(top, 1000);
-      else window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+
+      if (flashTimes) {
+        const flashDelay = options.slowScroll ? (p === 'm' ? 1850 : 1200) : (prefersReducedMotion() ? 80 : 520);
+        setTimeout(() => flashReadVerseRange(p, start, end, flashTimes), flashDelay);
+      }
     });
-    if (flashTimes) {
-      const flashDelay = options.slowScroll ? 1100 : (prefersReducedMotion() ? 80 : 520);
-      setTimeout(() => flashReadVerseRange(p, start, end, flashTimes), flashDelay);
-    }
+
+    return true;
   }
 
   function scheduleScrollToReadVerses(p, verseStart, verseEnd, options) {
@@ -12245,6 +12488,7 @@ function applyTranslationRtl(version) {
     if (verse != null && verse !== READ_VERSE_WHOLE && !options.flashTimes) {
       options.flashTimes = READ_VERSE_SCROLL_FLASH_TIMES;
     }
+
     const version = getGeneratorSelectedVersion(p);
     const key = readChapterCacheKey(version, bookEn, chapter);
     let chapterData = readChapterCache[key];
@@ -12263,16 +12507,28 @@ function applyTranslationRtl(version) {
     _readSyncLock = false;
 
     const end = verseEnd ?? verse;
-    // Allow passage DOM to settle after async load before smooth scroll.
-    const scrollDelay = options.slowScroll ? 40 : 0;
-    const runScroll = () => scrollToReadVerses(p, verse, end, options);
-    if (scrollDelay) {
-      setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(runScroll)), scrollDelay);
-    } else {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(runScroll);
+    const flashTimes = options.flashTimes || 0;
+
+    const runScroll = () => {
+      scrollToReadVersesThenFlash(p, verse, end, {
+        ...options,
+        flashTimes: options.flashTimes || READ_VERSE_SCROLL_FLASH_TIMES,
+        scrollDurationMs: p === 'm' ? 2250 : 1850
       });
-    }
+      if (p === 'm') {
+        setTimeout(() => scrollToReadVerses(p, verse, end, options), 220);
+      }
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (options.slowScroll) {
+          setTimeout(runScroll, 80);
+        } else {
+          runScroll();
+        }
+      });
+    });
   }
 
   let _readOpenTarget = null;
@@ -12291,7 +12547,49 @@ function applyTranslationRtl(version) {
     if (modal) modal.classList.remove('open');
   }
 
+  
+  
+  function waitForNextPaint() {
+    return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }
+
+  function setReadOpenLoadingOverlay(visible) {
+    const overlay = document.getElementById('readOpenLoadingOverlay');
+    if (!overlay) return;
+
+    if (visible) {
+      overlay.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('read-open-overlay-active');
+      overlay.style.display = 'flex';
+      overlay.classList.remove('is-visible');
+
+      // Let mobile browsers paint the overlay first, then start the animation.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => overlay.classList.add('is-visible'));
+      });
+    } else {
+      overlay.classList.remove('is-visible');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('read-open-overlay-active');
+      setTimeout(() => {
+        if (!overlay.classList.contains('is-visible')) overlay.style.display = '';
+      }, 320);
+    }
+  }
+
+  function hideReadOpenLoadingOverlayAfterScroll() {
+    // Let the verse scroll/flash begin first, then fade the popup away.
+    setTimeout(() => setReadOpenLoadingOverlay(false), 720);
+  }
+
   async function confirmOpenReadBible() {
+
+    const target = _readOpenTarget;
+    setReadOpenLoadingOverlay(true);
+    await waitForNextPaint();
+    setReadBibleOpenControlsLocked(true);
+    try {
+
     const target = _readOpenTarget;
     closeReadBibleConfirmModal();
     if (!target?.parsed) return;
@@ -12347,6 +12645,12 @@ function applyTranslationRtl(version) {
       slowScroll: true,
       flashTimes: 3
     });
+  
+    } finally {
+      // Unlock after the Read Bible passage and selectors have had time to paint.
+      setTimeout(() => setReadBibleOpenControlsLocked(false), 180);
+      hideReadOpenLoadingOverlayAfterScroll();
+    }
   }
 
   let _verseTapSuppressClickUntil = 0;
@@ -12932,7 +13236,7 @@ function applyTranslationRtl(version) {
 
   function renderSearchedPassage(p, data, passageParsed) {
     const display = document.getElementById(p + '-verseDisplay');
-    options = options || {};
+    if (!display) return;
     const isDesk = p === 'd';
     const body = formatVersesHtml(data.verses);
     const parsed = passageParsed || parsedFromPassageData(data);
@@ -13003,13 +13307,17 @@ function applyTranslationRtl(version) {
     let data = null;
     try {
       data = await withTimeout(fetchPassageForParsed(version, parsed), apiFetchTimeoutMs() + 3000, null);
-      if (data) {
+      if (data?.verses?.length) {
         renderSearchedPassage(p, data, parsed);
         scrollVerseDisplayAfterSearch(p);
         setCustomGenerateButtonAfterReveal();
         return true;
       }
-      display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+      if (display) display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
+      return false;
+    } catch (err) {
+      console.warn('Manual verse search failed:', err);
+      if (display) display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
       return false;
     } finally {
       clearReadDisplayLoading(p);
@@ -13017,9 +13325,10 @@ function applyTranslationRtl(version) {
   }
 
   async function onCustomSearch(p) {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     blurSearchInputs(p);
     _customGenIntent.d = _customGenIntent.m = 'verses';
-    const query = document.getElementById(p + '-custom-search').value;
+    const query = document.getElementById(p + '-custom-search')?.value || '';
     const parsed = parseReferenceSearch(query);
     if (!parsed) {
       showToast('Enter a reference like John 1:1 or John 1:1-7');
@@ -13246,7 +13555,10 @@ function applyTranslationRtl(version) {
       await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
       return;
     }
-    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, { flashTimes: READ_VERSE_SCROLL_FLASH_TIMES });
+    await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, {
+      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES,
+      slowScroll: true
+    });
   }
 
   async function applyPassageErrorRefreshRestore(state) {
@@ -13366,20 +13678,120 @@ function applyTranslationRtl(version) {
     await loadReadChapterAt(p, bookEn, chapter, { fadeTransition: true });
   }
 
+  
+  function findReadVerseElementForMobile(verseNum) {
+    const display = document.getElementById('m-verseDisplay');
+    const passage = display?.querySelector('.read-passage-text') || display;
+    if (!passage) return null;
+
+    const selectors = [
+      `.read-verse-segment[data-verse-num="${verseNum}"]`,
+      `[data-verse-num="${verseNum}"]`,
+      `[data-read-verse="${verseNum}"]`,
+      `[data-verse="${verseNum}"]`
+    ];
+
+    for (const sel of selectors) {
+      const el = passage.querySelector(sel);
+      if (el) return el;
+    }
+
+    return Array.from(passage.querySelectorAll('.read-verse-segment, .read-verse-line, p, span'))
+      .find(el => {
+        const attr = el.getAttribute('data-verse-num') || el.getAttribute('data-read-verse') || el.getAttribute('data-verse') || '';
+        const txt = (el.textContent || '').trim();
+        return attr === String(verseNum) || txt.startsWith(String(verseNum) + ' ') || txt.startsWith(String(verseNum) + '.');
+      }) || null;
+  }
+
+  function flashMobileSelectedVerseDirect(verseNum) {
+    const el = findReadVerseElementForMobile(verseNum);
+    if (!el) return false;
+
+    el.classList.remove('verse-phrase-flash', 'verse-flash-x3', 'mobile-selected-verse-flash');
+    void el.offsetWidth;
+    requestAnimationFrame(() => {
+      el.classList.add('mobile-selected-verse-flash');
+    });
+    return true;
+  }
+
+  function scrollMobileToSelectedVerseDirect(verseNum) {
+    const el = findReadVerseElementForMobile(verseNum);
+    if (!el) return false;
+
+    const rect = el.getBoundingClientRect();
+    const currentY = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const targetY = Math.max(0, currentY + rect.top - (window.innerHeight * 0.38));
+
+    if (typeof slowMobileScrollToY === 'function') {
+      slowMobileScrollToY(targetY, 1800);
+    } else if (typeof smoothScrollToY === 'function') {
+      smoothScrollToY(targetY, 1800);
+    } else {
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+    return true;
+  }
+
+  async function handleMobileVerseSelectDirect() {
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
+    if (_readSyncLock) return;
+
+    const verseSelect = document.getElementById('m-read-verse');
+    const bookSelect = document.getElementById('m-read-book');
+    const chapterSelect = document.getElementById('m-read-chapter');
+    if (!verseSelect || !bookSelect || !chapterSelect) return;
+
+    const verseRaw = verseSelect.value;
+    if (!verseRaw || verseRaw === READ_VERSE_WHOLE) return;
+
+    const verseNum = parseInt(verseRaw, 10);
+    const bookEn = bookSelect.value;
+    const chapterRaw = chapterSelect.value;
+    const chapter = usesCatalogChapters(getGeneratorSelectedVersion('m'), bookEn) ? chapterRaw : parseInt(chapterRaw, 10);
+    if (!bookEn || !chapterRaw || !verseNum) return;
+
+    await showReadChapterAndScrollToVerse('m', bookEn, chapter, verseNum, verseNum, {
+      flashTimes: 0,
+      slowScroll: false
+    });
+    // Mobile paint can happen late after innerHTML changes. Retry until the verse exists,
+    // but flash only after the slow scroll should be finished.
+    const attempts = [80, 260, 520, 850];
+    let didStartScroll = false;
+    attempts.forEach((delay) => {
+      setTimeout(() => {
+        if (didStartScroll) return;
+        didStartScroll = scrollMobileToSelectedVerseDirect(verseNum);
+        if (didStartScroll) {
+          setTimeout(() => flashMobileSelectedVerseDirect(verseNum), 2050);
+        }
+      }, delay);
+    });
+  }
+
   async function onReadVerseChange(p) {
     if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (_readSyncLock) return;
-    const verseVal = document.getElementById(p + '-read-verse').value;
-    const bookEn = document.getElementById(p + '-read-book').value;
-    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    const chRaw = document.getElementById(p + '-read-chapter').value;
+
+    const verseSel = document.getElementById(p + '-read-verse');
+    const bookSel = document.getElementById(p + '-read-book');
+    const chapterSel = document.getElementById(p + '-read-chapter');
+    const versionSel = document.getElementById(p + '-version');
+    if (!verseSel || !bookSel || !chapterSel || !versionSel) return;
+
+    const verseVal = verseSel.value;
+    const bookEn = bookSel.value;
+    const version = normalizeGhModuleId(versionSel.value);
+    const chRaw = chapterSel.value;
     const chapter = usesCatalogChapterKeys(version) ? chRaw : (parseInt(chRaw, 10) || 1);
 
     if (verseVal === READ_VERSE_WHOLE) {
       _readSyncLock = true;
       syncReadSelectors(p, bookEn, chapter, READ_VERSE_WHOLE);
       _readSyncLock = false;
-      const version = getGeneratorSelectedVersion(p);
+
       const key = readChapterCacheKey(version, bookEn, chapter);
       const cached = readChapterCache[key];
       if (cached) {
@@ -13397,9 +13809,21 @@ function applyTranslationRtl(version) {
     _readSyncLock = true;
     syncReadSelectors(p, bookEn, chapter, verse);
     _readSyncLock = false;
+
+    // In Read Bible mode, do not flash while scrolling.
+    // Scroll to the selected verse first, wait for scroll to finish, then flash 3 times.
+    const scrolledExisting = scrollToReadVersesThenFlash(p, verse, verse, {
+      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES,
+      slowScroll: true,
+      scrollDurationMs: p === 'm' ? 2250 : 1850
+    });
+    if (scrolledExisting) return;
+
+    // Fallback only if the selected verse is not currently rendered yet.
     await showReadChapterAndScrollToVerse(p, bookEn, chapter, verse, verse, {
       flashTimes: READ_VERSE_SCROLL_FLASH_TIMES,
-      slowScroll: p === 'd' && typeof isDesktopCompactDisplayMode === 'function' && isDesktopCompactDisplayMode()
+      slowScroll: true,
+      scrollDurationMs: p === 'm' ? 2250 : 1850
     });
   }
 
@@ -13431,7 +13855,8 @@ function applyTranslationRtl(version) {
 
     const verseEnd = parsed.verseEnd ?? parsed.verseStart;
     await showReadChapterAndScrollToVerse(p, parsed.book, parsed.chapter, parsed.verseStart, verseEnd, {
-      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES
+      flashTimes: READ_VERSE_SCROLL_FLASH_TIMES,
+      slowScroll: true
     });
   }
 
@@ -14497,6 +14922,27 @@ function scrollBibleLibraryTop(p) {
       });
     });
   }
+
+  function setReadBibleOpenControlsLocked(locked) {
+    // Reuse the same grey-out/disable system used during Bible version loading.
+    if (typeof setVersionSwitchControlsLocked === 'function') {
+      setVersionSwitchControlsLocked(!!locked);
+      return;
+    }
+
+    const ids = [
+      'd-testament', 'd-read-book', 'd-read-chapter', 'd-read-verse', 'd-read-search', 'd-read-search-btn',
+      'm-testament', 'm-read-book', 'm-read-chapter', 'm-read-verse', 'm-read-search', 'm-read-search-btn'
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.disabled = !!locked;
+      el.classList.toggle('is-loading-locked', !!locked);
+      el.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    });
+  }
+
 
   function isVersionSwitchControlsLocked() {
     return _versionSwitchControlsLocked;
@@ -16996,7 +17442,35 @@ function iabFallbackCopy(url, callback) {
       clickDesktopNavButton(event.key === 'ArrowLeft' ? 'prev' : 'next');
     });
   })();
+
+  // Mobile Read Bible verse selector safety: after option rebuilds, Android may fire input instead of change.
+  (function installMobileReadVerseSelectFallback() {
+    if (window.__vgMobileReadVerseSelectFallbackInstalled) return;
+    window.__vgMobileReadVerseSelectFallbackInstalled = true;
+    ['input', 'change'].forEach(function(evtName) {
+      document.addEventListener(evtName, function(event) {
+        const target = event.target;
+        if (!target || target.id !== 'm-read-verse') return;
+        setTimeout(function() {
+          if (typeof onReadVerseChange === 'function') onReadVerseChange('m');
+        }, 25);
+      }, true);
+    });
+  })();
+
 </script>
+
+
+  <div id="readOpenLoadingOverlay" class="read-open-loading-overlay" aria-hidden="true">
+    <div class="read-open-loading-box" role="status" aria-live="polite">
+      <div class="read-open-loading-orb">
+        <div class="read-open-loading-spinner" aria-hidden="true"></div>
+        <div class="read-open-loading-cross">✝</div>
+      </div>
+      <div class="read-open-loading-title">Opening Read Bible</div>
+      <div class="read-open-loading-subtitle">Loading scripture…</div>
+    </div>
+  </div>
 
 </body>
 </html>
