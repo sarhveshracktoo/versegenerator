@@ -24,6 +24,14 @@
         var isPhoneLandscape = isPhoneUa && w > h && h <= 600 && w <= 1000;
         var layout = (w <= 768 || isPhoneLandscape) ? 'mobile' : (w <= 1100 ? 'tablet' : 'desktop');
         document.documentElement.setAttribute('data-layout', layout);
+
+        // Performance optimized mode is ON by default.
+        // It removes expensive fixed SVG paint, blur/glass repainting, and decorative infinite animation.
+        // To test the old full-visual mode in browser console: localStorage.setItem('vg-performance-mode','visual')
+        var perfMode = localStorage.getItem('vg-performance-mode') || 'optimized';
+        if (perfMode !== 'visual') {
+          document.documentElement.classList.add('performance-optimized');
+        }
       } catch (_) {
         document.documentElement.setAttribute('data-theme', 'normal');
       }
@@ -4709,6 +4717,96 @@
     }
 
   </style>
+
+  <style id="vg-cpu-performance-patch">
+    /* CPU / fan fix: reduce constant repaint and GPU-heavy effects while keeping the app features. */
+    html.performance-optimized body::before {
+      display: none !important;
+      content: none !important;
+      background-image: none !important;
+    }
+    html.performance-optimized body {
+      background-image:
+        radial-gradient(ellipse at 20% 20%, var(--bg-gradient-a, #2e1a06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, var(--bg-gradient-b, #1f0e03) 0%, transparent 60%) !important;
+    }
+    html.performance-optimized *,
+    html.performance-optimized *::before,
+    html.performance-optimized *::after {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    html.performance-optimized .cross-icon {
+      animation: none !important;
+      text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.45) !important;
+    }
+    html.performance-optimized .header,
+    html.performance-optimized .votd-panel,
+    html.performance-optimized .weekly-banner,
+    html.performance-optimized .devotional-banner,
+    html.performance-optimized .control-panel-banner,
+    html.performance-optimized .scroll-card,
+    html.performance-optimized .mob-topbar,
+    html.performance-optimized .mob-card {
+      animation-duration: 0.18s !important;
+      animation-iteration-count: 1 !important;
+    }
+    html.performance-optimized .votd-panel,
+    html.performance-optimized .weekly-banner,
+    html.performance-optimized .devotional-banner,
+    html.performance-optimized .control-panel-banner,
+    html.performance-optimized .mob-votd-panel,
+    html.performance-optimized .mob-weekly-banner,
+    html.performance-optimized .mob-devotional-banner,
+    html.performance-optimized .mob-control-panel-banner,
+    html.performance-optimized .bg-music-card,
+    html.performance-optimized .rain-effect-card {
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18) !important;
+    }
+    html.performance-optimized .scroll-card,
+    html.performance-optimized .mob-card {
+      box-shadow:
+        0 0 0 1px var(--gold-dark),
+        0 6px 20px rgba(0, 0, 0, 0.20) !important;
+    }
+    html.performance-optimized .version-download-fill,
+    html.performance-optimized .read-bible-loader-orb,
+    html.performance-optimized .read-bible-loader-orb::before,
+    html.performance-optimized .read-bible-loader-orb::after,
+    html.performance-optimized .read-open-loading-spinner {
+      will-change: transform !important;
+    }
+    html.performance-optimized .read-passage-fade-layer,
+    html.performance-optimized .hbv-stage,
+    html.performance-optimized .mob-verse-box,
+    html.performance-optimized #d-verseDisplay {
+      will-change: auto !important;
+    }
+    html.performance-paused *,
+    html.performance-paused *::before,
+    html.performance-paused *::after {
+      animation-play-state: paused !important;
+      transition-duration: 0s !important;
+    }
+    @media (max-width: 768px), (pointer: coarse) {
+      html.performance-optimized body {
+        background-attachment: scroll !important;
+      }
+      html.performance-optimized .scroll-card,
+      html.performance-optimized .mob-card,
+      html.performance-optimized .votd-panel,
+      html.performance-optimized .weekly-banner,
+      html.performance-optimized .devotional-banner {
+        box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.24) !important;
+      }
+      html.performance-optimized .verse-reveal,
+      html.performance-optimized .hbv-stage.hbv-reveal,
+      html.performance-optimized .hbv-stage.hbv-nav-reveal {
+        animation-duration: 0.16s !important;
+      }
+    }
+  </style>
+
 </head>
 <body>
 <script>
@@ -12050,7 +12148,7 @@ function applyTranslationRtl(version) {
       layer.style.opacity = '';
       layer.style.pointerEvents = '';
       _readPassageFadeTimers[p] = null;
-    }, 80);
+    }, 160);
   }
 
   function setDesktopReadDisplayScrollButton(enabled) {
@@ -12302,7 +12400,7 @@ function applyTranslationRtl(version) {
           html.style.overflowAnchor = oldHtmlOverflowAnchor;
           body.style.overflowAnchor = oldBodyOverflowAnchor;
           _mobileTextSizeScrollInFlight = false;
-        }, 80);
+        }, 160);
       }
     }
 
@@ -16613,7 +16711,7 @@ function scrollBibleLibraryTop(p) {
         const progress = Math.min(1, (performance.now() - startedAt) / FADE_IN_MS);
         audio.volume = targetVolume * progress;
         if (progress >= 1) clearFade();
-      }, 80);
+      }, 160);
     }
 
     function applyCurrentVolume(immediate) {
@@ -16814,7 +16912,7 @@ function scrollBibleLibraryTop(p) {
         const progress = Math.min(1, (Date.now() - startedAt) / RAIN_FADE_MS);
         rainAudio.volume = Math.min(RAIN_VOLUME, RAIN_VOLUME * progress);
         if (progress >= 1) stopRainFade();
-      }, 80);
+      }, 160);
     }
 
     function createRainAudio() {
@@ -16928,7 +17026,7 @@ function scrollBibleLibraryTop(p) {
             rainAudio.volume = 0;
           } catch { /* ignore */ }
         }
-      }, 80);
+      }, 160);
     }
 
     function turnRainOff() {
@@ -17591,6 +17689,21 @@ function iabFallbackCopy(url, callback) {
       <div class="read-open-loading-subtitle">Loading scripture…</div>
     </div>
   </div>
+
+
+<script id="vg-cpu-performance-script">
+  (function () {
+    function syncPerformancePause() {
+      document.documentElement.classList.toggle('performance-paused', document.hidden);
+    }
+    document.addEventListener('visibilitychange', syncPerformancePause, { passive: true });
+    window.addEventListener('pagehide', function () {
+      document.documentElement.classList.add('performance-paused');
+    }, { passive: true });
+    window.addEventListener('pageshow', syncPerformancePause, { passive: true });
+    syncPerformancePause();
+  })();
+</script>
 
 </body>
 </html>
