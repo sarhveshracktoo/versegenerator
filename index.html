@@ -10897,12 +10897,62 @@ function applyTranslationRtl(version) {
     cancelReadBibleBootTimers();
   }
 
+  async function forceDefaultReadBiblePassageVisible(p, version) {
+    if (!isReadBibleMode(p)) return false;
+    const display = document.getElementById(p + '-verseDisplay');
+    if (hasReadPassageContent(display)) {
+      markReadBibleBootComplete(p);
+      return true;
+    }
+
+    version = normalizeGhModuleId(version || document.getElementById(p + '-version')?.value || resolveDefaultTranslationForBoot());
+    releaseReadBibleBootLock();
+
+    try {
+      applyDefaultTranslationToUi(version);
+      await loadGhTranslationData(version);
+      await ensureGhBooksDiscovered(version).catch(() => []);
+      await updateBooks(p, { skipReadInit: true, skipGeneratorRestore: true, silent: true }).catch(() => {});
+
+      let bookEn = document.getElementById(p + '-read-book')?.value || getFirstAvailableBook(version);
+      if (!bookEn || !isBookAvailableInVersion(version, bookEn)) bookEn = getFirstAvailableBook(version);
+      const chRaw = document.getElementById(p + '-read-chapter')?.value;
+      const chapter = usesCatalogChapterKeys(version, bookEn)
+        ? (chRaw || getDefaultReadChapter(version, bookEn))
+        : (parseInt(chRaw, 10) || 1);
+
+      await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: false });
+      if (hasReadPassageContent(display)) {
+        markReadBibleBootComplete(p);
+        return true;
+      }
+
+      const fallbackBook = getFirstAvailableBook(version);
+      const fallbackChapter = usesCatalogChapterKeys(version, fallbackBook)
+        ? getDefaultReadChapter(version, fallbackBook)
+        : 1;
+      await loadReadChapterAt(p, fallbackBook, fallbackChapter, { scrollToTop: false });
+      if (hasReadPassageContent(display)) {
+        markReadBibleBootComplete(p);
+        return true;
+      }
+    } catch (err) {
+      /* The caller will keep the error UI instead of leaving the boot spinner forever. */
+    }
+
+    if (isReadBibleMode(p) && display && !hasReadPassageContent(display)) {
+      clearReadDisplayLoading(p);
+      display.innerHTML = passageLoadErrorHtml(p);
+    }
+    return false;
+  }
+
   function displayNeedsReadBibleBoot(p) {
     const testSel = document.getElementById(p + '-testament');
     const display = document.getElementById(p + '-verseDisplay');
     if (!testSel || testSel.value !== 'read' || !display) return false;
     if (display.querySelector('.read-passage-text, .read-verse-segment')) return false;
-    if (display.querySelector('.passage-load-error')) return true;
+    if (display.querySelector('.passage-load-error, .version-switch-loader, .read-bible-start-loader')) return true;
     const text = (display.textContent || '').trim().toLowerCase();
     return !text || text.includes('loading scripture') || text.includes('loading read bible') ||
       text.includes('preparing your default bible version') || text.includes('could not load') ||
@@ -10955,12 +11005,15 @@ function applyTranslationRtl(version) {
         try {
           await initReadBiblePanel(p, true);
         } catch {
-          try {
-            const fallbackBook = getFirstAvailableBook(version);
-            await loadReadChapterAt(p, fallbackBook, usesCatalogChapterKeys(version, fallbackBook) ? getDefaultReadChapter(version, fallbackBook) : 1);
-          } catch { /* error UI */ }
+          /* The fallback below will try the first valid book/chapter. */
+        }
+        if (!hasReadPassageContent(document.getElementById(p + '-verseDisplay'))) {
+          await forceDefaultReadBiblePassageVisible(p, version);
         }
         markReadBibleBootComplete(p);
+      } catch (err) {
+        releaseReadBibleBootLock();
+        await forceDefaultReadBiblePassageVisible(p, resolveDefaultTranslationForBoot());
       } finally {
         releaseReadBibleBootLock();
         _readBibleBootPromise = null;
@@ -15112,6 +15165,9 @@ function scrollBibleLibraryTop(p) {
       if (isStale()) stopBibleVersionLoadingProgress(active);
       if (!isStale()) {
         finishBibleVersionSwitchLoader(active);
+        if (isReadBibleMode(active) && displayNeedsReadBibleBoot(active)) {
+          await forceDefaultReadBiblePassageVisible(active, document.getElementById(active + '-version')?.value);
+        }
         setVersionSwitchControlsLocked(false);
         setAllGeneratorVersionSwitchBusy(false);
       }
@@ -16238,6 +16294,12 @@ function scrollBibleLibraryTop(p) {
           try { await ensureDefaultReadBiblePassage({ force: true }); } catch (_) { /* keep handled error visible */ }
         }
       } finally {
+        if (!pendingGeneratorRestore && shouldBootReadBibleOnLoad()) {
+          const active = activePanel();
+          if (displayNeedsReadBibleBoot(active)) {
+            await forceDefaultReadBiblePassageVisible(active, document.getElementById(active + '-version')?.value || version);
+          }
+        }
         setVersionSwitchControlsLocked(false);
         setAllGeneratorVersionSwitchBusy(false);
       }
