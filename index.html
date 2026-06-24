@@ -6,6 +6,7 @@
   <script>
     (function () {
       try {
+        document.documentElement.classList.add('vg-entry-loader-active');
         var t = localStorage.getItem('vg-theme') || 'normal';
         document.documentElement.setAttribute('data-theme', t);
         var dm = localStorage.getItem('vg-display-mode') || 'full';
@@ -104,6 +105,317 @@
       --btn-accent-text: var(--ink);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+    /* ══ ENTRY BIBLE BOOKS LOADING SCREEN ══ */
+    html.vg-entry-loader-active,
+    html.vg-entry-loader-active body {
+      overflow: hidden !important;
+      height: 100%;
+    }
+    .vg-entry-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+      background:
+        radial-gradient(circle at 50% 42%, rgba(232, 201, 122, 0.16), transparent 34%),
+        radial-gradient(circle at 20% 18%, rgba(201, 168, 76, 0.16), transparent 28%),
+        radial-gradient(circle at 85% 82%, rgba(139, 26, 26, 0.22), transparent 30%),
+        linear-gradient(145deg, #070401 0%, #130b04 45%, #241205 100%);
+      color: var(--gold-light, #e8c97a);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity 1s ease, visibility 1s ease;
+      -webkit-tap-highlight-color: transparent;
+      transform: translateZ(0);
+    }
+    .vg-entry-loader::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.18;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(201, 168, 76, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201, 168, 76, 0.06) 1px, transparent 1px);
+      background-size: 58px 58px;
+      mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
+      -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 72%);
+    }
+    .vg-entry-loader::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.08) 46%, transparent 58%);
+      background-size: 220% 220%;
+      animation: vgEntryLoaderSweep 3.2s ease-in-out infinite;
+      opacity: 0.55;
+    }
+    .vg-entry-loader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .vg-entry-loader-box {
+      position: relative;
+      width: min(520px, 92vw);
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 46px 28px;
+      text-align: center;
+      border-radius: 30px;
+      border: 1px solid rgba(201, 168, 76, 0.28);
+      background: rgba(10, 6, 2, 0.42);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 80px rgba(201, 168, 76, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow: hidden;
+      animation: vgEntryLoaderRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .vg-entry-loader-box::before {
+      content: '';
+      position: absolute;
+      inset: 16px;
+      border: 1px solid rgba(201, 168, 76, 0.16);
+      border-radius: 24px;
+      pointer-events: none;
+    }
+    .vg-entry-loader-mark {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: var(--gold-light, #e8c97a);
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 2.1rem;
+      text-shadow: 0 0 24px rgba(232, 201, 122, 0.62);
+      background:
+        radial-gradient(circle, rgba(232, 201, 122, 0.18), transparent 56%),
+        rgba(201, 168, 76, 0.06);
+      box-shadow: inset 0 0 28px rgba(201, 168, 76, 0.12), 0 0 34px rgba(201, 168, 76, 0.16);
+    }
+    .vg-entry-loader-mark::before,
+    .vg-entry-loader-mark::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border-radius: inherit;
+      border: 2px solid transparent;
+      border-top-color: var(--gold, #c9a84c);
+      border-bottom-color: rgba(201, 168, 76, 0.24);
+      animation: vgEntryLoaderSpin 1.05s linear infinite;
+    }
+    .vg-entry-loader-mark::after {
+      inset: 20px;
+      border-top-color: rgba(232, 201, 122, 0.22);
+      border-bottom-color: var(--gold-light, #e8c97a);
+      animation-duration: 1.55s;
+      animation-direction: reverse;
+    }
+    .vg-entry-loader-title {
+      position: relative;
+      margin: 4px 0 0;
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.2rem, 4.6vw, 2.15rem);
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold-light, #e8c97a);
+      text-shadow: 0 0 22px rgba(201, 168, 76, 0.35);
+    }
+    .vg-entry-loader-subtitle {
+      position: relative;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(245, 234, 214, 0.68);
+    }
+    .vg-entry-loader-dots {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .vg-entry-loader-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--gold, #c9a84c);
+      box-shadow: 0 0 14px rgba(201, 168, 76, 0.45);
+      animation: vgEntryDotPulse 1.15s ease-in-out infinite;
+    }
+    .vg-entry-loader-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .vg-entry-loader-dots span:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes vgEntryLoaderSpin { to { transform: rotate(360deg); } }
+    @keyframes vgEntryDotPulse {
+      0%, 100% { opacity: 0.28; transform: translateY(0) scale(0.92); }
+      50% { opacity: 1; transform: translateY(-5px) scale(1); }
+    }
+    @keyframes vgEntryLoaderRise {
+      from { opacity: 0; transform: translateY(18px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes vgEntryLoaderSweep {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+    @media (max-width: 768px) {
+      .vg-entry-loader-box {
+        min-height: 280px;
+        padding: 38px 22px;
+        border-radius: 24px;
+      }
+      .vg-entry-loader-mark {
+        width: 84px;
+        height: 84px;
+        font-size: 1.8rem;
+      }
+      .vg-entry-loader-subtitle {
+        font-size: 0.62rem;
+        letter-spacing: 0.16em;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vg-entry-loader,
+      .vg-entry-loader-box,
+      .vg-entry-loader::after,
+      .vg-entry-loader-mark::before,
+      .vg-entry-loader-mark::after,
+      .vg-entry-loader-dots span {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+
+    /* Mobile-safe entry loader animation: real elements + transform animations only. */
+    .vg-entry-loader-mark {
+      isolation: isolate;
+      contain: layout paint style;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+      will-change: transform, opacity;
+      animation: vgEntryCrossPulse 1.65s ease-in-out infinite;
+      -webkit-animation: vgEntryCrossPulse 1.65s ease-in-out infinite;
+    }
+    .vg-entry-loader-mark::before,
+    .vg-entry-loader-mark::after {
+      content: none !important;
+      display: none !important;
+      animation: none !important;
+      -webkit-animation: none !important;
+    }
+    .vg-entry-loader-ring {
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      -webkit-transform: translate3d(0, 0, 0) rotate(0deg);
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .vg-entry-loader-ring-outer {
+      inset: 7px;
+      border: 3px solid rgba(201, 168, 76, 0.16);
+      border-top-color: var(--gold, #c9a84c);
+      border-right-color: rgba(232, 201, 122, 0.42);
+      animation: vgEntryMobileSpin 0.95s linear infinite;
+      -webkit-animation: vgEntryMobileSpin 0.95s linear infinite;
+    }
+    .vg-entry-loader-ring-inner {
+      inset: 22px;
+      border: 3px solid rgba(232, 201, 122, 0.14);
+      border-bottom-color: var(--gold-light, #e8c97a);
+      border-left-color: rgba(201, 168, 76, 0.38);
+      animation: vgEntryMobileSpinReverse 1.35s linear infinite;
+      -webkit-animation: vgEntryMobileSpinReverse 1.35s linear infinite;
+    }
+    .vg-entry-loader-cross {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+    @keyframes vgEntryMobileSpin {
+      to { transform: translate3d(0, 0, 0) rotate(360deg); }
+    }
+    @-webkit-keyframes vgEntryMobileSpin {
+      to { -webkit-transform: translate3d(0, 0, 0) rotate(360deg); }
+    }
+    @keyframes vgEntryMobileSpinReverse {
+      to { transform: translate3d(0, 0, 0) rotate(-360deg); }
+    }
+    @-webkit-keyframes vgEntryMobileSpinReverse {
+      to { -webkit-transform: translate3d(0, 0, 0) rotate(-360deg); }
+    }
+    @keyframes vgEntryCrossPulse {
+      0%, 100% { opacity: 0.88; transform: translate3d(0, 0, 0) scale(0.98); }
+      50% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.04); }
+    }
+    @-webkit-keyframes vgEntryCrossPulse {
+      0%, 100% { opacity: 0.88; -webkit-transform: translate3d(0, 0, 0) scale(0.98); }
+      50% { opacity: 1; -webkit-transform: translate3d(0, 0, 0) scale(1.04); }
+    }
+    @media (max-width: 768px), (pointer: coarse) {
+      .vg-entry-loader {
+        background:
+          radial-gradient(circle at 50% 42%, rgba(232, 201, 122, 0.16), transparent 34%),
+          linear-gradient(145deg, #070401 0%, #130b04 48%, #241205 100%);
+      }
+      .vg-entry-loader::before,
+      .vg-entry-loader::after {
+        display: none !important;
+        animation: none !important;
+        -webkit-animation: none !important;
+      }
+      .vg-entry-loader-box {
+        background: rgba(10, 6, 2, 0.82);
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        transform: translate3d(0, 0, 0);
+        -webkit-transform: translate3d(0, 0, 0);
+      }
+      .vg-entry-loader-dots span {
+        box-shadow: none;
+        animation-name: vgEntryDotPulseMobile;
+        -webkit-animation-name: vgEntryDotPulseMobile;
+      }
+    }
+    @keyframes vgEntryDotPulseMobile {
+      0%, 100% { opacity: 0.32; transform: translate3d(0, 0, 0) scale(0.9); }
+      50% { opacity: 1; transform: translate3d(0, -5px, 0) scale(1); }
+    }
+    @-webkit-keyframes vgEntryDotPulseMobile {
+      0%, 100% { opacity: 0.32; -webkit-transform: translate3d(0, 0, 0) scale(0.9); }
+      50% { opacity: 1; -webkit-transform: translate3d(0, -5px, 0) scale(1); }
+    }
+
 
     body {
       font-family: 'EB Garamond', serif;
@@ -4809,6 +5121,54 @@
 
 </head>
 <body>
+
+<div id="vg-entry-loader" class="vg-entry-loader" role="status" aria-live="polite" aria-label="loading bible books, please wait">
+  <div class="vg-entry-loader-box">
+    <div class="vg-entry-loader-mark" aria-hidden="true">
+      <span class="vg-entry-loader-ring vg-entry-loader-ring-outer"></span>
+      <span class="vg-entry-loader-ring vg-entry-loader-ring-inner"></span>
+      <span class="vg-entry-loader-cross">✝</span>
+    </div>
+    <h2 class="vg-entry-loader-title">loading bible books, please wait</h2>
+    <div class="vg-entry-loader-subtitle">Preparing scripture library</div>
+    <div class="vg-entry-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<script id="vg-entry-loader-script">
+  (function () {
+    var startedAt = Date.now();
+    var minVisibleMs = 1200;
+    var hidden = false;
+
+    function hideEntryBibleLoader() {
+      if (hidden) return;
+      hidden = true;
+      var wait = Math.max(0, minVisibleMs - (Date.now() - startedAt));
+      setTimeout(function () {
+        var loader = document.getElementById('vg-entry-loader');
+        if (loader) {
+          loader.classList.add('is-hidden');
+          setTimeout(function () {
+            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+          }, 1100);
+        }
+        document.documentElement.classList.remove('vg-entry-loader-active');
+      }, wait);
+    }
+
+    window.__vgHideEntryBibleLoader = hideEntryBibleLoader;
+    window.addEventListener('vg:bible-books-ready', hideEntryBibleLoader, { once: true });
+
+    // Safety fallback: never trap the user behind the entry screen if a remote JSON request stalls.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!hidden) hideEntryBibleLoader();
+      }, 30000);
+    }, { once: true });
+  })();
+</script>
+
 <script>
 (function () {
   try {
@@ -16400,6 +16760,8 @@ function scrollBibleLibraryTop(p) {
         }
         setVersionSwitchControlsLocked(false);
         setAllGeneratorVersionSwitchBusy(false);
+        window.dispatchEvent(new Event('vg:bible-books-ready'));
+        if (typeof window.__vgHideEntryBibleLoader === 'function') window.__vgHideEntryBibleLoader();
       }
     })();
     prefetchGhTranslation(version);
@@ -17704,6 +18066,9 @@ function iabFallbackCopy(url, callback) {
     syncPerformancePause();
   })();
 </script>
+
+
+
 
 </body>
 </html>
