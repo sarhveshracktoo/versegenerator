@@ -230,21 +230,21 @@
     .vg-entry-loader-title {
       position: relative;
       margin: 4px 0 0;
-      font-family: 'Cinzel Decorative', serif;
+      font-family: 'DrescherGroteskBT-SemiBold', 'Cinzel', Arial, sans-serif;
       font-size: clamp(1.2rem, 4.6vw, 2.15rem);
-      font-weight: 700;
-      line-height: 1.3;
-      letter-spacing: 0.06em;
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
       color: var(--gold-light, #e8c97a);
       text-shadow: 0 0 22px rgba(201, 168, 76, 0.35);
     }
     .vg-entry-loader-subtitle {
       position: relative;
-      font-family: 'Cinzel', serif;
+      font-family: 'DrescherGroteskBT-SemiBold', 'Cinzel', Arial, sans-serif;
       font-size: 0.72rem;
       font-weight: 600;
-      letter-spacing: 0.22em;
+      letter-spacing: 0.13em;
       text-transform: uppercase;
       color: rgba(245, 234, 214, 0.68);
     }
@@ -407,6 +407,34 @@
         -webkit-animation-name: vgEntryDotPulseMobile;
       }
     }
+
+
+    /* Desktop only: make the entry loading frame a bit smaller. Mobile stays unchanged. */
+    @media (min-width: 769px) and (pointer: fine) {
+      .vg-entry-loader-box {
+        width: min(440px, 86vw);
+        min-height: 270px;
+        gap: 14px;
+        padding: 36px 24px;
+        border-radius: 24px;
+      }
+      .vg-entry-loader-box::before {
+        inset: 13px;
+        border-radius: 19px;
+      }
+      .vg-entry-loader-mark {
+        width: 82px;
+        height: 82px;
+        font-size: 1.82rem;
+      }
+      .vg-entry-loader-title {
+        font-size: clamp(1.05rem, 2.8vw, 1.78rem);
+      }
+      .vg-entry-loader-subtitle {
+        font-size: 0.66rem;
+      }
+    }
+
     @keyframes vgEntryDotPulseMobile {
       0%, 100% { opacity: 0.32; transform: translate3d(0, 0, 0) scale(0.9); }
       50% { opacity: 1; transform: translate3d(0, -5px, 0) scale(1); }
