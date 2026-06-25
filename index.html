@@ -5512,7 +5512,7 @@
       <div class="devotional-inner">
         <div class="devotional-panel-body">
           <h3 class="control-section-title">Preferences</h3>
-          <p class="control-section-hint">Choose your default mode and translation, then fresh the page.</p>
+          <p class="control-section-hint">Choose your default mode and translation, then refresh the page.</p>
           <div class="control-pref-grid" role="group" aria-label="Default preferences">
             <div class="control-pref-field">
               <label class="control-pref-label" for="d-default-mode">Default Mode</label>
@@ -6665,6 +6665,8 @@ const GH_DEFAULT_TRANSLATION = 'KJV';
 const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
 const GH_RAW_JSON_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // Reuse downloaded Bible JSON for 7 days so Cloudflare R2 opens fast like GitHub.
+const GH_DEFAULT_RAW_JSON_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // Keep the selected Control Panel default Bible locally much longer for fast refresh.
+const DEFAULT_TRANSLATION_CACHE_META_KEY = 'vg-default-translation-cache-meta';
 const GH_SESSION_MEMORY_CACHE_MS = 6 * 60 * 60 * 1000; // After a fresh switch/download, reuse the in-memory JSON for fast random verse generation.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
 const GH_CACHE_SCHEMA_VERSION = '2026-06-25-r2-first-json-book-cache-v9';
@@ -6706,6 +6708,43 @@ function isGithubRawBibleUrl(url) {
 
 function getGhDataAgeMs(data) {
   return Date.now() - Number(data?.cachedAt || data?.fetchedAt || 0);
+}
+
+function getGhTranslationCacheKey(module) {
+  module = normalizeGhModuleId(module);
+  const meta = getGhMeta(module);
+  if (!meta) return '';
+  return GH_TX_CACHE_PREFIX + (meta.shortname || module);
+}
+
+function isCurrentDefaultTranslation(module) {
+  try { return normalizeGhModuleId(localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY) || '') === normalizeGhModuleId(module); }
+  catch { return false; }
+}
+
+function markDefaultTranslationCacheReady(module, cacheKey) {
+  try {
+    module = normalizeGhModuleId(module);
+    localStorage.setItem(DEFAULT_TRANSLATION_CACHE_META_KEY, JSON.stringify({
+      module,
+      cacheKey: cacheKey || getGhTranslationCacheKey(module),
+      cachedAt: Date.now()
+    }));
+  } catch { /* private mode */ }
+}
+
+function isReusableDefaultTranslationCache(module, data) {
+  if (!data?.booksByEn || !data?.bookIds?.length) return false;
+  module = normalizeGhModuleId(module);
+  if (!isCurrentDefaultTranslation(module)) return false;
+  try {
+    const meta = JSON.parse(localStorage.getItem(DEFAULT_TRANSLATION_CACHE_META_KEY) || '{}');
+    if (meta?.module && normalizeGhModuleId(meta.module) !== module) return false;
+    const age = Date.now() - Number(meta?.cachedAt || data?.cachedAt || data?.fetchedAt || 0);
+    return age >= 0 && age < GH_DEFAULT_RAW_JSON_CACHE_TTL_MS;
+  } catch {
+    return getGhDataAgeMs(data) < GH_DEFAULT_RAW_JSON_CACHE_TTL_MS;
+  }
 }
 
 async function resetStaleBibleJsonCachesOnce() {
@@ -8966,7 +9005,12 @@ function storeGhTranslationData(module, normalized, cacheKey) {
     LANG_BOOK_NAME_MAP[langCode] = { ...(LANG_BOOK_NAME_MAP[langCode] || {}), ...normalized.localizedNames };
     if (versionBooks?.length) BSS_BOOKS_CACHE[langCode] = versionBooks;
   }
-  if (cacheKey) void idbSetBible(cacheKey, normalized);
+  if (cacheKey) {
+    const savePromise = idbSetBible(cacheKey, normalized);
+    if (isCurrentDefaultTranslation(module)) {
+      void savePromise.then(ok => { if (ok) markDefaultTranslationCacheReady(module, cacheKey); });
+    }
+  }
   return normalized;
 }
 
@@ -8992,7 +9036,7 @@ async function loadGhTranslationData(module, options = {}) {
   GH_LOADING_PROMISES[module] = (async () => {
     const meta = GH_BIBLES[module];
     if (!meta) return null;
-    const cacheKey = GH_TX_CACHE_PREFIX + (meta.shortname || module);
+    const cacheKey = getGhTranslationCacheKey(module);
     applyGhBookMetaFromStorage(module);
 
     let idbCached = null;
@@ -9020,8 +9064,10 @@ async function loadGhTranslationData(module, options = {}) {
       !needsApocryphaMergeRefresh(module, idbCached) &&
       !needsStoredBookIdsRefresh(module, idbCached) &&
       !needsAllApocryphaCatalogRefresh(module, idbCached) &&
-      GH_RAW_JSON_CACHE_TTL_MS > 0 &&
-      getGhDataAgeMs(idbCached) < GH_RAW_JSON_CACHE_TTL_MS;
+      (
+        (GH_RAW_JSON_CACHE_TTL_MS > 0 && getGhDataAgeMs(idbCached) < GH_RAW_JSON_CACHE_TTL_MS) ||
+        isReusableDefaultTranslationCache(module, idbCached)
+      );
     if (reusableIdb) {
       // Fast switching: use the already-downloaded Bible immediately from IndexedDB.
       // This avoids waiting for another 10–30 MB Cloudflare download when changing Bible versions.
@@ -11523,6 +11569,20 @@ function applyTranslationRtl(version) {
     }
   }
 
+  async function cacheDefaultTranslationLocally(version) {
+    version = normalizeGhModuleId(version);
+    if (!version) return null;
+    if (typeof BIBLE_LIBRARY_OPTION_VALUE !== 'undefined' && version === BIBLE_LIBRARY_OPTION_VALUE) return null;
+    if (!GH_BIBLES[version]) return null;
+    applyInstantBookIdsFromMeta(version);
+    const data = await loadGhTranslationData(version).catch(() => null);
+    if (data?.booksByEn && data?.bookIds?.length) {
+      markDefaultTranslationCacheReady(version, getGhTranslationCacheKey(version));
+      return data;
+    }
+    return null;
+  }
+
   async function applyDefaultTranslation(version, options) {
     options = options || {};
     version = normalizeGhModuleId(version);
@@ -11538,6 +11598,7 @@ function applyTranslationRtl(version) {
       return;
     }
     if (!GH_BIBLES[version] && !isValidTranslationModule(version)) return;
+    if (options.save !== false) void cacheDefaultTranslationLocally(version);
     syncDefaultPrefSelects(null, version);
     const active = activePanel();
     const vSel = document.getElementById(active + '-version');
@@ -15551,7 +15612,7 @@ const BIBLE_LIBRARY_OPTION_VALUE = '__BIBLE_TRANSLATION_LIBRARY__';
 const BIBLE_LIBRARY_TITLE = '1500+ Bible Translation Library';
 const BIBLE_LIBRARY_R2_MANIFEST_URL = r2AssetUrl('JSON/r2-library-index.json');
 const BIBLE_LIBRARY_GITHUB_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
-const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v4-r2-live';
+const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v5-r2-live';
 let bibleLibraryRows = [];
 let bibleLibraryLoadingPromise = null;
 let lastRealBibleVersion = { d: null, m: null };
@@ -15631,7 +15692,6 @@ function closeBibleLibraryPanel() {
 
 const HIDDEN_BIBLE_LIBRARY_PANEL_TITLES = new Set([
     "55 book of apocrypha",
-    "apocrypha",
     "king james version strongs",
     "adnyamathanha christmas story",
     "gupapuyngu scripture",
