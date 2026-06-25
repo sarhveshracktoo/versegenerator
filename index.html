@@ -6,13 +6,6 @@
   <script>
     (function () {
       try {
-        // Entry page loader removed: show the page shell immediately.
-        // Keep the Bible download animation visible, but suppress any millisecond
-        // "Could not load" placeholder until the first default passage is truly ready.
-        var savedMode = localStorage.getItem('vg-default-mode') || 'read';
-        if (savedMode === 'read') {
-          document.documentElement.classList.add('vg-entry-bible-loading');
-        }
         var t = localStorage.getItem('vg-theme') || 'normal';
         document.documentElement.setAttribute('data-theme', t);
         var dm = localStorage.getItem('vg-display-mode') || 'full';
@@ -113,19 +106,6 @@
       --btn-accent-text: var(--ink);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* Direct entry: keep the Bible download animation, but hide only transient
-       error placeholders while the first default Bible is still loading. */
-    html.vg-entry-bible-loading .passage-load-error,
-    html.vg-entry-bible-loading #d-verseDisplay > p.verse-placeholder,
-    html.vg-entry-bible-loading #m-verseDisplay > p.mob-placeholder {
-      display: none !important;
-      visibility: hidden !important;
-    }
-    html.vg-entry-bible-loading #d-verseDisplay,
-    html.vg-entry-bible-loading #m-verseDisplay {
-      min-height: 180px;
-    }
 
 
     /* ══ ENTRY BIBLE BOOKS LOADING SCREEN ══ */
@@ -1273,15 +1253,6 @@
     html.version-switch-controls-locked label,
     html.version-switch-controls-locked .mob-label {
       opacity: 0.55;
-    }
-
-    html.version-switch-controls-locked .controls,
-    html.version-switch-controls-locked .mob-controls,
-    html.version-switch-controls-locked .control-panel-banner,
-    html.version-switch-controls-locked .mob-control-panel-banner {
-      opacity: 0.58;
-      filter: grayscale(0.28) saturate(0.72);
-      transition: opacity 0.2s ease, filter 0.2s ease;
     }
 
     /* Verse display */
@@ -4643,31 +4614,31 @@
       flex: 1;
       min-width: 0;
     }
-    .bible-library-save-list {
+    .bible-library-save-btn {
       display: none;
+      appearance: none;
       border: 0;
       background: transparent;
-      color: var(--gold-light);
+      padding: 2px 0;
+      margin: 0;
       font-family: 'Cinzel', serif;
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 0;
-      margin: 0;
+      color: var(--gold-light);
       cursor: pointer;
-      white-space: nowrap;
       -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+      line-height: 1.2;
     }
-    .bible-library-save-list.is-visible {
-      display: inline-flex;
-      align-items: center;
+    .bible-library-save-btn.is-visible { display: inline-flex; }
+    .bible-library-save-btn:focus-visible {
+      outline: 2px solid rgba(var(--accent-rgb), 0.65);
+      outline-offset: 3px;
+      border-radius: 3px;
     }
-    .bible-library-save-list:hover,
-    .bible-library-save-list:focus-visible {
-      text-decoration: underline;
-      outline: none;
-    }
+    .bible-library-save-btn:active { transform: translateY(1px); }
     .bible-library-filter {
       width: 100%;
       padding: 10px 12px;
@@ -4784,10 +4755,10 @@
     }
     html:not([data-theme]) .bible-library-panel .banner-label,
     html:not([data-theme]) .bible-library-search-title,
-    html:not([data-theme]) .bible-library-save-list,
+    html:not([data-theme]) .bible-library-save-btn,
     html[data-theme="normal"] .bible-library-panel .banner-label,
     html[data-theme="normal"] .bible-library-search-title,
-    html[data-theme="normal"] .bible-library-save-list {
+    html[data-theme="normal"] .bible-library-save-btn {
       color: var(--gold-dark);
     }
     html:not([data-theme]) .bible-library-body,
@@ -5237,8 +5208,9 @@
 </head>
 <body>
 
-<!-- Entry loading overlay removed: the app now opens directly to the page.
-     Controls are greyed out by the existing version-switch lock while the Bible loads. -->
+<script id="vg-entry-loader-script">
+  window.__vgHideEntryBibleLoader = function () {};
+</script>
 
 <script>
 (function () {
@@ -5306,7 +5278,7 @@
             <div class="bible-library-body">
               <div class="bible-library-search-row">
                 <div class="bible-library-search-title">Search..</div>
-                <button type="button" id="d-bibleLibrarySaveList" class="bible-library-save-list" onclick="saveSelectedBibleLibraryVersion('d')">Save List</button>
+                <button type="button" id="d-bibleLibrarySaveBtn" class="bible-library-save-btn" onclick="saveSelectedBibleLibraryVersion('d')" aria-label="Save selected Bible to version lists">SAVE</button>
               </div>
               <input id="d-bibleLibrarySearch" class="bible-library-filter" type="search" placeholder="Search territory or Bible version" oninput="filterBibleLibrary('d')">
               <div class="bible-library-table-wrap" id="d-bibleLibraryScroll">
@@ -5697,138 +5669,6 @@
 
   <div class="mob-content">
 
-    <div class="mob-card">
-      <div class="mob-card-orn">· ✦ ·</div>
-      <div class="mob-verse-counter" id="m-counter" style="display:none;"></div>
-
-      <div class="mob-select-row" id="m-mode-panel">
-        <div class="mob-field">
-          <span class="mob-label" id="m-testament-label">Mode</span>
-          <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
-            <option value="read" selected>Read Bible</option>
-            <option value="custom">Verse Generator</option>
-            <option value="hbv">Hardest Bible Verse Generator</option>
-          </select>
-        </div>
-        <div class="mob-field">
-          <span class="mob-label">Bible Versions</span>
-          <select class="mob-select" id="m-version" onchange="onVersionChange('m')">
-            <option value="NIV" selected>NIV</option>
-          </select>
-        </div>
-      </div>
-
-
-      <div id="m-bibleLibraryPanel" class="bible-library-panel mob-bible-library-panel" aria-live="polite">
-        <button type="button" class="devotional-header" onclick="toggleBibleLibraryPanel('m')" aria-expanded="false" aria-controls="m-bibleLibraryBody">
-          <span class="banner-label">1500+ Bible Translation Library</span>
-          <span class="devotional-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-        </button>
-        <div class="bible-library-collapse">
-          <div class="bible-library-inner" id="m-bibleLibraryBody">
-            <div class="bible-library-body">
-              <div class="bible-library-search-row">
-                <div class="bible-library-search-title">Search..</div>
-                <button type="button" id="m-bibleLibrarySaveList" class="bible-library-save-list" onclick="saveSelectedBibleLibraryVersion('m')">Save List</button>
-              </div>
-              <input id="m-bibleLibrarySearch" class="bible-library-filter" type="search" placeholder="Search territory or Bible version" oninput="filterBibleLibrary('m')">
-              <div class="bible-library-table-wrap" id="m-bibleLibraryScroll">
-                <div class="bible-library-status" id="m-bibleLibraryStatus">Open the panel to load the Bible list.</div>
-                <table class="bible-library-table" id="m-bibleLibraryTable" style="display:none;">
-                  <thead><tr><th>Territory</th><th>Vernacular Title</th></tr></thead>
-                  <tbody id="m-bibleLibraryTbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mob-select-row" id="m-bookWrapper">
-        <div class="mob-field full">
-          <span class="mob-label is-loading" id="m-book-label">Loading Books…</span>
-          <select class="mob-select" id="m-book">
-            <option value="whole" selected>— Whole Bible (random) —</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="mob-field full" id="m-customSearchWrapper" style="margin-bottom:9px;">
-        <span class="mob-label" id="m-custom-search-label">Search</span>
-        <div class="ref-search-wrap">
-          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onfocus="onCustomSearchFocus('m')" onkeydown="onSearchKeydown(event,'m','custom')">
-          <button type="button" class="ref-search-btn" onclick="onCustomSearch('m')" aria-label="Search" title="Search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div id="m-readBibleWrapper" style="display:none;">
-        <div class="mob-select-row">
-          <div class="mob-field full">
-            <span class="mob-label" id="m-read-book-label">Book</span>
-            <select class="mob-select" id="m-read-book" onchange="onReadBookChange('m')"></select>
-          </div>
-        </div>
-        <div class="mob-select-row">
-          <div class="mob-field">
-            <span class="mob-label" id="m-read-chapter-label">Chapter</span>
-            <select class="mob-select" id="m-read-chapter" onchange="onReadChapterChange('m')"></select>
-          </div>
-          <div class="mob-field">
-            <span class="mob-label" id="m-read-verse-label">Verse</span>
-            <select class="mob-select" id="m-read-verse" onchange="onReadVerseChange('m')"></select>
-          </div>
-        </div>
-        <div class="mob-field full" style="margin-bottom:9px;">
-          <span class="mob-label" id="m-read-search-label">Search</span>
-          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
-        </div>
-      </div>
-
-      <!-- Mobile text size slider -->
-      <div class="mob-field full" style="margin-bottom:9px;">
-        <span class="mob-label">Text Size</span>
-        <div class="mob-slider-row">
-          <span class="mob-slider-label">A</span>
-          <input type="range" id="m-size-slider" min="14" max="28" value="19" oninput="setVerseSize(this.value)">
-          <span class="mob-slider-label" style="font-size:1.1em;">A</span>
-        </div>
-      </div>
-
-      <div class="mob-verse-box read-swipeable" id="m-verseDisplay">
-        <p class="mob-placeholder">Tap the button below to receive the Word…</p>
-      </div>
-
-      <div class="mob-hbv-actions" id="m-hbv-actions">
-        <button class="mob-btn-action" id="m-hbv-prev-btn" onclick="showPrev('m')" disabled>◀ Previous</button>
-        <button class="mob-btn-action" id="m-hbv-save-btn" onclick="saveHbvImage('m')">⬇ Save</button>
-        <button class="mob-btn-action" id="m-hbv-next-btn" onclick="showNext('m')" disabled>Next ▶</button>
-      </div>
-
-      <div class="mob-image-wrap" id="m-imageWrap">
-        <canvas id="m-imageCanvas"></canvas>
-        <div class="mob-image-action-row">
-          <button class="mob-btn-action" onclick="downloadImage('m')">⬇ Save</button>
-        </div>
-      </div>
-
-      <div class="mob-verse-actions" id="m-actions" style="display:none;">
-        <button class="mob-btn-action" id="m-prev-btn" onclick="showPrev('m')" disabled>◀</button>
-        <button class="mob-btn-action" id="m-copy-btn" onclick="copyVerse('m')">⧉ Copy</button>
-        <button class="mob-btn-action" id="m-next-btn" onclick="showNext('m')" disabled>▶</button>
-        <button class="mob-btn-action easybible-action-btn read-mode-actions-hidden" id="m-easybible-btn" onclick="openEasyBible()">Open in EasyBible</button>
-        <button class="mob-btn-action" id="m-share-btn" onclick="openShare('m')">↗</button>
-        <button class="mob-btn-action" id="m-speak-btn" onclick="speakVerse('m')">🔊</button>
-        <button class="mob-btn-action" id="m-img-btn" onclick="generateImage('m')">🖼</button>
-      </div>
-
-      <div class="mob-fav-panel" id="m-fav-panel">
-        <div class="fav-panel-title">✦ Saved Verses ✦</div>
-        <div id="m-fav-list"></div>
-      </div>
-    </div>
-
     <!-- Mobile Verse of the Day -->
     <div class="mob-votd-panel votd-panel" id="m-votd-panel">
       <button type="button" class="devotional-header" id="m-votd-toggle" aria-expanded="false" aria-controls="m-votd-collapse" aria-label="Expand verse of the day" onclick="toggleVotdPanel()">
@@ -5931,6 +5771,137 @@
       </div>
     </div>
 
+    <div class="mob-card">
+      <div class="mob-card-orn">· ✦ ·</div>
+      <div class="mob-verse-counter" id="m-counter" style="display:none;"></div>
+
+      <div class="mob-select-row" id="m-mode-panel">
+        <div class="mob-field">
+          <span class="mob-label" id="m-testament-label">Mode</span>
+          <select class="mob-select" id="m-testament" onchange="updateBooks('m')">
+            <option value="read" selected>Read Bible</option>
+            <option value="custom">Verse Generator</option>
+            <option value="hbv">Hardest Bible Verse Generator</option>
+          </select>
+        </div>
+        <div class="mob-field">
+          <span class="mob-label">Bible Versions</span>
+          <select class="mob-select" id="m-version" onchange="onVersionChange('m')">
+            <option value="NIV" selected>NIV</option>
+          </select>
+        </div>
+      </div>
+
+
+      <div id="m-bibleLibraryPanel" class="bible-library-panel mob-bible-library-panel" aria-live="polite">
+        <button type="button" class="devotional-header" onclick="toggleBibleLibraryPanel('m')" aria-expanded="false" aria-controls="m-bibleLibraryBody">
+          <span class="banner-label">1500+ Bible Translation Library</span>
+          <span class="devotional-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+        <div class="bible-library-collapse">
+          <div class="bible-library-inner" id="m-bibleLibraryBody">
+            <div class="bible-library-body">
+              <div class="bible-library-search-row">
+                <div class="bible-library-search-title">Search..</div>
+                <button type="button" id="m-bibleLibrarySaveBtn" class="bible-library-save-btn" onclick="saveSelectedBibleLibraryVersion('m')" aria-label="Save selected Bible to version lists">SAVE</button>
+              </div>
+              <input id="m-bibleLibrarySearch" class="bible-library-filter" type="search" placeholder="Search territory or Bible version" oninput="filterBibleLibrary('m')">
+              <div class="bible-library-table-wrap" id="m-bibleLibraryScroll">
+                <div class="bible-library-status" id="m-bibleLibraryStatus">Open the panel to load the Bible list.</div>
+                <table class="bible-library-table" id="m-bibleLibraryTable" style="display:none;">
+                  <thead><tr><th>Territory</th><th>Vernacular Title</th></tr></thead>
+                  <tbody id="m-bibleLibraryTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mob-select-row" id="m-bookWrapper">
+        <div class="mob-field full">
+          <span class="mob-label is-loading" id="m-book-label">Loading Books…</span>
+          <select class="mob-select" id="m-book">
+            <option value="whole" selected>— Whole Bible (random) —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mob-field full" id="m-customSearchWrapper" style="margin-bottom:9px;">
+        <span class="mob-label" id="m-custom-search-label">Search</span>
+        <div class="ref-search-wrap">
+          <input type="text" id="m-custom-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. John 1:1 or John 1:1-7" oninput="onCustomSearchInput('m')" onfocus="onCustomSearchFocus('m')" onkeydown="onSearchKeydown(event,'m','custom')">
+          <button type="button" class="ref-search-btn" onclick="onCustomSearch('m')" aria-label="Search" title="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="m-readBibleWrapper" style="display:none;">
+        <div class="mob-select-row">
+          <div class="mob-field full">
+            <span class="mob-label" id="m-read-book-label">Book</span>
+            <select class="mob-select" id="m-read-book" onchange="onReadBookChange('m')"></select>
+          </div>
+        </div>
+        <div class="mob-select-row">
+          <div class="mob-field">
+            <span class="mob-label" id="m-read-chapter-label">Chapter</span>
+            <select class="mob-select" id="m-read-chapter" onchange="onReadChapterChange('m')"></select>
+          </div>
+          <div class="mob-field">
+            <span class="mob-label" id="m-read-verse-label">Verse</span>
+            <select class="mob-select" id="m-read-verse" onchange="onReadVerseChange('m')"></select>
+          </div>
+        </div>
+        <div class="mob-field full" style="margin-bottom:9px;">
+          <span class="mob-label" id="m-read-search-label">Search</span>
+          <input type="text" id="m-read-search" class="read-search-input mob-read-search ref-search-input" placeholder="e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15" onkeydown="onSearchKeydown(event,'m','read')">
+        </div>
+      </div>
+
+      <!-- Mobile text size slider -->
+      <div class="mob-field full" style="margin-bottom:9px;">
+        <span class="mob-label">Text Size</span>
+        <div class="mob-slider-row">
+          <span class="mob-slider-label">A</span>
+          <input type="range" id="m-size-slider" min="14" max="28" value="19" oninput="setVerseSize(this.value)">
+          <span class="mob-slider-label" style="font-size:1.1em;">A</span>
+        </div>
+      </div>
+
+      <div class="mob-verse-box read-swipeable" id="m-verseDisplay">
+        <p class="mob-placeholder">Tap the button below to receive the Word…</p>
+      </div>
+
+      <div class="mob-hbv-actions" id="m-hbv-actions">
+        <button class="mob-btn-action" id="m-hbv-prev-btn" onclick="showPrev('m')" disabled>◀ Previous</button>
+        <button class="mob-btn-action" id="m-hbv-save-btn" onclick="saveHbvImage('m')">⬇ Save</button>
+        <button class="mob-btn-action" id="m-hbv-next-btn" onclick="showNext('m')" disabled>Next ▶</button>
+      </div>
+
+      <div class="mob-image-wrap" id="m-imageWrap">
+        <canvas id="m-imageCanvas"></canvas>
+        <div class="mob-image-action-row">
+          <button class="mob-btn-action" onclick="downloadImage('m')">⬇ Save</button>
+        </div>
+      </div>
+
+      <div class="mob-verse-actions" id="m-actions" style="display:none;">
+        <button class="mob-btn-action" id="m-prev-btn" onclick="showPrev('m')" disabled>◀</button>
+        <button class="mob-btn-action" id="m-copy-btn" onclick="copyVerse('m')">⧉ Copy</button>
+        <button class="mob-btn-action" id="m-next-btn" onclick="showNext('m')" disabled>▶</button>
+        <button class="mob-btn-action easybible-action-btn read-mode-actions-hidden" id="m-easybible-btn" onclick="openEasyBible()">Open in EasyBible</button>
+        <button class="mob-btn-action" id="m-share-btn" onclick="openShare('m')">↗</button>
+        <button class="mob-btn-action" id="m-speak-btn" onclick="speakVerse('m')">🔊</button>
+        <button class="mob-btn-action" id="m-img-btn" onclick="generateImage('m')">🖼</button>
+      </div>
+
+      <div class="mob-fav-panel" id="m-fav-panel">
+        <div class="fav-panel-title">✦ Saved Verses ✦</div>
+        <div id="m-fav-list"></div>
+      </div>
+    </div>
 
     <!-- Control Panel (mobile) -->
     <div class="devotional-banner control-panel-banner mob-devotional-banner" id="m-control-panel">
@@ -11123,6 +11094,7 @@ function applyTranslationRtl(version) {
 
   function populateDefaultTranslationSelects() {
     if (typeof addBibleLibraryOptionToVersionSelects === 'function') addBibleLibraryOptionToVersionSelects();
+    if (typeof restoreSavedBibleLibraryVersionOptions === 'function') restoreSavedBibleLibraryVersionOptions();
     const source = document.getElementById('d-version');
     if (!source) return;
     const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
@@ -11160,7 +11132,6 @@ function applyTranslationRtl(version) {
   function cancelReadBibleBootForNonReadMode() {
     if (shouldBootReadBibleOnLoad()) return;
     _readBibleBootDone = true;
-    document.documentElement.classList.remove('vg-entry-bible-loading');
     cancelReadBibleBootTimers();
     releaseReadBibleBootLock();
     _readBibleBootPromise = null;
@@ -11413,11 +11384,6 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     if (!display) return;
     if (!display.querySelector('.version-switch-loader')) return;
-    if (isReadBibleMode(p) && document.documentElement.classList.contains('vg-entry-bible-loading')) {
-      // On web entry, do not replace the download animation with an error flash.
-      setBibleVersionLoadingProgress(p, 99, false);
-      return;
-    }
     stopBibleVersionLoadingProgress(p, 100, true);
     display.classList.remove('loading', 'read-updating', 'read-bible-boot-loading');
     if (isReadBibleMode(p)) {
@@ -11436,7 +11402,6 @@ function applyTranslationRtl(version) {
     if (!isReadBibleMode(p)) return;
     if (!hasReadPassageContent(document.getElementById(p + '-verseDisplay'))) return;
     _readBibleBootDone = true;
-    document.documentElement.classList.remove('vg-entry-bible-loading');
     cancelReadBibleBootTimers();
   }
 
@@ -11484,14 +11449,8 @@ function applyTranslationRtl(version) {
     }
 
     if (isReadBibleMode(p) && display && !hasReadPassageContent(display)) {
-      if (document.documentElement.classList.contains('vg-entry-bible-loading')) {
-        if (!display.querySelector('.version-switch-loader, .read-bible-start-loader')) {
-          setBibleVersionSwitchLoader(p, version);
-        }
-      } else {
-        clearReadDisplayLoading(p);
-        display.innerHTML = passageLoadErrorHtml(p);
-      }
+      clearReadDisplayLoading(p);
+      display.innerHTML = passageLoadErrorHtml(p);
     }
     return false;
   }
@@ -12164,7 +12123,7 @@ function applyTranslationRtl(version) {
   /** Read Bible verse dropdown: show entire chapter in the display panel */
   const READ_VERSE_WHOLE = 'whole-chapter';
   let _readLoadId = { d: 0, m: 0 };
-  const READ_BIBLE_BOOT_MS = 0;
+  const READ_BIBLE_BOOT_MS = 4000;
   let _readBibleBootTimers = [];
   let _readBibleBootPromise = null;
   let _readBibleBootDone = false;
@@ -12741,8 +12700,7 @@ function applyTranslationRtl(version) {
   }
 
   function shouldSlowScrollToBookSectionOnBookChange(p) {
-    // Mobile request: no automatic page movement around the Bible/book controls.
-    if (p === 'm') return false;
+    if (p === 'm') return true;
     if (p === 'd') return isDesktopCompactDisplayMode();
     return false;
   }
@@ -12776,7 +12734,8 @@ function applyTranslationRtl(version) {
 
 
   function shouldSlowScrollToOrnamentOnVersionChange(p) {
-    // Mobile request: changing Bible versions must not auto-scroll.
+    // Mobile: never auto-scroll when the Bible version changes.
+    // Desktop compact keeps its existing behavior.
     if (p === 'm') return false;
     if (p === 'd') return isDesktopCompactDisplayMode();
     return false;
@@ -14047,9 +14006,7 @@ function applyTranslationRtl(version) {
       if (display) display.innerHTML = `<p class="${isDesk ? 'verse-placeholder' : 'mob-placeholder'}">Could not load this passage. Check the reference and try again.</p>`;
       return false;
     } finally {
-      if (!document.documentElement.classList.contains('vg-entry-bible-loading') || hasReadPassageContent(display)) {
-        clearReadDisplayLoading(p);
-      }
+      clearReadDisplayLoading(p);
     }
   }
 
@@ -14150,7 +14107,6 @@ function applyTranslationRtl(version) {
     display.innerHTML = isDesk
       ? `<div class="read-passage-fade-layer ${reveal}"><p class="verse-ref read-passage-ref-top">${escapeHtml(displayRef)} &nbsp;·&nbsp; ${escapeHtml(label)}</p><p class="verse-text read-mode read-passage-text">${body}</p></div>`
       : `<div class="read-passage-fade-layer ${reveal}"><p class="mob-verse-ref read-passage-ref-top">${escapeHtml(displayRef)} · ${escapeHtml(label)}</p><p class="mob-verse-text read-mode read-passage-text">${body}</p></div>`;
-    document.documentElement.classList.remove('vg-entry-bible-loading');
     if (options.fadeIn) {
       const fadeLayer = getReadPassageFadeLayer(p);
       if (fadeLayer) {
@@ -14380,18 +14336,10 @@ function applyTranslationRtl(version) {
       if (data) {
         renderReadPassage(p, data);
       } else {
-        if (document.documentElement.classList.contains('vg-entry-bible-loading')) {
-          if (!display.querySelector('.version-switch-loader, .read-bible-start-loader')) {
-            setBibleVersionSwitchLoader(p, version);
-          }
-        } else {
-          display.innerHTML = passageLoadErrorHtml(p);
-        }
+        display.innerHTML = passageLoadErrorHtml(p);
       }
     } finally {
-      if (!document.documentElement.classList.contains('vg-entry-bible-loading') || hasReadPassageContent(display)) {
-        clearReadDisplayLoading(p);
-      }
+      clearReadDisplayLoading(p);
     }
   }
 
@@ -15239,31 +15187,175 @@ const BIBLE_LIBRARY_SAVED_KEY = 'vg-1500-bible-library-saved-versions-v1';
 let bibleLibraryRows = [];
 let bibleLibraryLoadingPromise = null;
 let lastRealBibleVersion = { d: null, m: null };
-let bibleLibraryCurrentSelection = { d: null, m: null };
+let currentBibleLibrarySelection = null;
+let _restoringSavedBibleLibraryOptions = false;
+
+function normalizeBibleLibrarySavedRow(row) {
+  if (!row) return null;
+  const path = String(row.path || '').trim();
+  const rawUrl = String(row.rawUrl || (path ? bibleLibraryRawUrlFromPath(path) : '')).trim();
+  const title = cleanBibleLibraryName(row.title || (path ? path.split('/').pop() : ''));
+  const territory = cleanBibleLibraryName(row.territory || 'Other');
+  if (!title || (!path && !rawUrl)) return null;
+  return { territory, title, path, rawUrl };
+}
+
+function readSavedBibleLibraryRows() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BIBLE_LIBRARY_SAVED_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    const unique = new Map();
+    parsed.forEach(item => {
+      const row = normalizeBibleLibrarySavedRow(item);
+      if (!row || isHiddenBibleLibraryPanelTitle(row.title)) return;
+      unique.set(row.path || row.rawUrl || row.title, row);
+    });
+    return Array.from(unique.values());
+  } catch { /* private mode */ }
+  return [];
+}
+
+function writeSavedBibleLibraryRows(rows) {
+  try { localStorage.setItem(BIBLE_LIBRARY_SAVED_KEY, JSON.stringify(rows)); } catch { /* private mode */ }
+}
+
+function restoreSavedBibleLibraryVersionOptions() {
+  if (_restoringSavedBibleLibraryOptions) return;
+  _restoringSavedBibleLibraryOptions = true;
+  try {
+    readSavedBibleLibraryRows().forEach(row => ensureBibleLibraryVersionOption(row));
+  } finally {
+    _restoringSavedBibleLibraryOptions = false;
+  }
+}
+
+function addBibleLibraryOptionToDefaultSelects(row) {
+  const moduleId = bibleLibraryModuleId(row);
+  const label = row.title || moduleId;
+  document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+    if (!sel || optionValueExists(sel, moduleId)) return;
+    let group = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.dataset.librarySelected === '1');
+    if (!group) {
+      group = document.createElement('optgroup');
+      group.label = '1500+ Library Selected';
+      group.dataset.librarySelected = '1';
+      const afterLibrary = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.label === 'Library');
+      if (afterLibrary && afterLibrary.nextSibling) sel.insertBefore(group, afterLibrary.nextSibling);
+      else sel.insertBefore(group, sel.firstChild);
+    }
+    const opt = document.createElement('option');
+    opt.value = moduleId;
+    opt.textContent = label;
+    opt.title = `${row.territory || 'Other'} - ${label}`;
+    group.appendChild(opt);
+  });
+}
+
+function getBibleLibrarySavedKey(row) {
+  const normalized = normalizeBibleLibrarySavedRow(row);
+  return normalized ? (normalized.path || normalized.rawUrl || normalized.title) : '';
+}
+
+function isBibleLibraryVersionSaved(row) {
+  const key = getBibleLibrarySavedKey(row);
+  if (!key) return false;
+  return readSavedBibleLibraryRows().some(item => getBibleLibrarySavedKey(item) === key);
+}
+
+function removeBibleLibraryOptionFromDefaultSelects(row) {
+  const moduleId = bibleLibraryModuleId(row);
+  document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+    if (!sel) return;
+    Array.from(sel.querySelectorAll(`option[value="${CSS.escape(moduleId)}"]`)).forEach(opt => opt.remove());
+    Array.from(sel.querySelectorAll('optgroup[data-library-selected="1"]')).forEach(group => {
+      if (!group.children.length) group.remove();
+    });
+    if (sel.value === moduleId) {
+      const fallback = GH_DEFAULT_TRANSLATION || 'KJV';
+      if (optionValueExists(sel, fallback)) sel.value = fallback;
+    }
+  });
+}
+
+function removeBibleLibraryOptionFromVersionSelectsWhenSafe(row) {
+  const moduleId = bibleLibraryModuleId(row);
+  ['d', 'm'].forEach(pl => {
+    const sel = document.getElementById(pl + '-version');
+    if (!sel || sel.value === moduleId) return;
+    Array.from(sel.querySelectorAll(`option[value="${CSS.escape(moduleId)}"]`)).forEach(opt => opt.remove());
+    Array.from(sel.querySelectorAll('optgroup[data-library-selected="1"]')).forEach(group => {
+      if (!group.children.length) group.remove();
+    });
+  });
+}
+
+function updateBibleLibrarySaveButtons() {
+  const hasSelection = !!currentBibleLibrarySelection;
+  const isSaved = hasSelection && isBibleLibraryVersionSaved(currentBibleLibrarySelection);
+  ['d', 'm'].forEach(pl => {
+    const btn = document.getElementById(pl + '-bibleLibrarySaveBtn');
+    if (!btn) return;
+    btn.classList.toggle('is-visible', hasSelection);
+    btn.textContent = isSaved ? 'UNSAVE' : 'SAVE';
+    btn.setAttribute('aria-label', isSaved ? 'Remove selected Bible from saved version lists' : 'Save selected Bible to version lists');
+  });
+}
+
+function rememberBibleLibrarySelection(row) {
+  currentBibleLibrarySelection = normalizeBibleLibrarySavedRow(row);
+  updateBibleLibrarySaveButtons();
+}
+
+function saveSelectedBibleLibraryVersion(p) {
+  const row = normalizeBibleLibrarySavedRow(currentBibleLibrarySelection);
+  if (!row) return;
+  const saved = readSavedBibleLibraryRows();
+  const key = getBibleLibrarySavedKey(row);
+  const exists = saved.some(item => getBibleLibrarySavedKey(item) === key);
+
+  if (exists) {
+    const next = saved.filter(item => getBibleLibrarySavedKey(item) !== key);
+    writeSavedBibleLibraryRows(next);
+    removeBibleLibraryOptionFromDefaultSelects(row);
+    removeBibleLibraryOptionFromVersionSelectsWhenSafe(row);
+
+    const moduleId = bibleLibraryModuleId(row);
+    if (localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY) === moduleId) {
+      try { localStorage.removeItem(DEFAULT_TRANSLATION_STORAGE_KEY); } catch { /* private mode */ }
+    }
+    if (typeof populateDefaultTranslationSelects === 'function') populateDefaultTranslationSelects();
+    setBibleLibraryStatus(`Unsaved: ${row.territory} - ${row.title}`);
+    updateBibleLibrarySaveButtons();
+    return;
+  }
+
+  writeSavedBibleLibraryRows(saved.concat(row));
+  const moduleId = ensureBibleLibraryVersionOption(row);
+  addBibleLibraryOptionToDefaultSelects(row);
+  if (typeof populateDefaultTranslationSelects === 'function') populateDefaultTranslationSelects();
+  document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
+    if (optionValueExists(sel, moduleId) && localStorage.getItem(DEFAULT_TRANSLATION_STORAGE_KEY) === moduleId) sel.value = moduleId;
+  });
+  setBibleLibraryStatus(`Saved: ${row.territory} - ${row.title}`);
+  updateBibleLibrarySaveButtons();
+}
 
 function addBibleLibraryOptionToVersionSelects() {
   ['d', 'm'].forEach(p => {
     const sel = document.getElementById(p + '-version');
-    if (!sel) return;
-    if (!optionValueExists(sel, BIBLE_LIBRARY_OPTION_VALUE)) {
-      const og = document.createElement('optgroup');
-      og.label = 'Library';
-      const o = document.createElement('option');
-      o.value = BIBLE_LIBRARY_OPTION_VALUE;
-      o.textContent = BIBLE_LIBRARY_TITLE;
-      o.title = 'Open the 1500+ Bible Translation Library list';
-      og.appendChild(o);
-      sel.insertBefore(og, sel.firstChild);
-    }
+    if (!sel || optionValueExists(sel, BIBLE_LIBRARY_OPTION_VALUE)) return;
+    const og = document.createElement('optgroup');
+    og.label = 'Library';
+    const o = document.createElement('option');
+    o.value = BIBLE_LIBRARY_OPTION_VALUE;
+    o.textContent = BIBLE_LIBRARY_TITLE;
+    o.title = 'Open the 1500+ Bible Translation Library list';
+    og.appendChild(o);
+    sel.insertBefore(og, sel.firstChild);
     if (sel.value && sel.value !== BIBLE_LIBRARY_OPTION_VALUE) lastRealBibleVersion[p] = sel.value;
   });
-  hydrateSavedBibleLibraryVersions();
-  const savedDefault = readDefaultTranslationFromStorage?.() || getSavedDefaultTranslation?.();
-  if (savedDefault) {
-    ['d', 'm'].forEach(p => {
-      const sel = document.getElementById(p + '-version');
-      if (sel && optionValueExists(sel, savedDefault)) sel.value = savedDefault;
-    });
+  if (typeof restoreSavedBibleLibraryVersionOptions === 'function' && !_restoringSavedBibleLibraryOptions) {
+    restoreSavedBibleLibraryVersionOptions();
   }
 }
 
@@ -15363,9 +15455,18 @@ const HIDDEN_BIBLE_LIBRARY_PANEL_TITLES = new Set([
     "ivatan"
 ]);
 
+const MOBILE_HIDDEN_BIBLE_LIBRARY_PANEL_TITLES = new Set([
+    "ethiopian orthodox bible in english"
+]);
+
 function isHiddenBibleLibraryPanelTitle(value) {
   const name = cleanBibleLibraryName(value).toLowerCase();
   return HIDDEN_BIBLE_LIBRARY_PANEL_TITLES.has(name);
+}
+
+function isHiddenMobileBibleLibraryPanelTitle(value) {
+  const name = cleanBibleLibraryName(value).toLowerCase();
+  return MOBILE_HIDDEN_BIBLE_LIBRARY_PANEL_TITLES.has(name);
 }
 
 function readBibleLibraryCache() {
@@ -15390,73 +15491,6 @@ function cleanBibleLibraryName(value) {
     .replace(/\s+/g, ' ')
     .trim();
   return /^01\s+English$/i.test(name) ? 'English' : name;
-}
-
-function readSavedBibleLibraryRows() {
-  try {
-    const rows = JSON.parse(localStorage.getItem(BIBLE_LIBRARY_SAVED_KEY) || '[]');
-    return Array.isArray(rows) ? rows.filter(row => row?.title && (row.path || row.rawUrl)) : [];
-  } catch { /* private mode */ }
-  return [];
-}
-
-function writeSavedBibleLibraryRows(rows) {
-  try { localStorage.setItem(BIBLE_LIBRARY_SAVED_KEY, JSON.stringify(rows)); } catch { /* private mode */ }
-}
-
-function sameBibleLibraryRow(a, b) {
-  if (!a || !b) return false;
-  return (!!a.path && !!b.path && a.path === b.path) ||
-    (!!a.rawUrl && !!b.rawUrl && a.rawUrl === b.rawUrl) ||
-    bibleLibraryModuleId(a) === bibleLibraryModuleId(b);
-}
-
-function hydrateSavedBibleLibraryVersions() {
-  readSavedBibleLibraryRows().forEach(row => ensureBibleLibraryVersionOption(row));
-}
-
-function setBibleLibrarySaveButtonState(p, row) {
-  bibleLibraryCurrentSelection[p] = row || null;
-  const btn = document.getElementById(p + '-bibleLibrarySaveList');
-  if (!btn) return;
-  btn.classList.toggle('is-visible', !!row);
-  btn.disabled = !row;
-  btn.textContent = 'Save List';
-  btn.title = row ? `Save ${row.title} in Bible Versions` : '';
-}
-
-function setCurrentBibleLibrarySelection(row, p) {
-  ['d', 'm'].forEach(pl => setBibleLibrarySaveButtonState(pl, row));
-}
-
-function saveSelectedBibleLibraryVersion(p) {
-  const row = bibleLibraryCurrentSelection[p] || bibleLibraryCurrentSelection[p === 'd' ? 'm' : 'd'];
-  if (!row) return;
-  const saved = readSavedBibleLibraryRows();
-  if (!saved.some(item => sameBibleLibraryRow(item, row))) {
-    saved.push({
-      territory: row.territory || 'Other',
-      title: row.title || 'Bible',
-      path: row.path || '',
-      rawUrl: row.rawUrl || bibleLibraryRawUrlFromPath(row.path || '')
-    });
-    writeSavedBibleLibraryRows(saved);
-  }
-  const moduleId = ensureBibleLibraryVersionOption(row);
-  if (typeof populateDefaultTranslationSelects === 'function') populateDefaultTranslationSelects();
-  if (typeof refreshDefaultPreferenceSelectValues === 'function') refreshDefaultPreferenceSelectValues();
-  ['d', 'm'].forEach(pl => {
-    const sel = document.getElementById(pl + '-version');
-    if (sel && optionValueExists(sel, moduleId)) sel.value = moduleId;
-    const btn = document.getElementById(pl + '-bibleLibrarySaveList');
-    if (btn && bibleLibraryCurrentSelection[pl]) {
-      btn.classList.add('is-visible');
-      btn.textContent = 'Saved';
-      setTimeout(() => { if (btn) btn.textContent = 'Save List'; }, 1400);
-    }
-  });
-  syncVersionSelects(moduleId);
-  setBibleLibraryStatus(`Saved in 1500+ Library Selected: ${row.title}`);
 }
 
 function bibleLibraryRawUrlFromPath(path) {
@@ -15543,6 +15577,7 @@ function ensureBibleLibraryVersionOption(row) {
       (group || sel).appendChild(opt);
     }
   });
+  addBibleLibraryOptionToDefaultSelects(row);
   return moduleId;
 }
 
@@ -15555,7 +15590,7 @@ function setBibleLibraryRowState(row, state) {
 }
 
 function shouldAutoScrollBibleLibraryBookSection(p) {
-  // Mobile request: selecting a Bible from the 1500+ panel must not auto-scroll.
+  // Mobile: selecting a Bible from the 1500+ panel must not move the page.
   if (p === 'm') return false;
   if (p === 'd') return typeof isTabletPortraitLayout === 'function' && isTabletPortraitLayout();
   return false;
@@ -15588,7 +15623,7 @@ async function selectBibleLibraryVersion(row, p) {
   if (!row) return;
   const active = document.getElementById(p + '-version') ? p : activePanel();
   const moduleId = ensureBibleLibraryVersionOption(row);
-  setCurrentBibleLibrarySelection(row, active);
+  rememberBibleLibrarySelection(row);
   setBibleLibraryRowState(row, 'loading');
   setBibleLibraryStatus(`Checking GitHub latest: ${row.title}…`);
 
@@ -15606,7 +15641,6 @@ async function selectBibleLibraryVersion(row, p) {
     const data = await loadGhTranslationData(moduleId, { forceFresh: true });
     if (!data?.booksByEn) throw new Error('Library Bible JSON returned no readable books.');
     setBibleLibraryRowState(row, 'selected');
-    setCurrentBibleLibrarySelection(row, active);
     setBibleLibraryStatus(`Selected: ${row.territory} - ${row.title}`);
     if (typeof onVersionChange === 'function') onVersionChange(active, { keepBibleLibraryPanel: true });
     scrollBibleLibraryBookSectionAfterSelect(active);
@@ -15661,6 +15695,7 @@ function renderBibleLibraryRows(p) {
   if (!tbody || !table || !status) return;
   const rows = (bibleLibraryRows || [])
     .filter(row => !isHiddenBibleLibraryPanelTitle(row?.title))
+    .filter(row => p !== 'm' || !isHiddenMobileBibleLibraryPanelTitle(row?.title))
     .filter(row => !filter || row.territory.toLowerCase().includes(filter) || row.title.toLowerCase().includes(filter));
   tbody.innerHTML = '';
   if (!rows.length) {
