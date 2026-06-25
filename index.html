@@ -43,6 +43,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a0f05'/%3E%3Crect x='28' y='8' width='8' height='48' rx='3' fill='%23c9a84c'/%3E%3Crect x='14' y='20' width='36' height='8' rx='3' fill='%23c9a84c'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <link rel="preload" href="https://db.onlinewebfonts.com/t/2040f704434843394f8505367793a81c.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preconnect" href="https://pub-74c6c14286c94e48a482e8783434636a.r2.dev" crossorigin>
+  <link rel="dns-prefetch" href="//pub-74c6c14286c94e48a482e8783434636a.r2.dev">
   <style>
     @font-face {
       font-family: 'DrescherGroteskBT-SemiBold';
@@ -6598,7 +6600,7 @@ The website owner respects legitimate copyright claims and aims to resolve such 
   "_meta": {
     "name": "External Bible Versions Master Index",
     "description": "Translations are loaded from TRANSLATION/versions.json to avoid hardcoding Bible JSON links inside this HTML.",
-    "source": "https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/versions.json"
+    "source": "https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/versions.json"
   },
   "translations": []
 }
@@ -6639,9 +6641,22 @@ The website owner respects legitimate copyright claims and aims to resolve such 
     return { ...UI_LANG.en, ...(UI_LANG[langCode] || {}) };
   }
 
-/* GitHub Bible Translations — external master index (TRANSLATION/versions.json) */
-const GH_TRANSLATIONS_INDEX_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/versions.json';
-const GH_INDEX_CACHE_KEY = 'vg-gh-translations-index-v9-master-rtl-sorted-apocrypha-no-trparsed';
+/* Cloudflare R2 Bible assets — external master index (TRANSLATION/versions.json) */
+const R2_PUBLIC_BASE_URL = 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/';
+function r2AssetUrl(path) {
+  return R2_PUBLIC_BASE_URL + String(path || '').replace(/^\/+/, '');
+}
+function convertKnownSourceUrlToR2(url) {
+  const value = String(url || '');
+  if (!value) return value;
+  if (value.startsWith(R2_PUBLIC_BASE_URL)) return value;
+  const rawMatch = value.match(/^https?:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/(?:refs\/heads\/)?main\/(.+)$/i);
+  if (rawMatch) return r2AssetUrl(rawMatch[3]);
+  return value;
+}
+
+const GH_TRANSLATIONS_INDEX_URL = r2AssetUrl('TRANSLATION/versions.json');
+const GH_INDEX_CACHE_KEY = 'vg-r2-translations-index-v1-master-rtl-sorted-apocrypha-no-trparsed';
 const EXCLUDED_TRANSLATION_IDS = new Set(['PHBT', 'phbt', 'KJVSTRONGS', 'KJV_STRONGS', 'KJV STRONGS', 'RV1909STRONGS', 'RV_1909_STRONGS', 'RV 1909 STRONGS', 'CHINESE UNION SIMP S', 'CHINESE UNION TRAD S', 'TRPARSED', 'TR PARSED', 'TR_PARSED']);
 const DEFAULT_TRANSLATION_STORAGE_KEY = 'vg-default-translation';
 const GH_TX_CACHE_PREFIX = 'bible_tx_dynamic_books_v2_';
@@ -6649,19 +6664,39 @@ const GH_BOOK_META_PREFIX = 'bible_tx_meta_dynamic_books_v2_';
 const GH_DEFAULT_TRANSLATION = 'KJV';
 const GH_DEFAULT_BOOK = 'whole';
 const GH_TRANSLATION_LOAD_TIMEOUT_MS = 120000;
-const GH_RAW_JSON_CACHE_TTL_MS = 0; // GitHub Bible JSON must refresh online before old text is reused.
+const GH_RAW_JSON_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // Reuse downloaded Bible JSON for 7 days so Cloudflare R2 opens fast like GitHub.
 const GH_SESSION_MEMORY_CACHE_MS = 6 * 60 * 60 * 1000; // After a fresh switch/download, reuse the in-memory JSON for fast random verse generation.
 const GH_CACHE_SCHEMA_KEY = 'vg-gh-cache-schema-version';
-const GH_CACHE_SCHEMA_VERSION = '2026-06-23-dynamic-github-books-v3';
+const GH_CACHE_SCHEMA_VERSION = '2026-06-25-r2-first-json-book-cache-v9';
 
 function isGithubRawUrl(url) {
   return /(^https?:)?\/\/raw\.githubusercontent\.com\//i.test(String(url || ''));
 }
 
+function isCloudflareR2Url(url) {
+  return String(url || '').startsWith(R2_PUBLIC_BASE_URL);
+}
+
+function isPreferredRemoteUrl(url) {
+  return isGithubRawUrl(url) || isCloudflareR2Url(url);
+}
+
 function addFreshGithubParam(url) {
-  if (!isGithubRawUrl(url)) return url;
-  const sep = String(url).includes('?') ? '&' : '?';
-  return `${url}${sep}v=${Date.now()}`;
+  const value = String(url || '');
+  if (!isGithubRawUrl(value) && !isCloudflareR2Url(value)) return url;
+
+  // Do not cache-bust large Cloudflare R2 Bible JSON files.
+  // Adding ?v=Date.now() forces a fresh 10–30 MB download every time,
+  // which makes R2 feel slower than GitHub. Keep cache-busting only for
+  // small index/manifest files so adding/removing Bible files still appears.
+  if (isCloudflareR2Url(value)) {
+    const clean = value.split('?')[0];
+    const isLiveIndex = /\/(TRANSLATION\/versions|JSON\/r2-library-index)\.json$/i.test(clean);
+    if (!isLiveIndex) return value;
+  }
+
+  const sep = value.includes('?') ? '&' : '?';
+  return `${value}${sep}v=${Date.now()}`;
 }
 
 function isGithubRawBibleUrl(url) {
@@ -6965,8 +7000,11 @@ function booksReadyForVersion(version, langBooks, availableIds) {
 
 function getReadNavBookList(version) {
   version = normalizeGhModuleId(version);
+  const data = GH_MEMORY_CACHE[version];
+  if (data?.booksByEn && Array.isArray(data.bookOrder) && data.bookOrder.length) {
+    return data.bookOrder.filter(k => Object.keys(data.booksByEn[k]?.chapters || {}).length > 0);
+  }
   if (isApocryphaStandaloneTranslation(version)) {
-    const data = GH_MEMORY_CACHE[version];
     if (!data?.booksByEn) return [];
     if (isAllApocryphaTranslation(version)) {
       return sortAllApocryphaBookKeys(Object.keys(data.booksByEn))
@@ -7145,13 +7183,13 @@ function canonicalizeApocryphaEntry(entry) {
     return { ...entry, id: APOCRYPHA_STANDALONE_MODULE, name: 'Apocrypha', translationName: 'Apocrypha', abbr: 'Apocrypha', abbreviation: 'Apocrypha', testament: 'apocrypha', hasApocrypha: false, rawUrl: entry.rawUrl || APOCRYPHA_STANDALONE_INDEX_ENTRY.rawUrl };
   }
   if (key === 'ALL') {
-    return { ...entry, id: ALL_APOCRYPHA_MODULE, name: 'All Apocrypha', translationName: 'All Apocrypha', abbr: 'All Apocrypha', abbreviation: 'All Apocrypha', testament: 'apocrypha', hasApocrypha: false, rawUrl: entry.rawUrl || ALL_APOCRYPHA_INDEX_ENTRY.rawUrl };
+    return { ...entry, id: ALL_APOCRYPHA_MODULE, name: 'All Apocrypha', translationName: 'All Apocrypha', abbr: 'All Apocrypha', abbreviation: 'All Apocrypha', testament: 'apocrypha', hasApocrypha: false, rawUrl: ALL_APOCRYPHA_INDEX_ENTRY.rawUrl };
   }
   if (key === 'KJV') {
-    return { ...entry, id: 'KJV_Apocrypha', name: 'KJVA', translationName: 'KJVA', abbr: 'KJVA', abbreviation: 'KJVA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Apocrypha%20.json' };
+    return { ...entry, id: 'KJV_Apocrypha', name: 'KJVA', translationName: 'KJVA', abbr: 'KJVA', abbreviation: 'KJVA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/KJV%20Apocrypha%20.json' };
   }
   if (key === 'WEB') {
-    return { ...entry, id: 'WEB_Apocrypha', name: 'WEBA', translationName: 'WEBA', abbr: 'WEBA', abbreviation: 'WEBA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB%20Apocrypha%20.json' };
+    return { ...entry, id: 'WEB_Apocrypha', name: 'WEBA', translationName: 'WEBA', abbr: 'WEBA', abbreviation: 'WEBA', testament: 'both', hasApocrypha: true, rawUrl: entry.rawUrl || 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/WEB%20Apocrypha%20.json' };
   }
   return entry;
 }
@@ -7291,12 +7329,12 @@ function masterEntryToTranslation(entry, indexData, fallbackPriority) {
   if (!entry) return null;
   entry = canonicalizeApocryphaEntry(entry);
   const sources = indexData?.sources || {};
-  const rawBase = sources.rawGitHubBase || 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/';
+  const rawBase = r2AssetUrl('TRANSLATION/');
   const file = normalizeMasterTranslationPath(entry.file || entry.path || '');
   const language = entry.language || (file.includes('/') ? decodeURIComponent(file.split('/')[0]) : 'Other');
   const title = entry.name || entry.translationName || titleFromMasterFile(file || entry.rawUrl || entry.pagesUrl);
   const abbr = String(entry.abbr || entry.abbreviation || entry.id || titleFromMasterFile(file)).trim();
-  const rawUrl = entry.rawUrl || (file ? rawBase + encodeMasterTranslationPath(file) : '');
+  const rawUrl = file ? rawBase + encodeMasterTranslationPath(file) : convertKnownSourceUrlToR2(entry.rawUrl || '');
   if (!abbr || !rawUrl) return null;
   return {
     id: String(entry.id || abbr).trim(),
@@ -7396,8 +7434,9 @@ function buildGhBiblesFromIndex(indexData) {
     t = canonicalizeApocryphaEntry(t);
     if (isExcludedTranslationEntry(t)) return;
     const abbr = (t.abbreviation || t.id || '').toUpperCase();
-    if (!t.id || !t.rawUrl || seen.has(abbr)) return;
-    seen.add(abbr);
+    const uniqueKey = String(t.id || abbr || '').toUpperCase();
+    if (!t.id || !t.rawUrl || seen.has(uniqueKey)) return;
+    seen.add(uniqueKey);
     out[t.id] = {
       name: t.translationName || t.id,
       shortname: t.abbreviation || t.id,
@@ -7405,8 +7444,8 @@ function buildGhBiblesFromIndex(indexData) {
       lang: t.language || 'Other',
       lang_short: t.languageCode || 'en',
       voiceLang: t.voiceLang || t.languageCode || 'en-US',
-      source: 'github',
-      rawUrl: t.rawUrl,
+      source: t.source || (t.r2LibraryAuto ? 'github-library' : 'github'),
+      rawUrl: convertKnownSourceUrlToR2(t.rawUrl),
       testament: t.testament || 'both',
       isRTL: inferTranslationRtl(t, t.rawUrl),
       hasApocrypha: !!t.hasApocrypha,
@@ -7424,7 +7463,7 @@ const APOCRYPHA_STANDALONE_INDEX_ENTRY = {
   voiceLang: 'en-US',
   translationName: 'Apocrypha',
   abbreviation: 'Apocrypha',
-  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/Apocrypha.json',
+  rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/Apocrypha.json',
   testament: 'apocrypha',
   isRTL: false,
   hasApocrypha: false
@@ -7437,7 +7476,7 @@ const ALL_APOCRYPHA_INDEX_ENTRY = {
   voiceLang: 'en-US',
   translationName: 'All Apocrypha',
   abbreviation: 'All Apocrypha',
-  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/55%20Book%20of%20Apocrypha.json',
+  rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/All%20Apocrypha.json',
   testament: 'apocrypha',
   isRTL: false,
   hasApocrypha: false
@@ -7450,7 +7489,7 @@ const KJV_APOCRYPHA_INDEX_ENTRY = {
   voiceLang: 'en-US',
   translationName: 'KJVA',
   abbreviation: 'KJVA',
-  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/KJV%20Apocrypha%20.json',
+  rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/KJV%20Apocrypha%20.json',
   testament: 'both',
   isRTL: false,
   hasApocrypha: true
@@ -7463,7 +7502,7 @@ const WEB_APOCRYPHA_INDEX_ENTRY = {
   voiceLang: 'en-US',
   translationName: 'WEBA',
   abbreviation: 'WEBA',
-  rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/English/WEB%20Apocrypha%20.json',
+  rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/English/WEB%20Apocrypha%20.json',
   testament: 'both',
   isRTL: false,
   hasApocrypha: true
@@ -7494,7 +7533,7 @@ const MAURITIAN_TRANSLATION_INDEX_ENTRIES = [
     voiceLang: 'mfe',
     translationName: 'Kreol Morisyen OT Portions',
     abbreviation: 'KMOTPOR',
-    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/KMOTPOR.json',
+    rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/Mauritian/KMOTPOR.json',
     testament: 'old',
     isRTL: false,
     hasApocrypha: false,
@@ -7507,7 +7546,7 @@ const MAURITIAN_TRANSLATION_INDEX_ENTRIES = [
     voiceLang: 'mfe',
     translationName: 'Nouvo Testaman Kreol Morisien Harmonisation NTPS KM',
     abbreviation: 'KMNT',
-    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/KMNT.json',
+    rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/Mauritian/KMNT.json',
     testament: 'both',
     isRTL: false,
     hasApocrypha: false,
@@ -7520,7 +7559,7 @@ const MAURITIAN_TRANSLATION_INDEX_ENTRIES = [
     voiceLang: 'mfe',
     translationName: 'Nouvo Testaman dan Kreol Morisien',
     abbreviation: 'NTKM2009',
-    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Mauritian/NTKM2009.json',
+    rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/Mauritian/NTKM2009.json',
     testament: 'new',
     isRTL: false,
     hasApocrypha: false,
@@ -7554,7 +7593,7 @@ const FILIPINO_TRANSLATION_INDEX_ENTRIES = [
     voiceLang: 'fil-PH',
     translationName: 'Ang Salita ng Diyos',
     abbreviation: 'ASD',
-    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/ASD.json',
+    rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/Filipino/ASD.json',
     testament: 'both',
     isRTL: false,
     hasApocrypha: false
@@ -7566,7 +7605,7 @@ const FILIPINO_TRANSLATION_INDEX_ENTRIES = [
     voiceLang: 'fil-PH',
     translationName: 'Ang Biblia',
     abbreviation: 'TLAB',
-    rawUrl: 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/TRANSLATION/Filipino/TLAB.json',
+    rawUrl: 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/TRANSLATION/Filipino/TLAB.json',
     testament: 'both',
     isRTL: false,
     hasApocrypha: false
@@ -7781,8 +7820,20 @@ function xhrGet(url, timeoutMs, asJson) {
   });
 }
 
+function shouldUseFastR2BibleCache(url) {
+  const value = String(url || '');
+  if (!isCloudflareR2Url(value)) return false;
+  if (!/\.json(?:$|[?#])/i.test(value)) return false;
+  if (/\/(TRANSLATION\/versions|JSON\/r2-library-index)\.json(?:$|[?#])/i.test(value)) return false;
+  return /\/(TRANSLATION|JSON)\//i.test(value);
+}
+
 function fetchWithTimeout(url, timeoutMs) {
-  const opts = { credentials: 'omit', mode: 'cors', cache: isGithubRawUrl(url) ? 'no-store' : 'default' };
+  const opts = {
+    credentials: 'omit',
+    mode: 'cors',
+    cache: shouldUseFastR2BibleCache(url) ? 'force-cache' : (isPreferredRemoteUrl(url) ? 'no-store' : 'default')
+  };
   if (typeof AbortController !== 'undefined') {
     const controller = new AbortController();
     const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
@@ -7793,7 +7844,7 @@ function fetchWithTimeout(url, timeoutMs) {
 }
 
 async function apiGetJson(url, timeoutMs) {
-  if (apiCircuitOpen() && !isGithubRawUrl(url)) return null;
+  if (apiCircuitOpen() && !isPreferredRemoteUrl(url)) return null;
   timeoutMs = timeoutMs || apiFetchTimeoutMs();
   const requestUrl = addFreshGithubParam(url);
 
@@ -7827,7 +7878,7 @@ async function apiGetJson(url, timeoutMs) {
 }
 
 async function apiGetText(url, timeoutMs) {
-  if (apiCircuitOpen() && !isGithubRawUrl(url)) return null;
+  if (apiCircuitOpen() && !isPreferredRemoteUrl(url)) return null;
   timeoutMs = timeoutMs || apiFetchTimeoutMs();
   const requestUrl = addFreshGithubParam(url);
 
@@ -8414,15 +8465,27 @@ function registerDynamicBibleLibraryBook(value) {
 }
 
 function isBibleLibraryDynamicMeta(meta) {
-  // Any GitHub JSON Bible may contain books outside the normal 66-book canon.
-  // This keeps versions such as the Ethiopian Orthodox Bible in English, and any
-  // future JSON with new book names, from losing those books during normalization.
+  // Any R2/GitHub JSON Bible may contain books outside the normal 66-book canon.
+  // This keeps versions such as All Apocrypha, Ethiopian-style canons, and any
+  // future JSON with new book names from losing those books during normalization.
   return !!(meta && (
     meta.source === 'github' ||
     meta.source === 'github-library' ||
+    meta.r2LibraryAuto === true ||
     meta.partialCanon === true ||
+    isCloudflareR2Url(meta.rawUrl) ||
     /raw\.githubusercontent\.com/i.test(String(meta.rawUrl || ''))
   ));
+}
+
+function pickBibleJsonRoot(raw) {
+  // Some JSON files use top-level metadata like { translation: "...", books: {...} }.
+  // Never treat string metadata as the Bible data root; only object/array containers count.
+  const candidates = [raw?.data, raw?.bible, raw?.translation];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === 'object') return candidate;
+  }
+  return raw;
 }
 
 function bookEnFromId(bookId) {
@@ -8440,7 +8503,7 @@ function normalizeApocryphaStandaloneJson(raw, meta) {
   const maxVerses = {};
   const bookIdByKey = {};
   let nextId = APOCRYPHA_STANDALONE_ID_START;
-  const root = raw?.data || raw?.bible || raw?.translation || raw;
+  const root = pickBibleJsonRoot(raw);
   if (!root || typeof root !== 'object') {
     return {
       module: meta.module, rawUrl: meta.rawUrl, testament: 'apocrypha', isRTL: false,
@@ -8554,32 +8617,38 @@ function normalizeGhBibleJson(raw, meta) {
   const localizedNames = {};
   const chapterCounts = {};
   const maxVerses = {};
+  const bookOrder = [];
 
   function ensureBook(bookEn, localizedName) {
     const displayName = cleanBookDisplayNameForCanonical(bookEn, localizedName);
     if (!booksByEn[bookEn]) {
       booksByEn[bookEn] = { bookId: BOOK_NUM[bookEn], localizedName: displayName, chapters: {} };
       if (BOOK_NUM[bookEn]) localizedNames[BOOK_NUM[bookEn]] = displayName;
+      bookOrder.push(bookEn);
     }
     return booksByEn[bookEn];
   }
 
   function addVerse(bookEn, localizedName, chapter, verse, text) {
-    const chNum = parseInt(chapter, 10);
-    const vNum = parseInt(verse, 10);
+    const chRaw = String(chapter ?? '').trim();
+    const vRaw = String(verse ?? '').trim();
     if (!bookEn && isBibleLibraryDynamicMeta(meta)) bookEn = registerDynamicBibleLibraryBook(localizedName);
     if (bookEn && !BOOK_NUM[bookEn] && isBibleLibraryDynamicMeta(meta)) bookEn = registerDynamicBibleLibraryBook(bookEn);
-    if (!bookEn || !BOOK_NUM[bookEn] || !Number.isFinite(chNum) || !Number.isFinite(vNum)) return;
+    if (!bookEn || !BOOK_NUM[bookEn] || !chRaw || !vRaw) return;
     const book = ensureBook(bookEn, localizedName || bookEn);
     const clean = cleanGhText(text);
     if (!clean) return;
-    const chKey = String(chNum);
-    const vKey = String(vNum);
+    const chKey = chRaw;
+    const vKey = vRaw;
     if (!book.chapters[chKey]) book.chapters[chKey] = {};
     book.chapters[chKey][vKey] = clean;
-    chapterCounts[bookEn] = Math.max(chapterCounts[bookEn] || 0, chNum);
+    const chNum = /^-?\d+$/.test(chKey) ? parseInt(chKey, 10) : NaN;
+    const vNum = /^-?\d+$/.test(vKey) ? parseInt(vKey, 10) : NaN;
+    if (Number.isFinite(chNum)) chapterCounts[bookEn] = Math.max(chapterCounts[bookEn] || 0, chNum);
+    else chapterCounts[bookEn] = Math.max(chapterCounts[bookEn] || 0, Object.keys(book.chapters).length);
     if (!maxVerses[bookEn]) maxVerses[bookEn] = {};
-    maxVerses[bookEn][chKey] = Math.max(maxVerses[bookEn][chKey] || 0, vNum);
+    if (Number.isFinite(vNum)) maxVerses[bookEn][chKey] = Math.max(maxVerses[bookEn][chKey] || 0, vNum);
+    else maxVerses[bookEn][chKey] = Math.max(maxVerses[bookEn][chKey] || 0, Object.keys(book.chapters[chKey]).length);
   }
 
   function bookFromAny(value) {
@@ -8596,7 +8665,7 @@ function normalizeGhBibleJson(raw, meta) {
     return null;
   }
 
-  const root = raw?.data || raw?.bible || raw?.translation || raw;
+  const root = pickBibleJsonRoot(raw);
 
   function readFlatVerseItems(items) {
     (items || []).forEach(v => {
@@ -8672,18 +8741,182 @@ function normalizeGhBibleJson(raw, meta) {
     });
   }
 
-  let bookIds = Object.values(booksByEn).map(b => b.bookId).filter(Boolean).sort((a, b) => a - b);
+  let bookIds = bookOrder.map(book => booksByEn[book]?.bookId).filter(Boolean);
   const testament = meta?.testament || 'both';
   if (testament === 'old') bookIds = bookIds.filter(id => id <= 39);
   else if (testament === 'new') bookIds = bookIds.filter(id => id >= 40);
   else if (testament === 'apocrypha') bookIds = bookIds.filter(id => id >= 67);
+  const filteredBookOrder = bookOrder.filter(book => bookIds.includes(booksByEn[book]?.bookId));
 
-  return { module: meta.module, rawUrl: meta.rawUrl, testament, isRTL: !!meta.isRTL, booksByEn, bookIds, localizedNames, chapterCounts, maxVerses, cachedAt: Date.now() };
+  return { module: meta.module, rawUrl: meta.rawUrl, testament, isRTL: !!meta.isRTL, booksByEn, bookIds, bookOrder: filteredBookOrder, localizedNames, chapterCounts, maxVerses, cachedAt: Date.now() };
+}
+
+
+/* Robust Apocrypha JSON normalizer for Cloudflare R2 files.
+   This accepts many Bible JSON shapes so All Apocrypha / Apocrypha and future
+   non-standard Bible JSON files do not appear in the list but fail to load. */
+function normalizeFlexibleApocryphaJson(raw, meta, options) {
+  options = options || {};
+  const booksByEn = {};
+  const localizedNames = {};
+  const chapterCounts = {};
+  const maxVerses = {};
+  const bookIdByKey = {};
+  const bookOrder = [];
+  let nextId = DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START;
+  const sourceFallback = options.sourceFallback || null;
+  const skipKeys = new Set(['metadata', '_meta', 'verses', 'version', 'translation', 'language', 'abbreviation', 'source', 'books', 'data', 'bible']);
+
+  function normalizeBookKey(value) {
+    const display = normalizeBibleLibraryBookName(value);
+    return display || String(value || '').trim();
+  }
+
+  function getOrCreateBook(bookName, source) {
+    const display = normalizeBookKey(bookName);
+    if (!display) return null;
+    const existingCanonical = resolveBookEnFromRaw(display) || BOOK_NAME_ALIASES[normalizeBookNameForMatch(display)] || (BOOK_NUM[display] ? display : null);
+    const key = existingCanonical || display;
+    if (!booksByEn[key]) {
+      let bookId = BOOK_NUM[key];
+      if (!bookId) bookId = nextId++;
+      bookIdByKey[key] = bookId;
+      booksByEn[key] = { bookId, localizedName: display, chapters: {} };
+      if (source) booksByEn[key].apocryphaSource = source;
+      localizedNames[bookId] = display;
+      bookOrder.push(key);
+      if (!BOOK_NUM[key] && bookId >= DYNAMIC_BIBLE_LIBRARY_BOOK_ID_START) {
+        BOOK_NUM[key] = bookId;
+        const nameKey = bibleLibraryBookKey(key);
+        if (nameKey) {
+          DYNAMIC_BIBLE_LIBRARY_BOOK_ID_BY_NAME[nameKey] = bookId;
+          DYNAMIC_BIBLE_LIBRARY_BOOK_NAME_BY_ID[bookId] = key;
+        }
+      }
+    } else if (source && !booksByEn[key].apocryphaSource) {
+      booksByEn[key].apocryphaSource = source;
+    }
+    return { key, book: booksByEn[key] };
+  }
+
+  function addVerse(bookName, chapter, verse, text, source) {
+    const clean = cleanGhText(text);
+    if (!clean) return;
+    const got = getOrCreateBook(bookName, source);
+    if (!got) return;
+    const chRaw = String(chapter ?? '1').trim();
+    const chKey = chRaw || '1';
+    const vRaw = String(verse ?? '').trim();
+    if (!vRaw) return;
+    if (!got.book.chapters[chKey]) got.book.chapters[chKey] = {};
+    got.book.chapters[chKey][vRaw] = clean;
+    const chNum = /^-?\d+$/.test(chKey) ? parseInt(chKey, 10) : NaN;
+    const vNum = /^-?\d+$/.test(vRaw) ? parseInt(vRaw, 10) : NaN;
+    if (Number.isFinite(chNum)) chapterCounts[got.key] = Math.max(chapterCounts[got.key] || 0, chNum);
+    else chapterCounts[got.key] = Math.max(chapterCounts[got.key] || 0, Object.keys(got.book.chapters).length);
+    if (!maxVerses[got.key]) maxVerses[got.key] = {};
+    if (Number.isFinite(vNum)) maxVerses[got.key][chKey] = Math.max(maxVerses[got.key][chKey] || 0, vNum);
+    else maxVerses[got.key][chKey] = Math.max(maxVerses[got.key][chKey] || 0, Object.keys(got.book.chapters[chKey]).length);
+  }
+
+  function sourceFromBookName(bookKey) {
+    if (/\(\s*KJV\s*\)/i.test(bookKey)) return 'kjv';
+    if (/\(\s*WEB\s*\)/i.test(bookKey)) return 'web';
+    return sourceFallback;
+  }
+
+  function readVersesObject(bookName, chapterKey, verses, source) {
+    if (Array.isArray(verses)) {
+      verses.forEach((vv, i) => {
+        if (vv && typeof vv === 'object') addVerse(bookName, chapterKey, vv.verse || vv.number || vv.id || i + 1, vv.text ?? vv.verse_text ?? vv.content ?? vv.value ?? vv.words ?? '', source);
+        else addVerse(bookName, chapterKey, i + 1, vv, source);
+      });
+    } else if (verses && typeof verses === 'object') {
+      Object.keys(verses).forEach(v => {
+        const vv = verses[v];
+        if (vv && typeof vv === 'object') addVerse(bookName, chapterKey, vv.verse || vv.number || vv.id || v, vv.text ?? vv.verse_text ?? vv.content ?? vv.value ?? vv.words ?? '', source);
+        else addVerse(bookName, chapterKey, v, vv, source);
+      });
+    }
+  }
+
+  function readChaptersObject(bookName, chapters, source) {
+    if (!chapters || typeof chapters !== 'object') return;
+    if (Array.isArray(chapters)) {
+      chapters.forEach((ch, i) => {
+        if (ch && typeof ch === 'object') readVersesObject(bookName, ch.chapter || ch.number || ch.id || i + 1, ch.verses || ch.verse || ch, source);
+      });
+    } else {
+      Object.keys(chapters).forEach(ch => readVersesObject(bookName, ch, chapters[ch], source));
+    }
+  }
+
+  function readBookArray(arr, forcedSource) {
+    arr.forEach((book, bi) => {
+      if (!book || typeof book !== 'object') return;
+      const name = book.name || book.book || book.book_name || book.title || book.id || book.abbreviation || `Book ${bi + 1}`;
+      const source = forcedSource || sourceFromBookName(name);
+      readChaptersObject(name, book.chapters || book.chapter || book.verses || book, source);
+    });
+  }
+
+  function readFlatVerseItems(items, forcedSource) {
+    items.forEach(item => {
+      if (!item || typeof item !== 'object') return;
+      const book = item.book || item.book_name || item.bookName || item.name || item.title;
+      addVerse(book, item.chapter || item.ch || 1, item.verse || item.v || item.number || item.id, item.text ?? item.verse_text ?? item.content ?? item.value ?? item.words ?? '', forcedSource || sourceFromBookName(book || ''));
+    });
+  }
+
+  const root = pickBibleJsonRoot(raw);
+  if (Array.isArray(root)) readFlatVerseItems(root, sourceFallback);
+  else if (Array.isArray(root?.verses)) readFlatVerseItems(root.verses, sourceFallback);
+  else if (Array.isArray(root?.books)) readBookArray(root.books, sourceFallback);
+  else if (root?.books && typeof root.books === 'object') {
+    Object.keys(root.books).forEach(bookKey => readChaptersObject(bookKey, root.books[bookKey], sourceFromBookName(bookKey)));
+  } else if (root && typeof root === 'object') {
+    Object.keys(root).forEach(bookKey => {
+      if (skipKeys.has(bookKey)) return;
+      readChaptersObject(bookKey, root[bookKey], sourceFromBookName(bookKey));
+    });
+  }
+
+  Object.keys(booksByEn).forEach(bookKey => {
+    const chs = booksByEn[bookKey].chapters || {};
+    Object.keys(chs).forEach(ch => { if (!Object.keys(chs[ch] || {}).length) delete chs[ch]; });
+    if (!Object.keys(chs).length) {
+      const id = booksByEn[bookKey].bookId;
+      delete localizedNames[id];
+      delete booksByEn[bookKey];
+      delete bookIdByKey[bookKey];
+    }
+  });
+  const bookIds = bookOrder.map(book => booksByEn[book]?.bookId).filter(Boolean);
+  const filteredBookOrder = bookOrder.filter(book => booksByEn[book] && bookIds.includes(booksByEn[book].bookId));
+  return {
+    module: meta.module, rawUrl: meta.rawUrl, testament: 'apocrypha', isRTL: false,
+    booksByEn, bookIds, bookOrder: filteredBookOrder, localizedNames, chapterCounts, maxVerses,
+    apocryphaStandalone: true, allApocryphaCatalog: !!options.allApocryphaCatalog,
+    bookIdByKey, catalogFormat: ALL_APOCRYPHA_CATALOG_FORMAT, cachedAt: Date.now()
+  };
+}
+
+function normalizeApocryphaStandaloneJson(raw, meta) {
+  const normalized = normalizeFlexibleApocryphaJson(raw, meta, { sourceFallback: 'kjv', allApocryphaCatalog: false });
+  normalized.allApocryphaCatalog = false;
+  return normalized;
+}
+
+function normalizeAllApocryphaJson(raw, meta) {
+  return normalizeFlexibleApocryphaJson(raw, meta, { sourceFallback: null, allApocryphaCatalog: true });
 }
 
 function buildBooksListFromGhData(data) {
   if (!data?.bookIds?.length) return null;
-  return data.bookIds.map(id => ({
+  const orderedIds = Array.isArray(data.bookOrder) && data.bookOrder.length
+    ? data.bookOrder.map(book => data.booksByEn?.[book]?.bookId).filter(Boolean)
+    : data.bookIds;
+  return orderedIds.map(id => ({
     id,
     name: formatGhBookDisplayName(data.localizedNames?.[id]) || bookEnFromId(id) || String(id),
     shortname: formatGhBookDisplayName(data.localizedNames?.[id]) || bookEnFromId(id) || String(id)
@@ -8720,7 +8953,7 @@ function storeGhTranslationData(module, normalized, cacheKey) {
   normalized.cachedAt = Date.now();
   normalized.fetchedAt = Date.now();
   normalized.sessionReady = true;
-  normalized.cachePolicy = 'github-raw-refresh-first-session-memory-fast';
+  normalized.cachePolicy = 'r2-fast-idb-first-session-memory-fast';
   GH_MEMORY_CACHE[module] = normalized;
   GH_BOOK_IDS_BY_MODULE[module] = normalized.bookIds;
   VERSION_BOOK_IDS_CACHE[module] = [...normalized.bookIds];
@@ -8740,7 +8973,7 @@ function storeGhTranslationData(module, normalized, cacheKey) {
 async function clearGhTranslationDataCache(module) {
   module = normalizeGhModuleId(module);
   // Clear only this page-session cache. IndexedDB/localStorage stay as offline fallback
-  // and are used only if GitHub cannot be reached.
+  // and are used only if Cloudflare cannot be reached.
   delete GH_MEMORY_CACHE[module];
   delete GH_BOOK_IDS_BY_MODULE[module];
   delete VERSION_BOOKS_CACHE[module];
@@ -8783,6 +9016,18 @@ async function loadGhTranslationData(module, options = {}) {
       return memoryCached;
     }
 
+    const reusableIdb = !forceFresh && idbCached?.booksByEn && idbCached.bookIds?.length &&
+      !needsApocryphaMergeRefresh(module, idbCached) &&
+      !needsStoredBookIdsRefresh(module, idbCached) &&
+      !needsAllApocryphaCatalogRefresh(module, idbCached) &&
+      GH_RAW_JSON_CACHE_TTL_MS > 0 &&
+      getGhDataAgeMs(idbCached) < GH_RAW_JSON_CACHE_TTL_MS;
+    if (reusableIdb) {
+      // Fast switching: use the already-downloaded Bible immediately from IndexedDB.
+      // This avoids waiting for another 10–30 MB Cloudflare download when changing Bible versions.
+      return storeGhTranslationData(module, idbCached, null);
+    }
+
     let raw = null;
     try { raw = await apiGetJson(meta.rawUrl, GH_TRANSLATION_LOAD_TIMEOUT_MS); }
     catch { raw = null; }
@@ -8791,7 +9036,7 @@ async function loadGhTranslationData(module, options = {}) {
           !needsApocryphaMergeRefresh(module, idbCached) &&
           !needsStoredBookIdsRefresh(module, idbCached) &&
           !needsAllApocryphaCatalogRefresh(module, idbCached)) {
-        // Offline fallback only: never prefer stored JSON over a successful GitHub refresh.
+        // Offline fallback only: never prefer stored JSON over a successful Cloudflare refresh.
         return storeGhTranslationData(module, idbCached, null);
       }
       const mergeBase = getApocryphaMergeBaseModule(module);
@@ -8846,6 +9091,68 @@ function prefetchGhTranslation(module, onReady) {
   }).catch(() => {
     if (typeof onReady === 'function') onReady(module);
   });
+}
+
+
+const FAST_VERSION_BACKGROUND_CACHE_DELAY_MS = 1800;
+let fastVersionBackgroundCacheStarted = false;
+const fastLibraryHoverPrefetchSet = new Set();
+
+function shouldSkipHeavyBackgroundBibleCaching() {
+  try {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c?.saveData) return true;
+  } catch { /* ignore */ }
+  return false;
+}
+
+function getMainDropdownBibleModulesForFastCache() {
+  const current = normalizeGhModuleId(document.getElementById(activePanel?.() + '-version')?.value || document.getElementById('d-version')?.value || GH_DEFAULT_TRANSLATION);
+  const saved = normalizeGhModuleId(readDefaultTranslationFromStorage?.() || current);
+  const modules = Object.values(GH_BIBLES || {})
+    .filter(b => b?.module)
+    .filter(b => !(typeof isBibleLibraryOnlyTranslationMeta === 'function' && isBibleLibraryOnlyTranslationMeta(b)))
+    .sort(compareBibleVersionsForList)
+    .map(b => normalizeGhModuleId(b.module));
+  const priority = [current, saved, GH_DEFAULT_TRANSLATION, 'WEB', 'BSB', 'NKJV', 'ESV', 'NIV', 'NLT', 'ASV', 'KJV_Apocrypha', ALL_APOCRYPHA_MODULE, APOCRYPHA_STANDALONE_MODULE]
+    .filter(Boolean)
+    .map(normalizeGhModuleId);
+  return [...new Set([...priority, ...modules])].filter(m => GH_BIBLES[m]);
+}
+
+function scheduleFastVersionBackgroundCache() {
+  if (fastVersionBackgroundCacheStarted) return;
+  fastVersionBackgroundCacheStarted = true;
+  const start = () => {
+    if (shouldSkipHeavyBackgroundBibleCaching()) return;
+    void warmMainBibleVersionsForFastSwitching();
+  };
+  if ('requestIdleCallback' in window) {
+    try { requestIdleCallback(start, { timeout: 6000 }); return; } catch { /* ignore */ }
+  }
+  setTimeout(start, FAST_VERSION_BACKGROUND_CACHE_DELAY_MS);
+}
+
+async function warmMainBibleVersionsForFastSwitching() {
+  const modules = getMainDropdownBibleModulesForFastCache();
+  for (const mod of modules) {
+    try {
+      if (GH_MEMORY_CACHE[mod]?.booksByEn) continue;
+      await loadGhTranslationData(mod);
+      await delay(180);
+    } catch { /* keep warming the rest */ }
+  }
+}
+
+function prefetchBibleLibraryRowForFastOpen(row) {
+  if (!row || shouldSkipHeavyBackgroundBibleCaching()) return;
+  const moduleId = bibleLibraryModuleId(row);
+  if (!moduleId || fastLibraryHoverPrefetchSet.has(moduleId)) return;
+  fastLibraryHoverPrefetchSet.add(moduleId);
+  try {
+    ensureBibleLibraryVersionOption(row);
+    void loadGhTranslationData(moduleId).catch(() => {});
+  } catch { /* ignore */ }
 }
 
 function getInstantBooksForVersion(version) {
@@ -8958,23 +9265,42 @@ async function fetchGhPassageVerses(module, bookEn, chapter, verseStart, verseEn
   const data = await loadGhTranslationData(module);
   const book = getGhBookData(data, bookEn);
   if (!book?.chapters) return null;
-  const chKey = String(chapter);
+
+  let chKey = String(chapter ?? '').trim();
+  if (!book.chapters[chKey]) {
+    // Protect Bible files whose chapters do not start at 1, or use catalog keys like 3B.
+    chKey = resolveReadChapter(module, bookEn, chKey) || getDefaultReadChapter(module, bookEn);
+  }
   const chapterData = book.chapters[chKey];
   if (!chapterData) return null;
+
+  const verseKeys = Object.keys(chapterData || {})
+    .filter(k => chapterData[k] != null && String(chapterData[k]).trim())
+    .sort((a, b) => {
+      const an = /^-?\d+$/.test(a), bn = /^-?\d+$/.test(b);
+      if (an && bn) return parseInt(a, 10) - parseInt(b, 10);
+      if (an !== bn) return an ? -1 : 1;
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+  const startNum = verseStart != null && /^-?\d+$/.test(String(verseStart)) ? parseInt(verseStart, 10) : null;
+  const endNum = verseEnd != null && /^-?\d+$/.test(String(verseEnd)) ? parseInt(verseEnd, 10) : null;
   const verses = [];
-  for (const v of Object.keys(chapterData).map(Number).sort((a, b) => a - b)) {
-    if (verseStart != null && v < verseStart) continue;
-    if (verseEnd != null && v > verseEnd) continue;
-    const text = chapterData[String(v)];
-    if (text) verses.push({ num: v, chapter: +chapter, text });
+  for (const key of verseKeys) {
+    const numeric = /^-?\d+$/.test(key) ? parseInt(key, 10) : null;
+    if (startNum != null && numeric != null && numeric < startNum) continue;
+    if (endNum != null && numeric != null && numeric > endNum) continue;
+    const text = cleanGhText(chapterData[key]);
+    if (!text) continue;
+    verses.push({ num: numeric != null ? numeric : key, chapter: chKey, text });
   }
   if (!verses.length) return null;
   const bookName = getGhLocalizedBookName(module, bookEn);
   const start = verses[0].num;
   const end = verses[verses.length - 1].num;
-  const ref = start === end ? `${bookName} ${chapter}:${start}` : `${bookName} ${chapter}:${start}-${end}`;
+  const ref = start === end ? `${bookName} ${chKey}:${start}` : `${bookName} ${chKey}:${start}-${end}`;
   const bookId = book.bookId ?? BOOK_NUM[bookEn];
-  return { verses, ref, bookName, chapter, bookId, version: module };
+  return { verses, ref, bookName, chapter: chKey, bookId, version: module };
 }
 
 async function fetchGhReference(module, reference) {
@@ -9021,7 +9347,7 @@ async function fetchRandomApocryphaStandaloneVerse(module, scope, attempt = 0) {
     return fetchRandomApocryphaStandaloneVerse(module, scope, attempt + 1);
   }
   const chKey = chKeys[Math.floor(Math.random() * chKeys.length)];
-  const chapter = parseInt(chKey, 10);
+  const chapter = chKey;
   const vKeys = Object.keys(bookData.chapters[chKey] || {});
   if (!vKeys.length) {
     if (pinnedBook) return null;
@@ -9072,7 +9398,7 @@ async function fetchRandomGhVerse(module, scope, attempt = 0) {
     return fetchRandomGhVerse(module, scope, attempt + 1);
   }
   const chKey = chKeys[Math.floor(Math.random() * chKeys.length)];
-  const chapter = parseInt(chKey, 10);
+  const chapter = chKey;
   const vKeys = Object.keys(bookData.chapters[chKey]);
   if (!vKeys.length) {
     if (pinnedBook) return null;
@@ -9158,6 +9484,17 @@ function appendApocryphaBookOptions(frag, allowedSet, langBooks, langCode, ui, v
 }
 
 
+
+function isBibleLibraryOnlyTranslationMeta(b) {
+  const moduleId = normalizeGhModuleId(b?.module || b?.id || '');
+  return !!(
+    b?.r2LibraryAuto === true ||
+    b?.source === 'github-library' ||
+    b?.source === 'r2-library' ||
+    /^LIB_/i.test(moduleId)
+  );
+}
+
 function getVersionListSortName(b) {
   return formatBibleVersionListName(b?.shortname || b?.name || b?.module || '');
 }
@@ -9180,6 +9517,9 @@ function populateTranslationSelects(panels) {
   panels = panels || ['d', 'm'];
   const byLang = {};
   Object.values(GH_BIBLES).forEach(b => {
+    // Keep the 1500+ library Bibles inside the 1500+ panel only.
+    // They are loaded on-demand when selected from the panel, not merged into the main Bible Versions list.
+    if (typeof isBibleLibraryOnlyTranslationMeta === 'function' && isBibleLibraryOnlyTranslationMeta(b)) return;
     const lang = b.lang || 'Other';
     if (!byLang[lang]) byLang[lang] = [];
     byLang[lang].push(b);
@@ -9242,8 +9582,14 @@ async function backgroundRefreshBibleList() {
       }
     }
   } catch { /* ignore */ }
+  try {
+    await loadBibleLibraryList();
+    renderBibleLibraryRows('d');
+    renderBibleLibraryRows('m');
+  } catch { /* ignore library sync */ }
   const version = resolveDefaultTranslationForBoot();
   prefetchGhTranslation(version);
+  scheduleFastVersionBackgroundCache();
 }
 
 async function loadBibleList() {
@@ -9260,11 +9606,13 @@ async function loadBibleList() {
     } catch { /* ignore: background refresh still retries below */ }
   }
   void backgroundRefreshBibleList();
+  void loadBibleLibraryList().then(() => { renderBibleLibraryRows('d'); renderBibleLibraryRows('m'); }).catch(() => {});
   const version = resolveDefaultTranslationForBoot();
   applyInstantBookIdsFromMeta(version);
   const deferRead = shouldBootReadBibleOnLoad() && !_readBibleBootDone;
   try { await updateBooks(activePanel(), { skipReadInit: !shouldBootReadBibleOnLoad() || deferRead }); }
   catch { ['d', 'm'].forEach(p => setBookLabelState(p, 'error')); }
+  scheduleFastVersionBackgroundCache();
   if (deferRead) {
     showEarlyReadBibleBootLoader();
     scheduleDefaultReadBibleBoot();
@@ -9487,7 +9835,7 @@ function applyTranslationRtl(version) {
     updateScrollToModeButtons();
   }
 
-  /* GitHub translations — see gh-bible-module above */
+  /* Cloudflare R2 translations — see gh-bible-module above */
 
 
 
@@ -9509,14 +9857,14 @@ function applyTranslationRtl(version) {
   let _encouragementDisplayCache = {};
 
   const DAILY_ENCOURAGEMENT_JSON_URL =
-    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/Daily%20Encouragement.json';
+    'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/Daily%20Encouragement.json';
   const DAILY_ENCOURAGEMENT_CACHE_KEY = 'vg-daily-encouragement-json-v1';
   let _encouragementList = [];
   let _encouragementCatalogLoadPromise = null;
   let _encouragementRenderedKey = null;
 
   const WEEKLY_JSON_URL =
-    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20and%20week%20verse.json';
+    'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/daily%20and%20week%20verse.json';
   const WEEKLY_JSON_CACHE_KEY = 'vg-weekly-json-remote-v4';
   let _weeklyVersesList = [];
   let _weeklyVersesByWeek = {};
@@ -9529,7 +9877,7 @@ function applyTranslationRtl(version) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Verse of the Week must come from the remote GitHub JSON file, so editing
+  // Verse of the Week must come from the remote Cloudflare JSON file, so editing
   // daily and week verse.json updates the website without editing this HTML.
   const WEEKLY_VERSES_OFFLINE = [];
 
@@ -9699,8 +10047,8 @@ function applyTranslationRtl(version) {
 
     _weeklyCatalogLoadPromise = (async () => {
       try {
-        // Cache-bust the GitHub raw URL so changes to date/month in the JSON
-        // are read from GitHub instead of from an older embedded/browser copy.
+        // Cache-bust the Cloudflare R2 URL so changes to date/month in the JSON
+        // are read from Cloudflare instead of from an older embedded/browser copy.
         const freshUrl = WEEKLY_JSON_URL + (WEEKLY_JSON_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         const data = await apiGetJson(freshUrl, 16000);
         const list = normalizeWeeklyCatalogData(data);
@@ -10348,10 +10696,10 @@ function applyTranslationRtl(version) {
   }
 
   /* ══════════════════════════════════════
-     DAILY DEVOTIONAL (GitHub JSON, MM-DD)
+     DAILY DEVOTIONAL (Cloudflare JSON, MM-DD)
   ══════════════════════════════════════ */
   const DEVOTIONAL_JSON_URL =
-    'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/main/daily%20devotionals.json';
+    'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/daily%20devotionals.json';
   const DEVOTIONAL_CACHE_KEY = 'vg-devotionals-json-v1';
   let _devotionalsMap = null;
   let _devotionalLoadPromise = null;
@@ -11568,7 +11916,7 @@ function applyTranslationRtl(version) {
     return document.getElementById(p + '-testament').value === 'hbv';
   }
 
-  const HBV_LIST_URL = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/HBV/HBV.txt';
+  const HBV_LIST_URL = 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/HBV/HBV.txt';
   const HBV_CACHE_KEY = 'vg-hbv-urls-v1';
   let _hbvUrls = null;
   let _hbvUrlsLoadPromise = null;
@@ -13631,6 +13979,26 @@ function applyTranslationRtl(version) {
       else sel.value = getFirstAvailableBook(version);
       return;
     }
+    const jsonBookOrder = getReadNavBookList(version);
+    const jsonData = GH_MEMORY_CACHE[version];
+    if (jsonData?.booksByEn && jsonBookOrder.length) {
+      const g = document.createElement('optgroup');
+      g.label = 'Books';
+      jsonBookOrder.forEach(b => {
+        const o = document.createElement('option');
+        o.value = b;
+        o.textContent = formatGhBookDisplayName(getGhLocalizedBookName(version, b)) || b;
+        g.appendChild(o);
+      });
+      if (g.children.length) frag.appendChild(g);
+      sel.replaceChildren(frag);
+      const firstBook = jsonBookOrder[0] || getFirstAvailableBook(version);
+      if (optionValueExists(sel, saved)) sel.value = saved;
+      else if (optionValueExists(sel, firstBook)) sel.value = firstBook;
+      else sel.selectedIndex = 0;
+      return;
+    }
+
     const allowed = new Set(getAvailableBookIds(version));
     const dynamicLibraryBooks = Array.from(allowed)
       .filter(id => isDynamicBibleLibraryBookId(id))
@@ -14116,7 +14484,7 @@ function applyTranslationRtl(version) {
     if (isDesk) ensureDesktopReadDisplayScrollButton();
 
     const fullText = data.verses.map(v => `${v.num} ${v.text}`).join(' ');
-    const chapterNum = data.chapter ?? parseInt(document.getElementById(p + '-read-chapter')?.value, 10);
+    const chapterNum = data.chapter ?? (document.getElementById(p + '-read-chapter')?.value || '1');
     const verseStart = data.verses[0]?.num;
     const verseEnd = data.verses[data.verses.length - 1]?.num;
     const passageParsed = bookEn && chapterNum != null
@@ -14221,9 +14589,10 @@ function applyTranslationRtl(version) {
   async function reloadReadPassage(p) {
     const bookEn = document.getElementById(p + '-read-book')?.value;
     if (!bookEn) return;
-    const chapter = parseInt(document.getElementById(p + '-read-chapter')?.value, 10) || 1;
+    const version = normalizeGhModuleId(document.getElementById(p + '-version')?.value);
+    const chRaw = document.getElementById(p + '-read-chapter')?.value;
+    const chapter = usesCatalogChapterKeys(version, bookEn) ? (chRaw || getDefaultReadChapter(version, bookEn)) : (parseInt(chRaw, 10) || 1);
     const verseVal = document.getElementById(p + '-read-verse')?.value;
-    const version = document.getElementById(p + '-version')?.value;
     const key = readChapterCacheKey(version, bookEn, chapter);
     delete readChapterCache[key];
     _readLoadId[p]++;
@@ -14557,7 +14926,7 @@ function applyTranslationRtl(version) {
     const readBookSel = document.getElementById(p + '-read-book');
     const bookEn = savedBook && optionValueExists(readBookSel, savedBook)
       ? savedBook : getFirstAvailableBook(version);
-    const chapterNum = parseInt(savedChapter, 10) || 1;
+    const chapterNum = usesCatalogChapterKeys(version, bookEn) ? (savedChapter || getDefaultReadChapter(version, bookEn)) : (parseInt(savedChapter, 10) || 1);
     let verseSync = READ_VERSE_WHOLE;
     if (savedVerse === READ_VERSE_WHOLE) verseSync = READ_VERSE_WHOLE;
     else {
@@ -14583,14 +14952,17 @@ function applyTranslationRtl(version) {
     populateReadBookSelect(p, langBooks, ui, version);
     const searchInput = document.getElementById(p + '-read-search');
     if (searchInput) searchInput.placeholder = ui.searchPlaceholder || 'e.g. Matthew 6, Matthew 24:5, or Matthew 24:5-15';
-    if (resetToGenesis) {
+    const forceFirstBook = !!resetToGenesis;
+    if (forceFirstBook) {
       const bookEn = getFirstAvailableBook(version);
-      const chapter = usesCatalogChapterKeys(version, bookEn)
-        ? getDefaultReadChapter(version, bookEn)
-        : 1;
+      const chapter = getDefaultReadChapter(version, bookEn);
       await loadReadChapterAt(p, bookEn, chapter);
     } else {
-      const bookEn = document.getElementById(p + '-read-book').value || getFirstAvailableBook(version);
+      const readBookSelect = document.getElementById(p + '-read-book');
+      const selectedBook = readBookSelect?.value;
+      const bookEn = selectedBook && optionValueExists(readBookSelect, selectedBook)
+        ? selectedBook
+        : getFirstAvailableBook(version);
       const chRaw = document.getElementById(p + '-read-chapter').value;
       const chapter = usesCatalogChapterKeys(version, bookEn)
         ? (chRaw || getDefaultReadChapter(version, bookEn))
@@ -15174,11 +15546,12 @@ function applyTranslationRtl(version) {
 
 
 
-/* 1500+ Bible Translation Library — GitHub JSON directory browser */
+/* 1500+ Bible Translation Library — Cloudflare R2 JSON browser */
 const BIBLE_LIBRARY_OPTION_VALUE = '__BIBLE_TRANSLATION_LIBRARY__';
 const BIBLE_LIBRARY_TITLE = '1500+ Bible Translation Library';
-const BIBLE_LIBRARY_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
-const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v3-github-live';
+const BIBLE_LIBRARY_R2_MANIFEST_URL = r2AssetUrl('JSON/r2-library-index.json');
+const BIBLE_LIBRARY_GITHUB_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
+const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v4-r2-live';
 let bibleLibraryRows = [];
 let bibleLibraryLoadingPromise = null;
 let lastRealBibleVersion = { d: null, m: null };
@@ -15303,7 +15676,9 @@ function isHiddenBibleLibraryPanelTitle(value) {
 function readBibleLibraryCache() {
   try {
     const cached = JSON.parse(localStorage.getItem(BIBLE_LIBRARY_CACHE_KEY) || 'null');
-    if (cached?.rows?.length) return cached.rows.filter(row => !isHiddenBibleLibraryPanelTitle(row?.title));
+    if (cached?.rows?.length) return cached.rows
+      .filter(row => !isHiddenBibleLibraryPanelTitle(row?.title))
+      .map(row => row?.path ? { ...row, rawUrl: bibleLibraryRawUrlFromPath(row.path) } : row);
   } catch { /* ignore */ }
   return [];
 }
@@ -15329,7 +15704,7 @@ function bibleLibraryRawUrlFromPath(path) {
     .split('/')
     .map(part => encodeURIComponent(part))
     .join('/');
-  return `https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/${encoded}`;
+  return r2AssetUrl(encoded);
 }
 
 function bibleLibraryHash(value) {
@@ -15351,11 +15726,12 @@ function getOrCreateBibleLibraryDynamicGroup(sel) {
   let group = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.dataset.librarySelected === '1');
   if (!group) {
     group = document.createElement('optgroup');
+    // Hidden on purpose: selected 1500+ panel Bibles must not appear inside the main Bible Versions dropdown.
     group.label = '1500+ Library Selected';
     group.dataset.librarySelected = '1';
-    const afterLibrary = Array.from(sel.children).find(node => node.tagName === 'OPTGROUP' && node.label === 'Library');
-    if (afterLibrary && afterLibrary.nextSibling) sel.insertBefore(group, afterLibrary.nextSibling);
-    else sel.insertBefore(group, sel.firstChild);
+    group.hidden = true;
+    group.style.display = 'none';
+    sel.appendChild(group);
   }
   return group;
 }
@@ -15390,6 +15766,8 @@ function ensureBibleLibraryVersionOption(row) {
       translationName: label,
       abbreviation: label,
       rawUrl,
+      source: 'github-library',
+      r2LibraryAuto: true,
       testament: 'both',
       isRTL: GH_BIBLES[moduleId].isRTL,
       hasApocrypha: false,
@@ -15405,6 +15783,9 @@ function ensureBibleLibraryVersionOption(row) {
       opt.value = moduleId;
       opt.textContent = label;
       opt.title = `${row.territory || 'Other'} - ${label}`;
+      // Programmatic option only: do not show 1500+ panel Bibles in the main Bible Versions list.
+      opt.hidden = true;
+      opt.dataset.librarySelected = '1';
       (group || sel).appendChild(opt);
     }
   });
@@ -15420,40 +15801,52 @@ function setBibleLibraryRowState(row, state) {
 }
 
 function shouldAutoScrollBibleLibraryBookSection(p) {
-  if (p === 'm') return getLayoutMode() === 'mobile';
-  if (p === 'd') return typeof isTabletPortraitLayout === 'function' && isTabletPortraitLayout();
-  return false;
+  // 1500+ panel row auto-scroll is mobile-only.
+  // Do not run this behavior on desktop or tablet layouts.
+  return p === 'm' && getLayoutMode() === 'mobile';
+}
+
+function getMobileBibleLibraryBookScrollTarget() {
+  const readWrapper = document.getElementById('m-readBibleWrapper');
+  const normalBookWrapper = document.getElementById('m-bookWrapper');
+  const readBookSelect = document.getElementById('m-read-book');
+  const normalBookSelect = document.getElementById('m-book');
+  const isVisible = (el) => {
+    if (!el) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getClientRects().length > 0;
+  };
+
+  if (isVisible(readWrapper)) {
+    return readBookSelect?.closest('.mob-select-row') || readWrapper;
+  }
+  return normalBookSelect?.closest('#m-bookWrapper') || normalBookWrapper || readWrapper;
 }
 
 function scrollBibleLibraryBookSectionAfterSelect(p) {
-  const modeValue = document.getElementById(p + '-testament')?.value;
-  if (modeValue !== 'read' && modeValue !== 'custom') return;
+  // Called only after selecting a Bible from the 1500+ Library panel.
+  // Mobile only. Scroll directly to the Book selector and do not bounce to the ornament.
   if (!shouldAutoScrollBibleLibraryBookSection(p)) return;
-  let attempts = 0;
-  const maxAttempts = 8;
-  const run = () => {
+
+  setTimeout(() => {
     if (!shouldAutoScrollBibleLibraryBookSection(p)) return;
-    const readWrapper = document.getElementById(p + '-readBibleWrapper');
-    const fallbackWrapper = document.getElementById(p + '-bookWrapper');
-    const readVisible = readWrapper && getComputedStyle(readWrapper).display !== 'none';
-    const target = (readVisible ? readWrapper : fallbackWrapper) || readWrapper;
+    const target = getMobileBibleLibraryBookScrollTarget();
     if (!target) return;
-    const topbar = p === 'm' ? document.querySelector('.mob-topbar') : null;
-    const fixedOffset = topbar ? Math.ceil(topbar.getBoundingClientRect().height + 12) : 18;
+
+    const topbar = document.querySelector('.mob-topbar');
+    const fixedOffset = topbar ? Math.ceil(topbar.getBoundingClientRect().height + 14) : 18;
     const top = window.scrollY + target.getBoundingClientRect().top - fixedOffset;
     window.scrollTo({ top: Math.max(0, top), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-    attempts += 1;
-    if (attempts < maxAttempts) setTimeout(run, attempts < 3 ? 220 : 420);
-  };
-  setTimeout(run, 180);
+  }, 120);
 }
+
 
 async function selectBibleLibraryVersion(row, p) {
   if (!row) return;
   const active = document.getElementById(p + '-version') ? p : activePanel();
   const moduleId = ensureBibleLibraryVersionOption(row);
   setBibleLibraryRowState(row, 'loading');
-  setBibleLibraryStatus(`Checking GitHub latest: ${row.title}…`);
+  setBibleLibraryStatus(`Loading from Cloudflare: ${row.title}…`);
 
   ['d', 'm'].forEach(pl => {
     // Keep the user's current mode. Selecting a Bible from the 1500+ panel
@@ -15466,52 +15859,154 @@ async function selectBibleLibraryVersion(row, p) {
   ['d', 'm'].forEach(updateEasyBibleButtonVisibility);
 
   try {
-    const data = await loadGhTranslationData(moduleId, { forceFresh: true });
+    const data = await loadGhTranslationData(moduleId);
     if (!data?.booksByEn) throw new Error('Library Bible JSON returned no readable books.');
     setBibleLibraryRowState(row, 'selected');
     setBibleLibraryStatus(`Selected: ${row.territory} - ${row.title}`);
-    if (typeof onVersionChange === 'function') onVersionChange(active, { keepBibleLibraryPanel: true });
-    scrollBibleLibraryBookSectionAfterSelect(active);
+    if (typeof onVersionChange === 'function') {
+      onVersionChange(active, {
+        keepBibleLibraryPanel: true,
+        skipOrnamentScroll: true,
+        bibleLibraryMobileBookScroll: true
+      });
+    }
   } catch (_) {
     setBibleLibraryRowState(row, '');
     setBibleLibraryStatus('Could not load this Bible JSON. Please check your connection and try again.');
   }
 }
 
+function normalizeBibleLibraryManifestRows(data) {
+  const rows = [];
+  const pushPath = (path) => {
+    path = String(path || '').replace(/^\/+/, '');
+    if (!/^JSON\//i.test(path) || !/\.json$/i.test(path)) return;
+    const parts = path.split('/');
+    const territory = cleanBibleLibraryName(parts.length > 2 ? parts[1] : 'Other');
+    const title = cleanBibleLibraryName(parts[parts.length - 1]);
+    if (!title || title.toLowerCase() === 'versions' || isHiddenBibleLibraryPanelTitle(title)) return;
+    rows.push({ territory, title, path, rawUrl: bibleLibraryRawUrlFromPath(path) });
+  };
+
+  if (Array.isArray(data)) {
+    data.forEach(item => {
+      if (typeof item === 'string') pushPath(item);
+      else if (item?.path) pushPath(item.path);
+      else if (item?.rawUrl || item?.url) {
+        const raw = convertKnownSourceUrlToR2(item.rawUrl || item.url);
+        const path = raw.startsWith(R2_PUBLIC_BASE_URL) ? decodeURIComponent(raw.slice(R2_PUBLIC_BASE_URL.length).split('?')[0]) : '';
+        pushPath(path);
+      }
+    });
+  } else if (Array.isArray(data?.rows)) {
+    data.rows.forEach(row => {
+      const path = String(row?.path || '').replace(/^\/+/, '');
+      if (path) pushPath(path);
+      else if (row?.territory && row?.title) {
+        const territory = cleanBibleLibraryName(row.territory);
+        const title = cleanBibleLibraryName(row.title);
+        if (!title || isHiddenBibleLibraryPanelTitle(title)) return;
+        const encodedPath = `JSON/${encodeURIComponent(territory)}/${encodeURIComponent(title)}.json`;
+        rows.push({ territory, title, path: `JSON/${territory}/${title}.json`, rawUrl: r2AssetUrl(encodedPath) });
+      }
+    });
+  } else if (Array.isArray(data?.tree)) {
+    data.tree.forEach(item => {
+      if (item?.type === 'blob') pushPath(item.path);
+    });
+  } else if (Array.isArray(data?.files)) {
+    data.files.forEach(item => pushPath(typeof item === 'string' ? item : item?.path));
+  }
+
+  const unique = new Map();
+  rows.forEach(row => {
+    const key = `${row.territory.toLowerCase()}::${row.title.toLowerCase()}`;
+    if (!unique.has(key)) unique.set(key, row);
+  });
+  return [...unique.values()].sort((a, b) =>
+    a.territory.localeCompare(b.territory, undefined, { sensitivity: 'base' }) ||
+    a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+  );
+}
+
+
+function bibleLibraryRowToTranslationEntry(row, index) {
+  if (!row) return null;
+  const moduleId = bibleLibraryModuleId(row);
+  const rawUrl = row.rawUrl || bibleLibraryRawUrlFromPath(row.path);
+  const label = row.title || moduleId;
+  if (!rawUrl || !label) return null;
+  return {
+    id: moduleId,
+    language: row.territory || 'Other',
+    languageCode: 'en',
+    voiceLang: 'en-US',
+    translationName: label,
+    abbreviation: label,
+    rawUrl,
+    source: 'github-library',
+    r2LibraryAuto: true,
+    testament: 'both',
+    isRTL: inferTranslationRtl({ language: row.territory, translationName: label, abbreviation: label, rawUrl }, rawUrl),
+    hasApocrypha: false,
+    partialCanon: true,
+    priority: 20000 + (index || 0)
+  };
+}
+
+function syncBibleLibraryRowsIntoVersionList(rows) {
+  // Do NOT merge the 1500+ panel library into the main Bible Versions dropdown.
+  // The main Bible Versions list must stay the same as the original curated TRANSLATION/versions.json list.
+  // The 1500+ panel still syncs live from Cloudflare via r2-library-index.json and loads selected Bibles on demand.
+  return Array.isArray(rows) && rows.length > 0;
+}
+
+
+async function fetchBibleLibraryRowsFromCloudflare() {
+  const data = await apiGetJson(BIBLE_LIBRARY_R2_MANIFEST_URL, 45000);
+  const rows = normalizeBibleLibraryManifestRows(data);
+  if (!rows.length) throw new Error('Cloudflare manifest returned no Bible JSON rows.');
+  return rows;
+}
+
+async function fetchBibleLibraryRowsFromGithubListFallback() {
+  const response = await fetch(`${BIBLE_LIBRARY_GITHUB_TREE_API}&live=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Fallback list could not be loaded.');
+  const data = await response.json();
+  const rows = normalizeBibleLibraryManifestRows(data);
+  if (!rows.length) throw new Error('Fallback list returned no Bible JSON rows.');
+  return rows;
+}
+
 async function loadBibleLibraryList() {
   if (bibleLibraryLoadingPromise) return bibleLibraryLoadingPromise;
-  setBibleLibraryStatus('Loading the 1500+ Bible Translation Library list, wait a moment…');
+  setBibleLibraryStatus('Loading the 1500+ Bible Translation Library list from Cloudflare, wait a moment…');
   const cachedFallback = readBibleLibraryCache();
-  bibleLibraryLoadingPromise = fetch(`${BIBLE_LIBRARY_TREE_API}&live=${Date.now()}`, { cache: 'no-store' })
-    .then(r => {
-      if (!r.ok) throw new Error('GitHub list could not be loaded.');
-      return r.json();
-    })
-    .then(data => {
-      const tree = Array.isArray(data?.tree) ? data.tree : [];
-      const rows = [];
-      tree.forEach(item => {
-        const path = String(item?.path || '');
-        if (item?.type !== 'blob' || !/^JSON\//i.test(path) || !/\.json$/i.test(path)) return;
-        const parts = path.split('/');
-        const territory = cleanBibleLibraryName(parts.length > 2 ? parts[1] : 'Other');
-        const title = cleanBibleLibraryName(parts[parts.length - 1]);
-        if (!title || title.toLowerCase() === 'versions' || isHiddenBibleLibraryPanelTitle(title)) return;
-        rows.push({ territory, title, path, rawUrl: bibleLibraryRawUrlFromPath(path) });
-      });
-      rows.sort((a, b) => a.territory.localeCompare(b.territory, undefined, { sensitivity: 'base' }) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+  bibleLibraryLoadingPromise = (async () => {
+    try {
+      const rows = await fetchBibleLibraryRowsFromCloudflare();
       bibleLibraryRows = rows;
-      try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now(), source: 'github-live' })); } catch { /* quota */ }
-      setBibleLibraryStatus(rows.length ? 'Bible list updated from GitHub.' : 'No Bible JSON files found on GitHub.');
+      try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now(), source: 'cloudflare-r2' })); } catch { /* quota */ }
+      syncBibleLibraryRowsIntoVersionList(rows);
+      setBibleLibraryStatus(rows.length ? '1500+ Bible Library updated from Cloudflare.' : 'No Bible JSON files found on Cloudflare.');
       return rows;
-    })
-    .catch(err => {
-      bibleLibraryRows = cachedFallback;
-      if (!bibleLibraryRows.length) setBibleLibraryStatus('Could not load the GitHub Bible list. Please check your internet connection and try again.');
-      else setBibleLibraryStatus('Using saved Bible list because GitHub could not be reached.');
-      return bibleLibraryRows;
-    })
-    .finally(() => { bibleLibraryLoadingPromise = null; });
+    } catch (_) {
+      try {
+        const rows = await fetchBibleLibraryRowsFromGithubListFallback();
+        bibleLibraryRows = rows;
+        try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now(), source: 'fallback-list-r2-files' })); } catch { /* quota */ }
+        syncBibleLibraryRowsIntoVersionList(rows);
+        setBibleLibraryStatus(rows.length ? '1500+ Bible Library ready. Bible JSON will load from Cloudflare.' : 'No Bible JSON files found.');
+        return rows;
+      } catch (err) {
+        bibleLibraryRows = cachedFallback;
+        if (bibleLibraryRows.length) syncBibleLibraryRowsIntoVersionList(bibleLibraryRows);
+        if (!bibleLibraryRows.length) setBibleLibraryStatus('Could not load the Cloudflare Bible list. Please check your connection and try again.');
+        else setBibleLibraryStatus('Using saved Bible list. Bible JSON will load from Cloudflare.');
+        return bibleLibraryRows;
+      }
+    }
+  })().finally(() => { bibleLibraryLoadingPromise = null; });
   return bibleLibraryLoadingPromise;
 }
 
@@ -15541,6 +16036,9 @@ function renderBibleLibraryRows(p) {
     tr.setAttribute('aria-label', `Load ${row.title} from ${row.territory}`);
     const moduleId = bibleLibraryModuleId(row);
     if (currentVersion === moduleId) tr.classList.add('is-selected');
+    tr.addEventListener('mouseenter', () => prefetchBibleLibraryRowForFastOpen(row), { once: true });
+    tr.addEventListener('focus', () => prefetchBibleLibraryRowForFastOpen(row), { once: true });
+    tr.addEventListener('touchstart', () => prefetchBibleLibraryRowForFastOpen(row), { passive: true, once: true });
     tr.addEventListener('click', () => selectBibleLibraryVersion(row, p));
     tr.addEventListener('keydown', ev => {
       if (ev.key === 'Enter' || ev.key === ' ') {
@@ -15654,14 +16152,15 @@ function scrollBibleLibraryTop(p) {
     setGeneratorVersionSwitchBusy('d', true);
     setGeneratorVersionSwitchBusy('m', true);
 
-    // Start the slow scroll immediately while the controls are greyed out/disabled,
-    // instead of waiting until the Bible version has finished loading.
-    slowScrollToOrnamentOnVersionChange(p);
+    // Start the normal version-change scroll unless this change came from the
+    // 1500+ panel mobile row tap. The 1500+ panel must scroll directly to
+    // the Book selector, not first to the ornament/divider.
+    if (!options.skipOrnamentScroll) slowScrollToOrnamentOnVersionChange(p);
 
-    _versionChangeTimer = setTimeout(() => onVersionChangeImpl(p), 140);
+    _versionChangeTimer = setTimeout(() => onVersionChangeImpl(p, options), 140);
   }
 
-  async function onVersionChangeImpl(p) {
+  async function onVersionChangeImpl(p, options = {}) {
     const changeGen = ++_versionChangeGeneration;
     const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
     const isStale = () => isVersionChangeStale(changeGen);
@@ -15747,6 +16246,9 @@ function scrollBibleLibraryTop(p) {
         }
         setVersionSwitchControlsLocked(false);
         setAllGeneratorVersionSwitchBusy(false);
+        if (options && options.bibleLibraryMobileBookScroll) {
+          setTimeout(() => scrollBibleLibraryBookSectionAfterSelect(active), 90);
+        }
       }
     }
   }
@@ -17009,16 +17511,16 @@ function scrollBibleLibraryTop(p) {
   /* ══ Background music (Random Opus player with MP3 fallback — silent until user starts) ══ */
   (function initBackgroundMusic() {
     const OPUS_TRACKS = [
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/1.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/2.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/3.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/4.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/5.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/6.opus',
-      'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/7.opus'
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/1.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/2.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/3.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/4.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/5.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/6.opus',
+      'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/7.opus'
     ];
 
-    // MP3 fallback uses the same file numbers from the GitHub music folder.
+    // MP3 fallback uses the same file numbers from the Cloudflare music folder.
     // Example: /opus/1.opus -> /music/1.mp3
     const MP3_FALLBACK_TRACKS = OPUS_TRACKS.map(url => url.replace('/opus/', '/music/').replace(/\.opus(\?.*)?$/i, '.mp3$1'));
 
@@ -17349,7 +17851,7 @@ function scrollBibleLibraryTop(p) {
 
   /* ══ Rain Effect (off by default, starts only when user toggles ON) ══ */
   (function initRainEffect() {
-    const RAIN_URL = 'https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/main/opus/rain2.opus';
+    const RAIN_URL = 'https://pub-74c6c14286c94e48a482e8783434636a.r2.dev/opus/rain2.opus';
     const RAIN_VOLUME = 0.15;
     const RAIN_FADE_MS = 5000;
 
