@@ -11098,16 +11098,13 @@ function applyTranslationRtl(version) {
     const source = document.getElementById('d-version');
     if (!source) return;
     const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
-    const activeVersion = normalizeGhModuleId(
-      document.getElementById(activePanel() + '-version')?.value
-      || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION
-    );
     document.querySelectorAll('[data-default-translation-select]').forEach(sel => {
       const prev = sel.value;
       sel.innerHTML = source.innerHTML;
+      // Rebuilding the default Bible dropdown must not make the currently selected
+      // 1500+ Bible become the default. Saved default wins first; otherwise keep
+      // the user's previous default-dropdown value, then fall back to the app default.
       if (saved && optionValueExists(sel, saved)) sel.value = saved;
-      else if (optionValueExists(sel, activeVersion)) sel.value = activeVersion;
       else if (optionValueExists(sel, prev)) sel.value = prev;
       else if (optionValueExists(sel, GH_DEFAULT_TRANSLATION)) sel.value = GH_DEFAULT_TRANSLATION;
     });
@@ -11116,12 +11113,11 @@ function applyTranslationRtl(version) {
   function refreshDefaultPreferenceSelectValues() {
     const mode = getEffectiveDefaultMode();
     const saved = readDefaultTranslationFromStorage() || getSavedDefaultTranslation();
-    const activeVersion = normalizeGhModuleId(
-      document.getElementById(activePanel() + '-version')?.value
-      || document.getElementById('d-version')?.value
-      || GH_DEFAULT_TRANSLATION
-    );
-    const trans = (saved && isValidTranslationModule(saved)) ? saved : activeVersion;
+    const firstDefaultSelect = document.querySelector('[data-default-translation-select]');
+    const currentDefaultSelectValue = firstDefaultSelect?.value;
+    let trans = GH_DEFAULT_TRANSLATION;
+    if (saved && isValidTranslationModule(saved)) trans = saved;
+    else if (currentDefaultSelectValue && optionValueExists(firstDefaultSelect, currentDefaultSelectValue)) trans = currentDefaultSelectValue;
     syncDefaultPrefSelects(mode, trans);
   }
 
