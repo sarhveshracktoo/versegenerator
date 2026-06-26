@@ -32,6 +32,9 @@
         if (perfMode !== 'visual') {
           document.documentElement.classList.add('performance-optimized');
         }
+        if (localStorage.getItem('vg-lightweight-mode') === '1') {
+          document.documentElement.classList.add('lightweight-mode');
+        }
       } catch (_) {
         document.documentElement.setAttribute('data-theme', 'normal');
       }
@@ -4154,6 +4157,133 @@
       outline: none;
       box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28), inset 0 0 10px rgba(0, 0, 0, 0.18);
     }
+
+    /* Lightweight mode: removes heavy panels, modes, scrolling and visual effects for lag-free Bible reading */
+    .lightweight-pref-grid {
+      grid-template-columns: 1fr;
+    }
+    .lightweight-pref-field {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.16);
+    }
+    .lightweight-help-text {
+      grid-column: 1 / -1;
+      margin: -2px 0 0;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: rgba(245, 234, 214, 0.68);
+    }
+    .lightweight-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 32px;
+      flex-shrink: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lightweight-toggle input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+    .lightweight-toggle-ui {
+      position: relative;
+      width: 58px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(var(--accent-rgb), 0.38);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.22);
+      transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    }
+    .lightweight-toggle-ui::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--parchment);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+      transition: transform 0.22s ease, background 0.22s ease;
+    }
+    .lightweight-toggle input:checked + .lightweight-toggle-ui {
+      background: rgba(var(--accent-rgb), 0.34);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14), inset 0 0 10px rgba(var(--accent-rgb), 0.16);
+    }
+    .lightweight-toggle input:checked + .lightweight-toggle-ui::before {
+      transform: translateX(26px);
+      background: var(--gold-light);
+    }
+    .lightweight-toggle input:focus-visible + .lightweight-toggle-ui {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28), inset 0 0 10px rgba(0, 0, 0, 0.18);
+    }
+    html.lightweight-mode,
+    html.lightweight-mode * {
+      scroll-behavior: auto !important;
+    }
+    html.lightweight-mode *,
+    html.lightweight-mode *::before,
+    html.lightweight-mode *::after {
+      animation: none !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    html.lightweight-mode body::before,
+    html.lightweight-mode .vg-entry-loader::before,
+    html.lightweight-mode .vg-entry-loader::after {
+      display: none !important;
+    }
+    html.lightweight-mode .read-passage-fade-layer,
+    html.lightweight-mode .read-passage-fade-layer.read-passage-transitioning,
+    html.lightweight-mode .read-passage-fade-layer.read-passage-fade-out,
+    html.lightweight-mode .read-passage-fade-layer.read-passage-fade-in {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    html.lightweight-mode #d-votd-panel,
+    html.lightweight-mode #m-votd-panel,
+    html.lightweight-mode #d-weekly-banner,
+    html.lightweight-mode #m-weekly-banner,
+    html.lightweight-mode #d-encouragement-banner,
+    html.lightweight-mode #m-encouragement-banner,
+    html.lightweight-mode #d-devotional-banner,
+    html.lightweight-mode #m-devotional-banner,
+    html.lightweight-mode #d-hbv-actions,
+    html.lightweight-mode #m-hbv-actions,
+    html.lightweight-mode #d-generate-slot-below,
+    html.lightweight-mode #m-generate-slot-below,
+    html.lightweight-mode #d-fav-panel,
+    html.lightweight-mode #m-fav-panel,
+    html.lightweight-mode #d-rain-effect-row,
+    html.lightweight-mode #m-rain-effect-row {
+      display: none !important;
+    }
+    html.lightweight-mode #d-testament option[value="custom"],
+    html.lightweight-mode #d-testament option[value="hbv"],
+    html.lightweight-mode #m-testament option[value="custom"],
+    html.lightweight-mode #m-testament option[value="hbv"],
+    html.lightweight-mode [data-default-mode-select] option[value="custom"],
+    html.lightweight-mode [data-default-mode-select] option[value="hbv"] {
+      display: none !important;
+    }
+
     html.justify-reading-enabled #d-verseDisplay.read-display-active .read-passage-text,
     html.justify-reading-enabled #m-verseDisplay.read-display-active .read-passage-text {
       text-align: justify !important;
@@ -5545,6 +5675,18 @@
               </label>
             </div>
           </div>
+          <h3 class="control-section-title" style="margin-top:18px;">Lightweight</h3>
+          <p class="control-section-hint">Use this when the web is lagging. It keeps only Read Bible mode active.</p>
+          <div class="control-pref-grid lightweight-pref-grid" role="group" aria-label="Lightweight mode setting">
+            <div class="control-pref-field lightweight-pref-field">
+              <label class="control-pref-label" for="d-lightweight-mode">Lightweight Mode</label>
+              <label class="lightweight-toggle" aria-label="Lightweight Mode">
+                <input type="checkbox" id="d-lightweight-mode" data-lightweight-toggle>
+                <span class="lightweight-toggle-ui" aria-hidden="true"></span>
+              </label>
+              <p class="lightweight-help-text">Disables heavy panels, generator modes, fade effects, rain, and extra auto-scroll for smoother Bible reading. Chapter and verse auto-scroll stay active. Background music stays available.</p>
+            </div>
+          </div>
           <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
           <p class="control-section-hint">Choose an appearance. Your selection is saved automatically.</p>
           <div class="theme-grid" id="d-theme-grid" role="radiogroup" aria-label="Website themes"></div>
@@ -5941,6 +6083,18 @@
                   <input type="checkbox" id="m-justify-reading-text" data-justify-reading-toggle>
                   <span class="justify-reading-toggle-ui" aria-hidden="true"></span>
                 </label>
+              </div>
+            </div>
+            <h3 class="control-section-title" style="margin-top:18px;">Lightweight</h3>
+            <p class="control-section-hint">Use this when the web is lagging. It keeps only Read Bible mode active.</p>
+            <div class="control-pref-grid lightweight-pref-grid" role="group" aria-label="Lightweight mode setting">
+              <div class="control-pref-field lightweight-pref-field">
+                <label class="control-pref-label" for="m-lightweight-mode">Lightweight Mode</label>
+                <label class="lightweight-toggle" aria-label="Lightweight Mode">
+                  <input type="checkbox" id="m-lightweight-mode" data-lightweight-toggle>
+                  <span class="lightweight-toggle-ui" aria-hidden="true"></span>
+                </label>
+                <p class="lightweight-help-text">Disables heavy panels, generator modes, fade effects, rain, and extra auto-scroll for smoother Bible reading. Chapter and verse auto-scroll stay active. Background music stays available.</p>
               </div>
             </div>
             <h3 class="control-section-title" style="margin-top:18px;">Themes</h3>
@@ -11064,6 +11218,7 @@ function applyTranslationRtl(version) {
   }
 
   function getEffectiveDefaultMode() {
+    if (typeof isLightweightMode === 'function' && isLightweightMode()) return 'read';
     return getSavedDefaultMode() || FALLBACK_DEFAULT_MODE;
   }
 
@@ -11215,6 +11370,133 @@ function applyTranslationRtl(version) {
     populateDefaultTranslationSelects();
     bindDefaultPreferenceControls();
     refreshDefaultPreferenceSelectValues();
+  }
+
+  /* ══════════════════════════════════════
+     LIGHTWEIGHT MODE — LAG-FREE READ BIBLE
+  ══════════════════════════════════════ */
+  const LIGHTWEIGHT_MODE_STORAGE_KEY = 'vg-lightweight-mode';
+
+  function isLightweightMode() {
+    try { return localStorage.getItem(LIGHTWEIGHT_MODE_STORAGE_KEY) === '1'; }
+    catch { return document.documentElement.classList.contains('lightweight-mode'); }
+  }
+
+  window.__vgIsLightweightMode = isLightweightMode;
+
+  window.__vgAllowLightweightAutoScrollUntil = 0;
+  function allowLightweightAutoScroll(durationMs) {
+    window.__vgAllowLightweightAutoScrollUntil = Math.max(
+      window.__vgAllowLightweightAutoScrollUntil || 0,
+      Date.now() + Math.max(350, durationMs || 2400)
+    );
+  }
+  function isLightweightAutoScrollAllowed() {
+    return !isLightweightMode() || Date.now() < (window.__vgAllowLightweightAutoScrollUntil || 0);
+  }
+  window.__vgIsLightweightAutoScrollAllowed = isLightweightAutoScrollAllowed;
+  window.__vgAllowLightweightAutoScroll = allowLightweightAutoScroll;
+
+  function setLightweightToggleUi(enabled) {
+    document.querySelectorAll('[data-lightweight-toggle]').forEach(toggle => {
+      toggle.checked = !!enabled;
+    });
+  }
+
+  function setModeOptionsForLightweight(enabled) {
+    document.querySelectorAll('#d-testament, #m-testament, [data-default-mode-select]').forEach(sel => {
+      Array.from(sel.options || []).forEach(opt => {
+        if (opt.value === 'custom' || opt.value === 'hbv') {
+          opt.disabled = !!enabled;
+          opt.hidden = !!enabled;
+        }
+      });
+      if (enabled && sel.value !== 'read' && optionValueExists(sel, 'read')) sel.value = 'read';
+    });
+  }
+
+  function stopHeavyMediaForLightweight() {
+    // Keep background music available in Lightweight Mode.
+    // Only stop the separate rain effect, because it adds another looping audio layer and UI work.
+    try {
+      document.querySelectorAll('#rain-effect-player audio, #rain-effect-player video').forEach(media => {
+        try {
+          media.pause();
+          media.currentTime = 0;
+          media.muted = true;
+          media.volume = 0;
+        } catch (_) {}
+      });
+    } catch (_) {}
+    try {
+      document.querySelectorAll('[data-rain-effect-toggle]').forEach(btn => {
+        btn.classList.remove('is-on', 'is-loading');
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', 'Turn on rain effect');
+        btn.setAttribute('title', 'Turn on rain effect');
+        const label = btn.querySelector('.rain-effect-status');
+        if (label) label.textContent = 'OFF';
+      });
+    } catch (_) {}
+  }
+
+  async function enforceLightweightReadBible(options) {
+    options = options || {};
+    setModeOptionsForLightweight(true);
+    stopHeavyMediaForLightweight();
+    try { localStorage.setItem(DEFAULT_MODE_STORAGE_KEY, 'read'); } catch (_) {}
+    syncDefaultPrefSelects('read', null);
+    ['d', 'm'].forEach(pl => {
+      const tSel = document.getElementById(pl + '-testament');
+      if (tSel && tSel.value !== 'read') {
+        tSel.value = 'read';
+        tSel.dataset.prevValue = 'read';
+      }
+    });
+    if (options.skipUpdate) return;
+    try { await updateBooks(activePanel(), { skipReadInit: false }); } catch (_) {}
+  }
+
+  async function setLightweightMode(enabled, options) {
+    options = options || {};
+    enabled = !!enabled;
+    if (enabled && options.ask !== false) {
+      const ok = window.confirm(
+        'Enable Lightweight Mode?\n\nThis will disable Verse of the Day, Verse of the Week, Daily Encouragement, Daily Devotional, Verse Generator, Hardest Bible Verse Generator, rain effect, extra auto-scroll, and fade animations.\n\nChapter changing and verse selection will still auto-scroll. Background music will stay available. Only Read Bible mode will stay active so Bible passages load and read more smoothly.'
+      );
+      if (!ok) {
+        setLightweightToggleUi(false);
+        return;
+      }
+    }
+    try { localStorage.setItem(LIGHTWEIGHT_MODE_STORAGE_KEY, enabled ? '1' : '0'); } catch (_) {}
+    document.documentElement.classList.toggle('lightweight-mode', enabled);
+    setLightweightToggleUi(enabled);
+    setModeOptionsForLightweight(enabled);
+    if (enabled) {
+      await enforceLightweightReadBible();
+      showToast('Lightweight mode enabled. Read Bible mode is active.');
+    } else {
+      refreshDefaultPreferenceSelectValues();
+      showToast('Lightweight mode disabled.');
+    }
+  }
+
+  function bindLightweightModeControls() {
+    document.querySelectorAll('[data-lightweight-toggle]').forEach(toggle => {
+      if (toggle.dataset.bound === '1') return;
+      toggle.dataset.bound = '1';
+      toggle.addEventListener('change', () => { void setLightweightMode(toggle.checked); });
+    });
+  }
+
+  function initLightweightModeUI() {
+    const enabled = isLightweightMode();
+    document.documentElement.classList.toggle('lightweight-mode', enabled);
+    bindLightweightModeControls();
+    setLightweightToggleUi(enabled);
+    setModeOptionsForLightweight(enabled);
+    if (enabled) void enforceLightweightReadBible({ skipUpdate: true });
   }
 
 
@@ -12406,59 +12688,65 @@ function applyTranslationRtl(version) {
   }
 
   async function navigateReadChapter(p, delta) {
-    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    if (isApocryphaStandaloneTranslation(version) || getGhMeta(version)?.hasApocrypha) {
-      await loadGhTranslationData(version);
-    }
-    let { bookEn, chapter } = getReadNavPosition(p);
-    const list = getReadNavBookList(version);
-    let pos = list.indexOf(bookEn);
-    if (pos < 0) {
-      const fallbackBook = getFirstAvailableBook(version);
-      const fallbackCh = usesCatalogChapterKeys(version, fallbackBook)
-        ? getDefaultReadChapter(version, fallbackBook)
-        : 1;
-      await loadReadChapterAt(p, fallbackBook, fallbackCh, { scrollToTop: true, fadeTransition: true });
-      return;
-    }
+    if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
+    setVersionSwitchControlsLocked(true);
+    try {
+      const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+      if (isApocryphaStandaloneTranslation(version) || getGhMeta(version)?.hasApocrypha) {
+        await loadGhTranslationData(version);
+      }
+      let { bookEn, chapter } = getReadNavPosition(p);
+      const list = getReadNavBookList(version);
+      let pos = list.indexOf(bookEn);
+      if (pos < 0) {
+        const fallbackBook = getFirstAvailableBook(version);
+        const fallbackCh = usesCatalogChapterKeys(version, fallbackBook)
+          ? getDefaultReadChapter(version, fallbackBook)
+          : 1;
+        await loadReadChapterAt(p, fallbackBook, fallbackCh, { scrollToTop: true, fadeTransition: !(typeof isLightweightMode === 'function' && isLightweightMode()), lightweightChapterScroll: true });
+        return;
+      }
 
-    const catalogKeys = getReadChapterKeys(version, bookEn);
-    if (catalogKeys?.length) {
-      const chStr = String(chapter);
-      let idx = catalogKeys.indexOf(chStr);
-      if (idx < 0) idx = 0;
-      if (delta < 0) {
-        if (idx > 0) chapter = catalogKeys[idx - 1];
+      const catalogKeys = getReadChapterKeys(version, bookEn);
+      if (catalogKeys?.length) {
+        const chStr = String(chapter);
+        let idx = catalogKeys.indexOf(chStr);
+        if (idx < 0) idx = 0;
+        if (delta < 0) {
+          if (idx > 0) chapter = catalogKeys[idx - 1];
+          else if (pos > 0) {
+            bookEn = list[pos - 1];
+            const prevKeys = getReadChapterKeys(version, bookEn);
+            chapter = prevKeys[prevKeys.length - 1];
+          } else return;
+        } else {
+          if (idx < catalogKeys.length - 1) chapter = catalogKeys[idx + 1];
+          else if (pos < list.length - 1) {
+            bookEn = list[pos + 1];
+            chapter = getDefaultReadChapter(version, bookEn);
+          } else return;
+        }
+      } else if (delta < 0) {
+        if (chapter > 1) chapter--;
         else if (pos > 0) {
-          bookEn = list[pos - 1];
-          const prevKeys = getReadChapterKeys(version, bookEn);
-          chapter = prevKeys[prevKeys.length - 1];
+          pos--;
+          bookEn = list[pos];
+          chapter = getChapterCountForBook(version, bookEn);
         } else return;
       } else {
-        if (idx < catalogKeys.length - 1) chapter = catalogKeys[idx + 1];
+        const maxCh = getChapterCountForBook(version, bookEn);
+        if (chapter < maxCh) chapter++;
         else if (pos < list.length - 1) {
-          bookEn = list[pos + 1];
+          pos++;
+          bookEn = list[pos];
           chapter = getDefaultReadChapter(version, bookEn);
         } else return;
       }
-    } else if (delta < 0) {
-      if (chapter > 1) chapter--;
-      else if (pos > 0) {
-        pos--;
-        bookEn = list[pos];
-        chapter = getChapterCountForBook(version, bookEn);
-      } else return;
-    } else {
-      const maxCh = getChapterCountForBook(version, bookEn);
-      if (chapter < maxCh) chapter++;
-      else if (pos < list.length - 1) {
-        pos++;
-        bookEn = list[pos];
-        chapter = getDefaultReadChapter(version, bookEn);
-      } else return;
-    }
 
-    await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true, fadeTransition: true });
+      await loadReadChapterAt(p, bookEn, chapter, { scrollToTop: true, fadeTransition: !(typeof isLightweightMode === 'function' && isLightweightMode()), lightweightChapterScroll: true });
+    } finally {
+      setVersionSwitchControlsLocked(false);
+    }
   }
 
   function readChapterCacheKey(version, bookEn, chapter) {
@@ -12478,6 +12766,7 @@ function applyTranslationRtl(version) {
   const _readPassageFadeTimers = { d: null, m: null };
 
   function canUseReadPassageFade(p, options) {
+    if (typeof isLightweightMode === 'function' && isLightweightMode()) return false;
     if (!options || !options.fadeTransition) return false;
     // Do not skip this transition on mobile when the device reports reduced motion;
     // this is a required Read Bible passage-change effect and only the text layer fades.
@@ -12831,6 +13120,7 @@ function applyTranslationRtl(version) {
   }
 
   function slowMobileScrollToY(targetY, durationMs) {
+    if (typeof isLightweightMode === 'function' && isLightweightMode() && !(typeof isLightweightAutoScrollAllowed === 'function' && isLightweightAutoScrollAllowed())) return;
     const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     const target = Math.min(maxScroll, Math.max(0, targetY));
     const start = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
@@ -12905,6 +13195,7 @@ function applyTranslationRtl(version) {
   }
 
   function scheduleScrollToCenterVerseDisplay(p) {
+    if (typeof isLightweightMode === 'function' && isLightweightMode()) return;
     if (isDesktopFullVerseGeneratorWithBibleLibraryOpen(p)) return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -12915,6 +13206,7 @@ function applyTranslationRtl(version) {
   }
 
   function smoothScrollToY(targetY, durationMs) {
+    if (typeof isLightweightMode === 'function' && isLightweightMode() && !(typeof isLightweightAutoScrollAllowed === 'function' && isLightweightAutoScrollAllowed())) return;
     const top = Math.max(0, targetY);
     if (prefersReducedMotion()) {
       window.scrollTo(0, top);
@@ -12937,6 +13229,7 @@ function applyTranslationRtl(version) {
   }
 
   function smoothScrollElementTo(el, targetY, durationMs) {
+    if (typeof isLightweightMode === 'function' && isLightweightMode() && !(typeof isLightweightAutoScrollAllowed === 'function' && isLightweightAutoScrollAllowed())) return;
     if (!el) return;
     const top = Math.max(0, Math.min(targetY, el.scrollHeight - el.clientHeight));
     if (prefersReducedMotion()) {
@@ -13093,6 +13386,9 @@ function applyTranslationRtl(version) {
     if (!firstTarget) return false;
 
     const flashTimes = options.flashTimes || 0;
+    if (typeof allowLightweightAutoScroll === 'function') {
+      allowLightweightAutoScroll(options.scrollDurationMs || (p === 'm' ? 2600 : 2100));
+    }
 
     requestAnimationFrame(() => {
       const rect = firstTarget.getBoundingClientRect();
@@ -13488,6 +13784,9 @@ function applyTranslationRtl(version) {
     const display = document.getElementById(p + '-verseDisplay');
     const cached = readChapterCache[key];
     const useFadeTransition = canUseReadPassageFade(p, options);
+    if (scrollToTop && options.lightweightChapterScroll && typeof allowLightweightAutoScroll === 'function') {
+      allowLightweightAutoScroll(p === 'm' ? 3200 : 2400);
+    }
     if (scrollToTop && useFadeTransition) {
       if (p === 'm') scrollReadAreaToTextSize(p);
       else scrollReadAreaToTop(p);
@@ -14354,11 +14653,20 @@ function applyTranslationRtl(version) {
   async function onReadChapterChange(p) {
     if (typeof isVersionSwitchControlsLocked === 'function' && isVersionSwitchControlsLocked()) return;
     if (_readSyncLock) return;
-    const bookEn = document.getElementById(p + '-read-book').value;
-    const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
-    const chRaw = document.getElementById(p + '-read-chapter').value;
-    const chapter = usesCatalogChapterKeys(version, bookEn) ? chRaw : (parseInt(chRaw, 10) || 1);
-    await loadReadChapterAt(p, bookEn, chapter, { fadeTransition: true });
+    setVersionSwitchControlsLocked(true);
+    try {
+      const bookEn = document.getElementById(p + '-read-book').value;
+      const version = normalizeGhModuleId(document.getElementById(p + '-version').value);
+      const chRaw = document.getElementById(p + '-read-chapter').value;
+      const chapter = usesCatalogChapterKeys(version, bookEn) ? chRaw : (parseInt(chRaw, 10) || 1);
+      await loadReadChapterAt(p, bookEn, chapter, {
+        scrollToTop: true,
+        fadeTransition: !(typeof isLightweightMode === 'function' && isLightweightMode()),
+        lightweightChapterScroll: true
+      });
+    } finally {
+      setVersionSwitchControlsLocked(false);
+    }
   }
 
   
@@ -14400,6 +14708,7 @@ function applyTranslationRtl(version) {
   }
 
   function scrollMobileToSelectedVerseDirect(verseNum) {
+    if (typeof allowLightweightAutoScroll === 'function') allowLightweightAutoScroll(2600);
     const el = findReadVerseElementForMobile(verseNum);
     if (!el) return false;
 
@@ -15382,7 +15691,9 @@ function openBibleLibraryPanel(p) {
     renderBibleLibraryRows('d');
     renderBibleLibraryRows('m');
   });
-  setTimeout(() => panel?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  if (!(typeof isLightweightMode === 'function' && isLightweightMode())) {
+    setTimeout(() => panel?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
 }
 
 function toggleBibleLibraryPanel(p) {
@@ -15733,7 +16044,7 @@ function renderBibleLibraryRows(p) {
 function filterBibleLibrary(p) { renderBibleLibraryRows(p); }
 function scrollBibleLibraryTop(p) {
   const wrap = document.getElementById(p + '-bibleLibraryScroll');
-  if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
+  if (wrap && !(typeof isLightweightMode === 'function' && isLightweightMode())) wrap.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 
@@ -15752,9 +16063,53 @@ function scrollBibleLibraryTop(p) {
   ];
   let _versionSwitchControlsLocked = false;
 
+  function setActionButtonLoadingLocked(btn, locked) {
+    if (!btn) return;
+    if (locked) {
+      if (btn.dataset.loadingLockPrevDisabled == null) {
+        btn.dataset.loadingLockPrevDisabled = btn.disabled ? '1' : '0';
+      }
+      btn.disabled = true;
+      btn.classList.add('version-switch-control-locked', 'is-loading-locked');
+      btn.setAttribute('aria-busy', 'true');
+      btn.setAttribute('aria-disabled', 'true');
+    } else {
+      const wasDisabled = btn.dataset.loadingLockPrevDisabled === '1';
+      delete btn.dataset.loadingLockPrevDisabled;
+      btn.disabled = wasDisabled;
+      btn.classList.remove('version-switch-control-locked', 'is-loading-locked');
+      btn.setAttribute('aria-busy', 'false');
+      btn.setAttribute('aria-disabled', wasDisabled ? 'true' : 'false');
+    }
+  }
+
+  function setPrevCopyNextButtonsLocked(locked) {
+    ['d', 'm'].forEach(pl => {
+      ['prev', 'copy', 'next'].forEach(suffix => {
+        setActionButtonLoadingLocked(document.getElementById(pl + '-' + suffix + '-btn'), !!locked);
+      });
+    });
+  }
+
+  function refreshPrevCopyNextStateAfterUnlock() {
+    ['d', 'm'].forEach(pl => {
+      if (typeof isReadBibleMode === 'function' && isReadBibleMode(pl) && typeof updateReadChapterNav === 'function') {
+        updateReadChapterNav(pl);
+      } else {
+        const prevBtn = document.getElementById(pl + '-prev-btn');
+        const nextBtn = document.getElementById(pl + '-next-btn');
+        if (prevBtn && history?.[pl]) prevBtn.disabled = history[pl].length === 0;
+        if (nextBtn && future?.[pl]) nextBtn.disabled = future[pl].length === 0;
+      }
+      const copyBtn = document.getElementById(pl + '-copy-btn');
+      if (copyBtn) copyBtn.disabled = false;
+    });
+  }
+
   function setVersionSwitchControlsLocked(locked) {
     _versionSwitchControlsLocked = !!locked;
     document.documentElement.classList.toggle('version-switch-controls-locked', _versionSwitchControlsLocked);
+    setPrevCopyNextButtonsLocked(_versionSwitchControlsLocked);
 
     ['d', 'm'].forEach(pl => {
       VERSION_SWITCH_LOCK_CONTROL_IDS.forEach(id => {
@@ -15773,6 +16128,8 @@ function scrollBibleLibraryTop(p) {
         btn.setAttribute('aria-busy', _versionSwitchControlsLocked ? 'true' : 'false');
       });
     });
+
+    if (!_versionSwitchControlsLocked) refreshPrevCopyNextStateAfterUnlock();
   }
 
   function setReadBibleOpenControlsLocked(locked) {
@@ -16233,10 +16590,15 @@ function scrollBibleLibraryTop(p) {
       return;
     }
     if (history[p].length === 0) return;
-    future[p].push(current[p]);
-    const prev = history[p].pop();
-    current[p] = prev;
-    renderCurrentEntry(p, prev);
+    setVersionSwitchControlsLocked(true);
+    try {
+      future[p].push(current[p]);
+      const prev = history[p].pop();
+      current[p] = prev;
+      await renderCurrentEntry(p, prev);
+    } finally {
+      setVersionSwitchControlsLocked(false);
+    }
   }
   async function showNext(p) {
     if (isReadBibleMode(p)) {
@@ -16267,10 +16629,15 @@ function scrollBibleLibraryTop(p) {
       return;
     }
     if (future[p].length === 0) return;
-    history[p].push(current[p]);
-    const next = future[p].pop();
-    current[p] = next;
-    renderCurrentEntry(p, next);
+    setVersionSwitchControlsLocked(true);
+    try {
+      history[p].push(current[p]);
+      const next = future[p].pop();
+      current[p] = next;
+      await renderCurrentEntry(p, next);
+    } finally {
+      setVersionSwitchControlsLocked(false);
+    }
   }
 
   /* ══════════════════════════════════════
@@ -16949,6 +17316,33 @@ function scrollBibleLibraryTop(p) {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
+  // Stop expensive automatic scrolling while Lightweight Mode is active.
+  (function installLightweightScrollGuard() {
+    if (window.__vgLightweightScrollGuardInstalled) return;
+    window.__vgLightweightScrollGuardInstalled = true;
+    const originalWindowScrollTo = window.scrollTo.bind(window);
+    window.scrollTo = function () {
+      if (typeof window.__vgIsLightweightMode === 'function' && window.__vgIsLightweightMode() && !(typeof window.__vgIsLightweightAutoScrollAllowed === 'function' && window.__vgIsLightweightAutoScrollAllowed())) return;
+      return originalWindowScrollTo.apply(window, arguments);
+    };
+    const proto = Element && Element.prototype;
+    if (proto && proto.scrollIntoView) {
+      const originalScrollIntoView = proto.scrollIntoView;
+      proto.scrollIntoView = function () {
+        if (typeof window.__vgIsLightweightMode === 'function' && window.__vgIsLightweightMode() && !(typeof window.__vgIsLightweightAutoScrollAllowed === 'function' && window.__vgIsLightweightAutoScrollAllowed())) return;
+        return originalScrollIntoView.apply(this, arguments);
+      };
+    }
+    const scrollProto = HTMLElement && HTMLElement.prototype;
+    if (scrollProto && scrollProto.scrollTo) {
+      const originalElementScrollTo = scrollProto.scrollTo;
+      scrollProto.scrollTo = function () {
+        if (typeof window.__vgIsLightweightMode === 'function' && window.__vgIsLightweightMode() && !(typeof window.__vgIsLightweightAutoScrollAllowed === 'function' && window.__vgIsLightweightAutoScrollAllowed())) return;
+        return originalElementScrollTo.apply(this, arguments);
+      };
+    }
+  })();
+
   /* ══════════════════════════════════════
      INIT
   ══════════════════════════════════════ */
@@ -17014,6 +17408,7 @@ function scrollBibleLibraryTop(p) {
     initLegalTextSize();
     initPanelMagnifyPrefs();
     initDefaultPreferencesUI();
+    initLightweightModeUI();
 
     // Background work. Keep Mode / Book / Chapter / Verse / Search locked on first
     // web entry until the default Bible JSON and first passage/placeholder are safely ready.
@@ -17081,6 +17476,7 @@ function scrollBibleLibraryTop(p) {
     populateTranslationSelects(activePanels);
     applySavedDefaultsOnLoad();
     refreshDefaultPreferenceSelectValues();
+    if (typeof initLightweightModeUI === 'function') initLightweightModeUI();
     const defaultVer = resolveDefaultTranslationForBoot();
     applyDefaultTranslationToUi(defaultVer);
     activePanels.forEach(p => {
@@ -18025,6 +18421,7 @@ function iabFallbackCopy(url, callback) {
 
 
     function smoothScrollToElement(el, offset) {
+      if (typeof window.__vgIsLightweightMode === 'function' && window.__vgIsLightweightMode()) return;
       if (!el || !isDesktop()) return;
       var behavior = 'smooth';
       try {
