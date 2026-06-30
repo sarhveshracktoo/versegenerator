@@ -16852,71 +16852,96 @@ function scrollBibleLibraryTop(p) {
     return Math.round(bodySize * 0.38);
   }
 
-  function setPassageBodyFont(ctx, size) {
-    ctx.font = `italic ${size}px Georgia, serif`;
+  const IMAGE_HEADER_SPACE = 200;
+  const IMAGE_FOOTER_SPACE = 200;
+  const IMAGE_REF_BLOCK = 56;
+  const IMAGE_FRAME_INSET = 78;
+  const DENSE_SCRIPT_RE = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/;
+  const DENSE_SCRIPT_COUNT_RE = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]/g;
+  const IMAGE_TEXT_SAFE_INSET = 118;
+
+  function getPassageImageFontStack(isDense) {
+    if (isDense) {
+      return '"Noto Serif SC", "Source Han Serif SC", "PingFang SC", "Microsoft YaHei", "SimSun", serif';
+    }
+    return 'Georgia, serif';
+  }
+
+  function isDenseImageText(text) {
+    if (!text) return false;
+    const sample = String(text).trim();
+    if (!sample) return false;
+    const denseChars = (sample.match(DENSE_SCRIPT_COUNT_RE) || []).length;
+    const letters = (sample.match(/\S/g) || []).length;
+    if (letters > 0 && denseChars / letters >= 0.3) return true;
+    return !/\s/.test(sample) && letters > 10;
+  }
+
+  function isEntryDenseImageText(entry) {
+    const verses = entry.readVerses || entry.genVerses;
+    if (verses?.length) {
+      return isDenseImageText(verses.map(v => v.text || '').join(''));
+    }
+    return isDenseImageText(getImageSourceText(entry));
+  }
+
+  function setPassageBodyFont(ctx, size, isDense) {
+    ctx.font = `italic ${size}px ${getPassageImageFontStack(isDense)}`;
   }
 
   function setPassageNumFont(ctx, size) {
     ctx.font = `600 ${passageNumFontSize(size)}px Cinzel, serif`;
   }
 
-  function measurePassageRun(ctx, run, bodySize) {
+  function measurePassageRun(ctx, run, bodySize, isDense) {
     if (run.type === 'num') {
       setPassageNumFont(ctx, bodySize);
       return ctx.measureText(run.value).width;
     }
-    setPassageBodyFont(ctx, bodySize);
+    setPassageBodyFont(ctx, bodySize, isDense);
     return ctx.measureText(run.value).width;
   }
 
-  function measurePassageLineWidth(ctx, lineRuns, bodySize) {
+  function measurePassageLineWidth(ctx, lineRuns, bodySize, isDense) {
     let w = 0;
     lineRuns.forEach((run, i) => {
-      if (i > 0) {
-        setPassageBodyFont(ctx, bodySize);
+      if (i > 0 && run.gapBefore !== false) {
+        setPassageBodyFont(ctx, bodySize, isDense);
         w += ctx.measureText(' ').width;
       }
-      w += measurePassageRun(ctx, run, bodySize);
+      w += measurePassageRun(ctx, run, bodySize, isDense);
     });
     return w;
   }
 
-  function wrapPassageImageLines(ctx, verses, maxWidth, bodyFontSize) {
-    const lines = [];
-    let currentLine = [];
-    let currentWidth = 0;
-
-    function lineGapWidth() {
-      setPassageBodyFont(ctx, bodyFontSize);
-      return ctx.measureText(' ').width;
-    }
-
-    function pushLine() {
-      if (currentLine.length) lines.push(currentLine);
-      currentLine = [];
-      currentWidth = 0;
-    }
-
-    function appendRun(run) {
-      const runW = measurePassageRun(ctx, run, bodyFontSize);
-      if (currentLine.length && currentWidth + lineGapWidth() + runW > maxWidth) pushLine();
-      if (currentLine.length) currentWidth += lineGapWidth();
-      currentLine.push(run);
-      currentWidth += runW;
-    }
-
-    verses.forEach(v => {
-      appendRun({ type: 'num', value: String(v.num) });
-      const words = (v.text || '').replace(/\s+"/g, '"').replace(/\s+'/g, "'").split(/\s+/).filter(Boolean);
-      words.forEach(word => appendRun({ type: 'text', value: word }));
+  function passageLinesMaxWidth(ctx, lines, bodySize, isDense) {
+    let max = 0;
+    (lines || []).forEach(lineRuns => {
+      max = Math.max(max, measurePassageLineWidth(ctx, lineRuns, bodySize, isDense));
     });
-
-    pushLine();
-    return lines;
+    return max;
   }
 
-  function wrapCanvasLines(ctx, text, maxWidth) {
-    const words = text.split(/\s+/).filter(Boolean);
+  function wrapCanvasLines(ctx, text, maxWidth, isDense) {
+    if (isDense || isDenseImageText(text)) {
+      const chars = Array.from(String(text || '').replace(/\s+/g, ''));
+      let line = '';
+      const lines = [];
+      for (const ch of chars) {
+        if (!ch.trim()) continue;
+        const test = line + ch;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = ch;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    const words = String(text || '').split(/\s+/).filter(Boolean);
     let line = '';
     const lines = [];
     for (const word of words) {
@@ -16932,9 +16957,47 @@ function scrollBibleLibraryTop(p) {
     return lines;
   }
 
-  const IMAGE_HEADER_SPACE = 200;
-  const IMAGE_FOOTER_SPACE = 200;
-  const IMAGE_REF_BLOCK = 56;
+  function wrapPassageImageLines(ctx, verses, maxWidth, bodyFontSize, isDense) {
+    const lines = [];
+    let currentLine = [];
+    let currentWidth = 0;
+
+    function lineGapWidth() {
+      setPassageBodyFont(ctx, bodyFontSize, isDense);
+      return ctx.measureText(' ').width;
+    }
+
+    function pushLine() {
+      if (currentLine.length) lines.push(currentLine);
+      currentLine = [];
+      currentWidth = 0;
+    }
+
+    function appendRun(run, gapBefore) {
+      const runW = measurePassageRun(ctx, run, bodyFontSize, isDense);
+      const gap = gapBefore ? lineGapWidth() : 0;
+      if (currentLine.length && currentWidth + gap + runW > maxWidth) pushLine();
+      if (currentLine.length && gap) currentWidth += gap;
+      currentLine.push(run);
+      currentWidth += runW;
+    }
+
+    verses.forEach(v => {
+      const text = v.text || '';
+      appendRun({ type: 'num', value: String(v.num), gapBefore: false }, false);
+      if (isDense || isDenseImageText(text)) {
+        Array.from(text.replace(/\s+/g, '')).forEach(ch => {
+          if (ch.trim()) appendRun({ type: 'text', value: ch, gapBefore: false }, false);
+        });
+      } else {
+        const words = text.replace(/\s+"/g, '"').replace(/\s+'/g, "'").split(/\s+/).filter(Boolean);
+        words.forEach(word => appendRun({ type: 'text', value: word, gapBefore: true }, true));
+      }
+    });
+
+    pushLine();
+    return lines;
+  }
 
   function computeVerseImageLayout(ctx, entry) {
     const W = 1080;
@@ -16942,26 +17005,28 @@ function scrollBibleLibraryTop(p) {
     const verses = entry.readVerses || entry.genVerses || [];
     const verseCount = verses.length;
     const usePortrait = verseCount > 5;
-    const maxW = W - 130;
+    const isDense = isEntryDenseImageText(entry);
+    const maxW = W - IMAGE_TEXT_SAFE_INSET * 2;
     const chromeH = IMAGE_HEADER_SPACE + IMAGE_FOOTER_SPACE + IMAGE_REF_BLOCK;
 
     if (verseCount) {
       let fontSize = usePortrait ? 34 : 38;
       let passageLines = [];
       let lineHeight = Math.round(fontSize * 1.35);
-      const maxBlockH = (usePortrait ? W * 2.15 : W) - chromeH - 40;
+      const maxBlockH = (usePortrait ? W * 2.15 : W) - chromeH - IMAGE_FRAME_INSET;
 
-      for (let i = 0; i < 10; i++) {
-        passageLines = wrapPassageImageLines(ctx, verses, maxW, fontSize);
+      for (let i = 0; i < 14; i++) {
+        passageLines = wrapPassageImageLines(ctx, verses, maxW, fontSize, isDense);
         lineHeight = Math.round(fontSize * (usePortrait ? 1.32 : 1.35));
         const blockH = passageLines.length * lineHeight;
-        if (blockH <= maxBlockH || fontSize <= 20) break;
+        const widest = passageLinesMaxWidth(ctx, passageLines, fontSize, isDense);
+        if ((blockH <= maxBlockH && widest <= maxW) || fontSize <= 18) break;
         fontSize -= 2;
       }
 
       const blockH = passageLines.length * lineHeight;
       const height = usePortrait
-        ? Math.min(2400, Math.max(W, IMAGE_HEADER_SPACE + blockH + IMAGE_REF_BLOCK + IMAGE_FOOTER_SPACE + 36))
+        ? Math.min(2400, Math.max(W, IMAGE_HEADER_SPACE + blockH + IMAGE_REF_BLOCK + IMAGE_FOOTER_SPACE + IMAGE_FRAME_INSET))
         : W;
 
       return {
@@ -16971,24 +17036,37 @@ function scrollBibleLibraryTop(p) {
         lineHeight,
         passageLines,
         portrait: usePortrait,
+        isDense,
+        maxTextWidth: maxW,
         headerSpace: IMAGE_HEADER_SPACE,
         footerSpace: IMAGE_FOOTER_SPACE
       };
     }
 
-    ctx.font = 'italic 38px Georgia, serif';
-    let lines = wrapCanvasLines(ctx, rawText, maxW);
+    setPassageBodyFont(ctx, 38, isDense);
+    let lines = wrapCanvasLines(ctx, rawText, maxW, isDense);
     if (lines.length > 10) lines = lines.slice(0, 10);
     const lineHeight = 52;
     const blockH = lines.length * lineHeight;
-    const maxBlockH = W - chromeH;
+    const maxBlockH = W - chromeH - IMAGE_FRAME_INSET;
     let fontSize = 38;
     if (blockH > maxBlockH) {
-      fontSize = Math.max(26, Math.floor(38 * (maxBlockH / blockH)));
-      ctx.font = `italic ${fontSize}px Georgia, serif`;
-      lines = wrapCanvasLines(ctx, rawText, maxW);
+      fontSize = Math.max(22, Math.floor(38 * (maxBlockH / blockH)));
+      setPassageBodyFont(ctx, fontSize, isDense);
+      lines = wrapCanvasLines(ctx, rawText, maxW, isDense);
       if (lines.length > 10) lines = lines.slice(0, 10);
     }
+
+    for (let i = 0; i < 8 && fontSize > 18; i++) {
+      setPassageBodyFont(ctx, fontSize, isDense);
+      lines = wrapCanvasLines(ctx, rawText, maxW, isDense);
+      const widest = Math.max(0, ...lines.map(line => ctx.measureText(line).width));
+      if (widest <= maxW) break;
+      fontSize -= 2;
+      setPassageBodyFont(ctx, fontSize, isDense);
+      lines = wrapCanvasLines(ctx, rawText, maxW, isDense);
+    }
+
     return {
       width: W,
       height: W,
@@ -16996,6 +17074,8 @@ function scrollBibleLibraryTop(p) {
       lineHeight: Math.round(fontSize * 1.35),
       lines,
       portrait: false,
+      isDense,
+      maxTextWidth: maxW,
       headerSpace: IMAGE_HEADER_SPACE,
       footerSpace: IMAGE_FOOTER_SPACE
     };
@@ -17005,6 +17085,7 @@ function scrollBibleLibraryTop(p) {
     const lines = layout.passageLines;
     const lineH = layout.lineHeight;
     const bodySize = layout.fontSize;
+    const isDense = !!layout.isDense;
     const blockH = lines.length * lineH;
     const headerSpace = layout.headerSpace ?? IMAGE_HEADER_SPACE;
     const footerSpace = layout.footerSpace ?? IMAGE_FOOTER_SPACE;
@@ -17014,14 +17095,25 @@ function scrollBibleLibraryTop(p) {
     );
     const numRise = passageNumRise(bodySize);
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(IMAGE_TEXT_SAFE_INSET, IMAGE_TEXT_SAFE_INSET, S - IMAGE_TEXT_SAFE_INSET * 2, H - IMAGE_TEXT_SAFE_INSET * 2);
+    ctx.clip();
+
     lines.forEach((lineRuns, li) => {
-      const lineW = measurePassageLineWidth(ctx, lineRuns, bodySize);
-      let x = S / 2 - lineW / 2;
+      const lineW = measurePassageLineWidth(ctx, lineRuns, bodySize, isDense);
+      const safeW = S - IMAGE_TEXT_SAFE_INSET * 2;
+      const scaleX = lineW > safeW ? safeW / lineW : 1;
       const y = verseY + li * lineH;
+      let x = -lineW / 2;
+
+      ctx.save();
+      ctx.translate(S / 2, 0);
+      if (scaleX < 1) ctx.scale(scaleX, 1);
 
       lineRuns.forEach((run, ri) => {
-        if (ri > 0) {
-          setPassageBodyFont(ctx, bodySize);
+        if (ri > 0 && run.gapBefore !== false) {
+          setPassageBodyFont(ctx, bodySize, isDense);
           x += ctx.measureText(' ').width;
         }
         if (run.type === 'num') {
@@ -17032,17 +17124,33 @@ function scrollBibleLibraryTop(p) {
           ctx.fillText(run.value, x, y - numRise);
           x += ctx.measureText(run.value).width;
         } else {
-          setPassageBodyFont(ctx, bodySize);
+          setPassageBodyFont(ctx, bodySize, isDense);
           ctx.fillStyle = '#f5ead6';
           ctx.fillText(run.value, x, y);
           x += ctx.measureText(run.value).width;
         }
       });
+      ctx.restore();
     });
 
+    ctx.restore();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     return verseY + blockH;
+  }
+
+  function fillCenteredTextInside(ctx, text, centerX, y, maxWidth) {
+    const value = String(text || '');
+    const measured = ctx.measureText(value).width;
+    if (!measured || measured <= maxWidth) {
+      ctx.fillText(value, centerX, y);
+      return;
+    }
+    ctx.save();
+    ctx.translate(centerX, 0);
+    ctx.scale(maxWidth / measured, 1);
+    ctx.fillText(value, 0, y);
+    ctx.restore();
   }
 
   function drawVerseImage(ctx, layout, entry) {
@@ -17093,25 +17201,31 @@ function scrollBibleLibraryTop(p) {
     if (layout.passageLines?.length) {
       refY = drawPassageImageLines(ctx, layout, S, H) + 40;
     } else {
-      ctx.font = `italic ${layout.fontSize}px Georgia, serif`;
+      const isDense = !!layout.isDense;
+      setPassageBodyFont(ctx, layout.fontSize, isDense);
       const lineH = layout.lineHeight;
       const blockH = layout.lines.length * lineH;
       const verseY = Math.max(
         headerSpace,
         (H - blockH - footerSpace - IMAGE_REF_BLOCK) / 2
       );
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(IMAGE_TEXT_SAFE_INSET, IMAGE_TEXT_SAFE_INSET, S - IMAGE_TEXT_SAFE_INSET * 2, H - IMAGE_TEXT_SAFE_INSET * 2);
+      ctx.clip();
       layout.lines.forEach((l, i) => ctx.fillText(l, S / 2, verseY + i * lineH));
+      ctx.restore();
       refY = verseY + blockH + 40;
     }
     ctx.fillStyle = '#c9a84c';
     ctx.font = '600 28px Georgia, serif';
     const refLine = `— ${entry.ref} (${getTranslationLabel(entry.version, entry.genBook || entry.passageParsed?.book)})`;
-    ctx.fillText(refLine, S / 2, refY + 8);
+    fillCenteredTextInside(ctx, refLine, S / 2, refY + 8, S - IMAGE_TEXT_SAFE_INSET * 2);
 
     const refOrnament = '──── ❤︎ ────';
     ctx.font = '22px serif';
     ctx.globalAlpha = 0.55;
-    ctx.fillText(refOrnament, S / 2, refY + 42);
+    fillCenteredTextInside(ctx, refOrnament, S / 2, refY + 42, S - IMAGE_TEXT_SAFE_INSET * 2);
     ctx.globalAlpha = 1;
 
     const bottomLine = '━━━━༺❀༻━━ ·:*༺ ♱ linktr.ee/versegenerator ♱ ༻*:· ━━༺❀༻━━━━';
@@ -17125,7 +17239,7 @@ function scrollBibleLibraryTop(p) {
       ctx.font = `500 ${footerSize}px Georgia, serif`;
       footerSize -= 1;
     } while (ctx.measureText(bottomLine).width > maxFooterW && footerSize > 11);
-    ctx.fillText(bottomLine, S / 2, bottomY);
+    fillCenteredTextInside(ctx, bottomLine, S / 2, bottomY, maxFooterW);
     ctx.globalAlpha = 1;
   }
 
