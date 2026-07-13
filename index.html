@@ -8575,6 +8575,7 @@ function isBibleLibraryDynamicMeta(meta) {
   return !!(meta && (
     meta.source === 'github' ||
     meta.source === 'github-library' ||
+    meta.source === 'github-extracted-library' ||
     meta.partialCanon === true ||
     /raw\.githubusercontent\.com/i.test(String(meta.rawUrl || ''))
   ));
@@ -8902,6 +8903,35 @@ async function clearGhTranslationDataCache(module) {
   delete VERSION_BOOK_IDS_CACHE[module];
 }
 
+async function loadExtractedGithubBibleFolder(meta) {
+  const paths = Array.isArray(meta?.extractedBookPaths) ? meta.extractedBookPaths.filter(Boolean) : [];
+  if (!paths.length) throw new Error('No extracted Bible book files were found for this translation.');
+
+  const books = new Array(paths.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(8, paths.length);
+
+  async function worker() {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= paths.length) return;
+      const path = paths[index];
+      const url = bibleLibraryRawUrlFromPath(path);
+      try {
+        const book = await apiGetJson(url, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+        if (book && typeof book === 'object') books[index] = book;
+      } catch (_) {
+        // One damaged/missing book must not prevent the rest of the translation loading.
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  const loadedBooks = books.filter(Boolean);
+  if (!loadedBooks.length) throw new Error('None of the extracted Bible book files could be loaded.');
+  return { books: loadedBooks };
+}
+
 async function loadGhTranslationData(module, options = {}) {
   module = normalizeGhModuleId(module);
   const forceFresh = !!options.forceFresh;
@@ -8939,8 +8969,11 @@ async function loadGhTranslationData(module, options = {}) {
     }
 
     let raw = null;
-    try { raw = await apiGetJson(meta.rawUrl, GH_TRANSLATION_LOAD_TIMEOUT_MS); }
-    catch { raw = null; }
+    try {
+      raw = meta.source === 'github-extracted-library'
+        ? await loadExtractedGithubBibleFolder(meta)
+        : await apiGetJson(meta.rawUrl, GH_TRANSLATION_LOAD_TIMEOUT_MS);
+    } catch { raw = null; }
     if (!raw) {
       if (idbCached?.booksByEn && idbCached.bookIds?.length &&
           !needsApocryphaMergeRefresh(module, idbCached) &&
@@ -15486,8 +15519,10 @@ function applyTranslationRtl(version) {
 /* 1500+ Bible Translation Library — GitHub JSON directory browser */
 const BIBLE_LIBRARY_OPTION_VALUE = '__BIBLE_TRANSLATION_LIBRARY__';
 const BIBLE_LIBRARY_TITLE = '1500+ Bible Translation Library';
-const BIBLE_LIBRARY_TREE_API = 'https://api.github.com/repos/dailybibleion-ctrl/ambiant/git/trees/main?recursive=1';
-const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-json-list-v3-github-live';
+const BIBLE_LIBRARY_TREE_API = 'https://api.github.com/repos/sarhveshracktoo/versegenerator/git/trees/main?recursive=1';
+const BIBLE_LIBRARY_EXTRACTED_ROOT = 'TRANSLATION EXTRACTED/';
+const BIBLE_LIBRARY_RAW_BASE = 'https://raw.githubusercontent.com/sarhveshracktoo/versegenerator/refs/heads/main/';
+const BIBLE_LIBRARY_CACHE_KEY = 'vg-1500-bible-library-extracted-list-v1-github-live';
 const BIBLE_LIBRARY_SAVED_KEY = 'vg-1500-bible-library-saved-versions-v1';
 let bibleLibraryRows = [];
 let bibleLibraryLoadingPromise = null;
@@ -15497,12 +15532,14 @@ let _restoringSavedBibleLibraryOptions = false;
 
 function normalizeBibleLibrarySavedRow(row) {
   if (!row) return null;
-  const path = String(row.path || '').trim();
-  const rawUrl = String(row.rawUrl || (path ? bibleLibraryRawUrlFromPath(path) : '')).trim();
-  const title = cleanBibleLibraryName(row.title || (path ? path.split('/').pop() : ''));
+  const path = String(row.path || row.folderPath || '').trim();
+  const folderPath = String(row.folderPath || path).trim();
+  const bookPaths = Array.isArray(row.bookPaths) ? row.bookPaths.map(v => String(v || '').trim()).filter(Boolean) : [];
+  const rawUrl = String(row.rawUrl || (bookPaths[0] ? bibleLibraryRawUrlFromPath(bookPaths[0]) : '')).trim();
+  const title = cleanBibleLibraryName(row.title || (folderPath ? folderPath.split('/').pop() : ''));
   const territory = cleanBibleLibraryName(row.territory || 'Other');
-  if (!title || (!path && !rawUrl)) return null;
-  return { territory, title, path, rawUrl };
+  if (!title || !folderPath) return null;
+  return { territory, title, path: folderPath, folderPath, bookPaths, rawUrl };
 }
 
 function readSavedBibleLibraryRows() {
@@ -15805,7 +15842,7 @@ function bibleLibraryRawUrlFromPath(path) {
     .split('/')
     .map(part => encodeURIComponent(part))
     .join('/');
-  return `https://raw.githubusercontent.com/dailybibleion-ctrl/ambiant/refs/heads/main/${encoded}`;
+  return `${BIBLE_LIBRARY_RAW_BASE}${encoded}`;
 }
 
 function bibleLibraryHash(value) {
@@ -15848,8 +15885,10 @@ function ensureBibleLibraryVersionOption(row) {
       lang: row.territory || 'Other',
       lang_short: 'en',
       voiceLang: 'en-US',
-      source: 'github-library',
+      source: 'github-extracted-library',
       rawUrl,
+      folderPath: row.folderPath || row.path,
+      extractedBookPaths: Array.isArray(row.bookPaths) ? [...row.bookPaths] : [],
       testament: 'both',
       isRTL: inferTranslationRtl({ language: row.territory, translationName: label, abbreviation: label }, rawUrl),
       hasApocrypha: false,
@@ -15866,6 +15905,9 @@ function ensureBibleLibraryVersionOption(row) {
       translationName: label,
       abbreviation: label,
       rawUrl,
+      folderPath: row.folderPath || row.path,
+      extractedBookPaths: Array.isArray(row.bookPaths) ? [...row.bookPaths] : [],
+      source: 'github-extracted-library',
       testament: 'both',
       isRTL: GH_BIBLES[moduleId].isRTL,
       hasApocrypha: false,
@@ -15932,7 +15974,7 @@ async function selectBibleLibraryVersion(row, p) {
   const moduleId = ensureBibleLibraryVersionOption(row);
   rememberBibleLibrarySelection(row);
   setBibleLibraryRowState(row, 'loading');
-  setBibleLibraryStatus(`Checking GitHub latest: ${row.title}…`);
+  setBibleLibraryStatus(`Loading extracted books from GitHub: ${row.title}…`);
 
   ['d', 'm'].forEach(pl => {
     // Keep the user's current mode. Selecting a Bible from the 1500+ panel
@@ -15968,20 +16010,29 @@ async function loadBibleLibraryList() {
     })
     .then(data => {
       const tree = Array.isArray(data?.tree) ? data.tree : [];
-      const rows = [];
+      const grouped = new Map();
       tree.forEach(item => {
         const path = String(item?.path || '');
-        if (item?.type !== 'blob' || !/^JSON\//i.test(path) || !/\.json$/i.test(path)) return;
+        if (item?.type !== 'blob' || !path.startsWith(BIBLE_LIBRARY_EXTRACTED_ROOT) || !/\.json$/i.test(path)) return;
         const parts = path.split('/');
-        const territory = cleanBibleLibraryName(parts.length > 2 ? parts[1] : 'Other');
-        const title = cleanBibleLibraryName(parts[parts.length - 1]);
-        if (!title || title.toLowerCase() === 'versions' || isHiddenBibleLibraryPanelTitle(title)) return;
-        rows.push({ territory, title, path, rawUrl: bibleLibraryRawUrlFromPath(path) });
+        // Expected layout: TRANSLATION EXTRACTED / Language / Translation / Book.json
+        if (parts.length < 4) return;
+        const territory = cleanBibleLibraryName(parts[1] || 'Other');
+        const title = cleanBibleLibraryName(parts[2] || '');
+        if (!title || isHiddenBibleLibraryPanelTitle(title)) return;
+        const folderPath = parts.slice(0, 3).join('/');
+        if (!grouped.has(folderPath)) grouped.set(folderPath, { territory, title, path: folderPath, folderPath, bookPaths: [] });
+        grouped.get(folderPath).bookPaths.push(path);
       });
+      const rows = Array.from(grouped.values()).map(row => {
+        row.bookPaths.sort((a, b) => cleanBibleLibraryName(a.split('/').pop()).localeCompare(cleanBibleLibraryName(b.split('/').pop()), undefined, { numeric: true, sensitivity: 'base' }));
+        row.rawUrl = row.bookPaths[0] ? bibleLibraryRawUrlFromPath(row.bookPaths[0]) : '';
+        return row;
+      }).filter(row => row.bookPaths.length);
       rows.sort((a, b) => a.territory.localeCompare(b.territory, undefined, { sensitivity: 'base' }) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
       bibleLibraryRows = rows;
       try { localStorage.setItem(BIBLE_LIBRARY_CACHE_KEY, JSON.stringify({ rows, savedAt: Date.now(), source: 'github-live' })); } catch { /* quota */ }
-      setBibleLibraryStatus(rows.length ? 'Bible list updated from GitHub.' : 'No Bible JSON files found on GitHub.');
+      setBibleLibraryStatus(rows.length ? 'Bible version list updated from GitHub extracted folders.' : 'No extracted Bible folders were found on GitHub.');
       return rows;
     })
     .catch(err => {
