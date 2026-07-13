@@ -1,0 +1,14 @@
+{
+  "name": "Amoso",
+  "id": "Amoso",
+  "order": 30,
+  "chapters": {
+    "3": {
+      "3": "¶ Argi gali du eiti kartu, jeigu jie nesutaria?"
+    },
+    "6": {
+      "3": "¶ [Vargas] jums, kurie išstumiate [iš galvos mintį apie] nelaimės dieną ir priartinate smurto valdymą;",
+      "4": "kurie atsilošiate ant dramblio kaulo lovų ir drybsote savo kušetėse ir valgote ėriukus, paimtus iš bandos, bei veršius iš gardo vidurio;"
+    }
+  }
+}
